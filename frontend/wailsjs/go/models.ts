@@ -110,6 +110,22 @@ export namespace main {
 	        this.error = source["error"];
 	    }
 	}
+	export class ResourceUISettings {
+	    favorites: string[];
+	    collapsedSections: Record<string, boolean>;
+	    hideEmptyCRDs: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new ResourceUISettings(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.favorites = source["favorites"];
+	        this.collapsedSections = source["collapsedSections"];
+	        this.hideEmptyCRDs = source["hideEmptyCRDs"];
+	    }
+	}
 	export class TableColumn {
 	    name: string;
 	    type: string;

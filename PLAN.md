@@ -60,10 +60,10 @@ Produktnamen statt roher API-Gruppen) als auch die Ressourcen-Details (strukturi
       Suffix anzeigen (nur bei echter Kollision in derselben Sektion).
 
 ### A2 — Sidebar: Favoriten & Zustand
-- [ ] Ressourcen anpinnen (Stern-Icon im NavLink-Hover); Favoriten-Sektion ganz oben.
-- [ ] Persistenz in Settings **pro Kontext** (`favorites: { [contextName]: gvr[] }`).
-- [ ] Collapse-Zustand der Sektionen persistieren.
-- [ ] Optionaler Toggle „leere CRDs ausblenden": Instanz-Count lazy per List mit
+- [x] Ressourcen anpinnen (Stern-Icon im NavLink-Hover); Favoriten-Sektion ganz oben.
+- [x] Persistenz in Settings **pro Kontext** (`favorites: { [contextName]: gvr[] }`).
+- [x] Collapse-Zustand der Sektionen persistieren.
+- [x] Optionaler Toggle „leere CRDs ausblenden": Instanz-Count lazy per List mit
       `limit=1` beim Aufklappen der Sektion — kein Vorab-Scan über alle CRDs.
 
 ### A3 — Backend: Ressource als JSON + Events
@@ -81,8 +81,8 @@ Abhängig von: A3.
 - [x] **Übersicht, Kind-Renderer** (Registry `getOverviewRenderer`, Fallback generisch):
       Pod, Workload (Deploy/StatefulSet/DaemonSet/ReplicaSet), Service,
       ConfigMap/Secret (Werte-Toggle, base64-Dekodierung), Node.
-- [ ] YAML-Tab: Syntax-Highlighting ergänzen (aktuell schlichtes `<pre>`; verschoben,
-      z. B. CodeMirror-Read-Only zusammen mit E2).
+- [x] YAML-Tab: Syntax-Highlighting ergänzen (leichtgewichtiger Read-Only-Renderer
+      mit Zeilennummern; CodeMirror bleibt für E2/Editiermodus reserviert).
 
 ---
 

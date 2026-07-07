@@ -70,8 +70,17 @@ type TableResult struct {
 // ---------- Settings persistence ----------
 
 type Settings struct {
-	KubeConfigs []string `json:"kubeconfigs"`
-	LastContext string   `json:"lastContext"`
+	KubeConfigs       []string                   `json:"kubeconfigs"`
+	LastContext       string                     `json:"lastContext"`
+	Favorites         map[string][]string        `json:"favorites,omitempty"`
+	CollapsedSections map[string]map[string]bool `json:"collapsedSections,omitempty"`
+	HideEmptyCRDs     bool                       `json:"hideEmptyCRDs,omitempty"`
+}
+
+type ResourceUISettings struct {
+	Favorites         []string        `json:"favorites"`
+	CollapsedSections map[string]bool `json:"collapsedSections"`
+	HideEmptyCRDs     bool            `json:"hideEmptyCRDs"`
 }
 
 func settingsPath() string {
@@ -96,6 +105,23 @@ func (s Settings) save() {
 	_ = os.MkdirAll(filepath.Dir(path), 0o755)
 	data, _ := json.MarshalIndent(s, "", "  ")
 	_ = os.WriteFile(path, data, 0o600)
+}
+
+func cloneStringSlice(in []string) []string {
+	if len(in) == 0 {
+		return []string{}
+	}
+	out := make([]string, len(in))
+	copy(out, in)
+	return out
+}
+
+func cloneBoolMap(in map[string]bool) map[string]bool {
+	out := map[string]bool{}
+	for k, v := range in {
+		out[k] = v
+	}
+	return out
 }
 
 // ---------- Manager ----------
@@ -266,6 +292,72 @@ func (m *KubeManager) CurrentContext() string {
 	return m.currentContext
 }
 
+func (m *KubeManager) ResourceUISettings(contextName string) ResourceUISettings {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return ResourceUISettings{
+		Favorites:         cloneStringSlice(m.settings.Favorites[contextName]),
+		CollapsedSections: cloneBoolMap(m.settings.CollapsedSections[contextName]),
+		HideEmptyCRDs:     m.settings.HideEmptyCRDs,
+	}
+}
+
+func (m *KubeManager) SetResourceFavorite(contextName, resourceKey string, favorite bool) ResourceUISettings {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.settings.Favorites == nil {
+		m.settings.Favorites = map[string][]string{}
+	}
+	current := m.settings.Favorites[contextName]
+	filtered := current[:0]
+	for _, key := range current {
+		if key != resourceKey {
+			filtered = append(filtered, key)
+		}
+	}
+	if favorite {
+		filtered = append(filtered, resourceKey)
+	}
+	m.settings.Favorites[contextName] = cloneStringSlice(filtered)
+	m.settings.save()
+	return ResourceUISettings{
+		Favorites:         cloneStringSlice(m.settings.Favorites[contextName]),
+		CollapsedSections: cloneBoolMap(m.settings.CollapsedSections[contextName]),
+		HideEmptyCRDs:     m.settings.HideEmptyCRDs,
+	}
+}
+
+func (m *KubeManager) SetSectionCollapsed(contextName, sectionKey string, collapsed bool) ResourceUISettings {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.settings.CollapsedSections == nil {
+		m.settings.CollapsedSections = map[string]map[string]bool{}
+	}
+	if m.settings.CollapsedSections[contextName] == nil {
+		m.settings.CollapsedSections[contextName] = map[string]bool{}
+	}
+	m.settings.CollapsedSections[contextName][sectionKey] = collapsed
+	m.settings.save()
+	return ResourceUISettings{
+		Favorites:         cloneStringSlice(m.settings.Favorites[contextName]),
+		CollapsedSections: cloneBoolMap(m.settings.CollapsedSections[contextName]),
+		HideEmptyCRDs:     m.settings.HideEmptyCRDs,
+	}
+}
+
+func (m *KubeManager) SetHideEmptyCRDs(hide bool) ResourceUISettings {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.settings.HideEmptyCRDs = hide
+	contextName := m.currentContext
+	m.settings.save()
+	return ResourceUISettings{
+		Favorites:         cloneStringSlice(m.settings.Favorites[contextName]),
+		CollapsedSections: cloneBoolMap(m.settings.CollapsedSections[contextName]),
+		HideEmptyCRDs:     m.settings.HideEmptyCRDs,
+	}
+}
+
 // InitialContext returns the context to auto-connect on startup:
 // the last used one if it still exists, otherwise the kubeconfig's current-context.
 func (m *KubeManager) InitialContext() string {
@@ -363,6 +455,27 @@ func (m *KubeManager) ListNamespaces() ([]string, error) {
 	}
 	sort.Strings(names)
 	return names, nil
+}
+
+func (m *KubeManager) ResourceHasItems(group, version, resource, namespace string) (bool, error) {
+	_, dyn, _, err := m.clients()
+	if err != nil {
+		return false, err
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	gvr := schema.GroupVersionResource{Group: group, Version: version, Resource: resource}
+	opts := metav1.ListOptions{Limit: 1}
+	var list *unstructured.UnstructuredList
+	if namespace != "" {
+		list, err = dyn.Resource(gvr).Namespace(namespace).List(ctx, opts)
+	} else {
+		list, err = dyn.Resource(gvr).List(ctx, opts)
+	}
+	if err != nil {
+		return false, err
+	}
+	return len(list.Items) > 0, nil
 }
 
 // ListResourceTable fetches resources in the server-side Table format —

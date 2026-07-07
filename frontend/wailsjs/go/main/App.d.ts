@@ -20,6 +20,8 @@ export function GetEventsFor(arg1:string,arg2:string,arg3:string):Promise<Array<
 
 export function GetResourceJSON(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string):Promise<string>;
 
+export function GetResourceUISettings(arg1:string):Promise<main.ResourceUISettings>;
+
 export function GetResourceYAML(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string):Promise<string>;
 
 export function InitialContext():Promise<string>;
@@ -35,6 +37,14 @@ export function ListResourceTable(arg1:string,arg2:string,arg3:string,arg4:strin
 export function PatchResource(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string,arg6:string,arg7:string):Promise<void>;
 
 export function RemoveKubeConfig(arg1:string):Promise<void>;
+
+export function ResourceHasItems(arg1:string,arg2:string,arg3:string,arg4:string):Promise<boolean>;
+
+export function SetHideEmptyCRDs(arg1:boolean):Promise<main.ResourceUISettings>;
+
+export function SetResourceFavorite(arg1:string,arg2:string,arg3:boolean):Promise<main.ResourceUISettings>;
+
+export function SetSectionCollapsed(arg1:string,arg2:string,arg3:boolean):Promise<main.ResourceUISettings>;
 
 export function SetSuspend(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string,arg6:boolean):Promise<void>;
 

@@ -39,6 +39,12 @@ export interface TableResult {
   rows: TableRow[];
 }
 
+export interface ResourceUISettings {
+  favorites: string[];
+  collapsedSections: Record<string, boolean>;
+  hideEmptyCRDs: boolean;
+}
+
 export function resourceKey(r: APIResource): string {
   return `${r.group}/${r.version}/${r.name}`;
 }

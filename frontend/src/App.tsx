@@ -25,16 +25,21 @@ import {
   DeleteResource,
   DiscoverResources,
   FluxStatus,
+  GetResourceUISettings,
   InitialContext,
   ListContexts,
   ListKubeConfigs,
   ListNamespaces,
   ListResourceTable,
   RemoveKubeConfig,
+  ResourceHasItems,
+  SetHideEmptyCRDs,
+  SetResourceFavorite,
+  SetSectionCollapsed,
   UseContext,
 } from '../wailsjs/go/main/App';
 import { main } from '../wailsjs/go/models';
-import { APIResource, ContextInfo, KubeConfigInfo, TableResult, TableRow } from './types';
+import { APIResource, ContextInfo, KubeConfigInfo, ResourceUISettings, TableResult, TableRow, resourceKey } from './types';
 import { buildCrdNav, buildStandardNav, NavSection } from './resourceCatalog';
 import Sidebar from './components/Sidebar';
 import ResourceTable from './components/ResourceTable';
@@ -43,6 +48,12 @@ import KubeConfigModal from './components/KubeConfigModal';
 import { FluxOverview } from './components/flux';
 
 const REFRESH_INTERVAL_MS = 5000;
+
+const EMPTY_UI_SETTINGS: ResourceUISettings = {
+  favorites: [],
+  collapsedSections: {},
+  hideEmptyCRDs: false,
+};
 
 function errText(e: unknown): string {
   return typeof e === 'string' ? e : e instanceof Error ? e.message : String(e);
@@ -77,9 +88,20 @@ export default function App() {
     namespace: string;
   }>({ open: false, resource: null, name: '', namespace: '' });
 
+  const [resourceUI, setResourceUI] = useState<ResourceUISettings>(EMPTY_UI_SETTINGS);
+  const [crdItemPresence, setCrdItemPresence] = useState<Record<string, boolean | undefined>>({});
+
   const standardNav = useMemo<NavSection[]>(() => buildStandardNav(resources), [resources]);
   const crdNav = useMemo<NavSection[]>(() => buildCrdNav(resources), [resources]);
   const fluxAvailable = useMemo(() => crdNav.some((s) => s.label === 'Flux'), [crdNav]);
+
+  const applyResourceUI = useCallback((settings: ResourceUISettings) => {
+    setResourceUI({
+      favorites: settings.favorites ?? [],
+      collapsedSections: settings.collapsedSections ?? {},
+      hideEmptyCRDs: settings.hideEmptyCRDs ?? false,
+    });
+  }, []);
 
   const loadFluxStatus = useCallback(async () => {
     setFluxLoading(true);
@@ -124,17 +146,20 @@ export default function App() {
     setTable(null);
     setTableError('');
     setShowFlux(false);
+    setCrdItemPresence({});
     try {
       await UseContext(ctxName);
       setCurrentContext(ctxName);
-      const [ns, res] = await Promise.all([
+      const [ns, res, ui] = await Promise.all([
         ListNamespaces().catch(() => [] as string[]),
         DiscoverResources(),
+        GetResourceUISettings(ctxName),
       ]);
       setNamespaces(ns ?? []);
       setResources(res ?? []);
+      applyResourceUI(ui ?? EMPTY_UI_SETTINGS);
       setSelected((prev) => {
-        if (prev && (res ?? []).some((r) => r.group === prev.group && r.name === prev.name)) {
+        if (prev && (res ?? []).some((r) => r.group === prev.group && r.version === prev.version && r.name === prev.name)) {
           return prev;
         }
         return (res ?? []).find((r) => r.group === '' && r.name === 'pods') ?? null;
@@ -145,7 +170,7 @@ export default function App() {
     } finally {
       setConnecting(false);
     }
-  }, []);
+  }, [applyResourceUI]);
 
   // Initial load: kubeconfigs, contexts, auto-connect to last/current context.
   useEffect(() => {
@@ -159,6 +184,10 @@ export default function App() {
       }
     })();
   }, [refreshConfigsAndContexts, connect]);
+
+  useEffect(() => {
+    setCrdItemPresence({});
+  }, [namespace]);
 
   const loadTable = useCallback(
     async (showSpinner: boolean) => {
@@ -235,6 +264,67 @@ export default function App() {
     [refreshConfigsAndContexts]
   );
 
+  const toggleFavorite = useCallback(
+    async (resource: APIResource, favorite: boolean) => {
+      if (!currentContext) return;
+      const key = resourceKey(resource);
+      setResourceUI((prev) => ({
+        ...prev,
+        favorites: favorite ? [...prev.favorites.filter((x) => x !== key), key] : prev.favorites.filter((x) => x !== key),
+      }));
+      try {
+        applyResourceUI(await SetResourceFavorite(currentContext, key, favorite));
+      } catch (e) {
+        notifications.show({ message: errText(e), color: 'red' });
+        applyResourceUI(await GetResourceUISettings(currentContext));
+      }
+    },
+    [currentContext, applyResourceUI]
+  );
+
+  const updateSectionCollapsed = useCallback(
+    async (sectionKey: string, collapsed: boolean) => {
+      if (!currentContext) return;
+      setResourceUI((prev) => ({
+        ...prev,
+        collapsedSections: { ...prev.collapsedSections, [sectionKey]: collapsed },
+      }));
+      try {
+        applyResourceUI(await SetSectionCollapsed(currentContext, sectionKey, collapsed));
+      } catch (e) {
+        notifications.show({ message: errText(e), color: 'red' });
+      }
+    },
+    [currentContext, applyResourceUI]
+  );
+
+  const updateHideEmptyCRDs = useCallback(
+    async (hide: boolean) => {
+      setResourceUI((prev) => ({ ...prev, hideEmptyCRDs: hide }));
+      try {
+        applyResourceUI(await SetHideEmptyCRDs(hide));
+      } catch (e) {
+        notifications.show({ message: errText(e), color: 'red' });
+      }
+    },
+    [applyResourceUI]
+  );
+
+  const ensureCrdSectionPresence = useCallback(
+    (section: NavSection) => {
+      if (!resourceUI.hideEmptyCRDs) return;
+      for (const item of section.items) {
+        const key = resourceKey(item.resource);
+        if (crdItemPresence[key] !== undefined) continue;
+        setCrdItemPresence((prev) => ({ ...prev, [key]: undefined }));
+        ResourceHasItems(item.resource.group, item.resource.version, item.resource.name, item.resource.namespaced ? namespace : '')
+          .then((hasItems) => setCrdItemPresence((prev) => ({ ...prev, [key]: hasItems })))
+          .catch(() => setCrdItemPresence((prev) => ({ ...prev, [key]: true })));
+      }
+    },
+    [resourceUI.hideEmptyCRDs, crdItemPresence, namespace]
+  );
+
   const namespaceData = useMemo(
     () => [{ value: '', label: 'Alle Namespaces' }, ...namespaces.map((n) => ({ value: n, label: n }))],
     [namespaces]
@@ -298,7 +388,15 @@ export default function App() {
           standard={standardNav}
           crds={crdNav}
           selected={showFlux ? null : selected}
+          favorites={resourceUI.favorites}
+          collapsedSections={resourceUI.collapsedSections}
+          hideEmptyCRDs={resourceUI.hideEmptyCRDs}
+          crdItemPresence={crdItemPresence}
           onSelect={selectResource}
+          onToggleFavorite={toggleFavorite}
+          onSectionCollapsedChange={updateSectionCollapsed}
+          onHideEmptyCRDsChange={updateHideEmptyCRDs}
+          onEnsureCrdSectionPresence={ensureCrdSectionPresence}
           fluxAvailable={fluxAvailable}
           fluxActive={showFlux}
           onOpenFlux={openFlux}

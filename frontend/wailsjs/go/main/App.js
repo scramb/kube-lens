@@ -38,6 +38,10 @@ export function GetResourceJSON(arg1, arg2, arg3, arg4, arg5) {
   return window['go']['main']['App']['GetResourceJSON'](arg1, arg2, arg3, arg4, arg5);
 }
 
+export function GetResourceUISettings(arg1) {
+  return window['go']['main']['App']['GetResourceUISettings'](arg1);
+}
+
 export function GetResourceYAML(arg1, arg2, arg3, arg4, arg5) {
   return window['go']['main']['App']['GetResourceYAML'](arg1, arg2, arg3, arg4, arg5);
 }
@@ -68,6 +72,22 @@ export function PatchResource(arg1, arg2, arg3, arg4, arg5, arg6, arg7) {
 
 export function RemoveKubeConfig(arg1) {
   return window['go']['main']['App']['RemoveKubeConfig'](arg1);
+}
+
+export function ResourceHasItems(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['ResourceHasItems'](arg1, arg2, arg3, arg4);
+}
+
+export function SetHideEmptyCRDs(arg1) {
+  return window['go']['main']['App']['SetHideEmptyCRDs'](arg1);
+}
+
+export function SetResourceFavorite(arg1, arg2, arg3) {
+  return window['go']['main']['App']['SetResourceFavorite'](arg1, arg2, arg3);
+}
+
+export function SetSectionCollapsed(arg1, arg2, arg3) {
+  return window['go']['main']['App']['SetSectionCollapsed'](arg1, arg2, arg3);
 }
 
 export function SetSuspend(arg1, arg2, arg3, arg4, arg5, arg6) {

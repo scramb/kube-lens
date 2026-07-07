@@ -37,6 +37,7 @@ import {
 import { main } from '../../wailsjs/go/models';
 import { APIResource } from '../types';
 import { getOverviewRenderer, KubeObject } from './detail';
+import { YamlCode } from './detail/YamlCode';
 
 interface Props {
   opened: boolean;
@@ -303,21 +304,7 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
                 <Loader />
               </Center>
             ) : (
-              <pre
-                style={{
-                  margin: 0,
-                  padding: 12,
-                  fontSize: 12,
-                  lineHeight: 1.5,
-                  fontFamily: 'var(--mantine-font-family-monospace)',
-                  background: 'var(--mantine-color-dark-8)',
-                  borderRadius: 8,
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-word',
-                }}
-              >
-                {yaml}
-              </pre>
+              <YamlCode code={yaml} />
             )}
           </Tabs.Panel>
 
