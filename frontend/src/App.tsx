@@ -7,6 +7,7 @@ import {
   Center,
   Group,
   Loader,
+  Menu,
   Select,
   Text,
   TextInput,
@@ -16,15 +17,20 @@ import {
 import { notifications } from '@mantine/notifications';
 import {
   IconAlertCircle,
+  IconFileSettings,
   IconRefresh,
   IconSearch,
   IconSettings,
+  IconSettingsCog,
 } from '@tabler/icons-react';
 import {
   AddKubeConfigDialog,
   DeleteResource,
   DiscoverResources,
   FluxStatus,
+  GetMetricsAvailability,
+  GetNodeListMetrics,
+  GetPodListMetrics,
   GetResourceUISettings,
   InitialContext,
   ListContexts,
@@ -39,12 +45,15 @@ import {
   UseContext,
 } from '../wailsjs/go/main/App';
 import { main } from '../wailsjs/go/models';
-import { APIResource, ContextInfo, KubeConfigInfo, ResourceUISettings, TableResult, TableRow, resourceKey } from './types';
+import { APIResource, ContextInfo, KubeConfigInfo, ResourceListMetric, ResourceUISettings, TableResult, TableRow, resourceKey } from './types';
 import { buildCrdNav, buildStandardNav, NavSection } from './resourceCatalog';
 import Sidebar from './components/Sidebar';
-import ResourceTable from './components/ResourceTable';
+import ResourceTable, { ExtraTableColumn } from './components/ResourceTable';
 import YamlDrawer from './components/YamlDrawer';
 import KubeConfigModal from './components/KubeConfigModal';
+import PrometheusConfigModal from './components/PrometheusConfigModal';
+import { ClusterOverview } from './components/cluster/ClusterOverview';
+import { formatBytes, formatCPU } from './components/metrics/format';
 import { FluxOverview } from './components/flux';
 
 const REFRESH_INTERVAL_MS = 5000;
@@ -77,10 +86,15 @@ export default function App() {
   const [filter, setFilter] = useState('');
 
   const [showFlux, setShowFlux] = useState(false);
+  const [showCluster, setShowCluster] = useState(false);
   const [fluxStatus, setFluxStatus] = useState<main.FluxKindStatus[]>([]);
   const [fluxLoading, setFluxLoading] = useState(false);
+  const [metricsAvailable, setMetricsAvailable] = useState(false);
+  const [tableMetrics, setTableMetrics] = useState<Record<string, ResourceListMetric>>({});
+  const [clusterRefreshToken, setClusterRefreshToken] = useState(0);
 
   const [configModalOpen, setConfigModalOpen] = useState(false);
+  const [prometheusModalOpen, setPrometheusModalOpen] = useState(false);
   const [drawer, setDrawer] = useState<{
     open: boolean;
     resource: APIResource | null;
@@ -115,12 +129,20 @@ export default function App() {
   }, []);
 
   const openFlux = useCallback(() => {
+    setShowCluster(false);
     setShowFlux(true);
     loadFluxStatus();
   }, [loadFluxStatus]);
 
+  const openCluster = useCallback(() => {
+    setShowFlux(false);
+    setShowCluster(true);
+    setClusterRefreshToken((v) => v + 1);
+  }, []);
+
   const selectResource = useCallback((r: APIResource) => {
     setShowFlux(false);
+    setShowCluster(false);
     setSelected(r);
   }, []);
 
@@ -129,6 +151,7 @@ export default function App() {
       const r = resources.find((x) => x.group === s.group && x.name === s.resource);
       if (r) {
         setShowFlux(false);
+        setShowCluster(false);
         setSelected(r);
       }
     },
@@ -146,6 +169,9 @@ export default function App() {
     setTable(null);
     setTableError('');
     setShowFlux(false);
+    setShowCluster(false);
+    setMetricsAvailable(false);
+    setTableMetrics({});
     setCrdItemPresence({});
     try {
       await UseContext(ctxName);
@@ -157,6 +183,9 @@ export default function App() {
       ]);
       setNamespaces(ns ?? []);
       setResources(res ?? []);
+      GetMetricsAvailability(ctxName)
+        .then((availability) => setMetricsAvailable(availability?.available ?? false))
+        .catch(() => setMetricsAvailable(false));
       applyResourceUI(ui ?? EMPTY_UI_SETTINGS);
       setSelected((prev) => {
         if (prev && (res ?? []).some((r) => r.group === prev.group && r.version === prev.version && r.name === prev.name)) {
@@ -202,13 +231,31 @@ export default function App() {
         );
         setTable(result);
         setTableError('');
+        setTableMetrics({});
+
+        if (currentContext && metricsAvailable && selected.group === '' && (selected.name === 'pods' || selected.name === 'nodes')) {
+          try {
+            const names = (result.rows ?? []).map((row) => row.name).filter(Boolean);
+            const metrics = selected.name === 'pods'
+              ? await GetPodListMetrics(currentContext, selected.namespaced ? namespace : '', names)
+              : await GetNodeListMetrics(currentContext, names);
+            const mapped: Record<string, ResourceListMetric> = {};
+            for (const metric of metrics ?? []) {
+              const key = selected.name === 'pods' ? `${metric.namespace}/${metric.name}` : metric.name;
+              mapped[key] = metric;
+            }
+            setTableMetrics(mapped);
+          } catch {
+            setTableMetrics({});
+          }
+        }
       } catch (e) {
         setTableError(errText(e));
       } finally {
         setTableLoading(false);
       }
     },
-    [selected, namespace]
+    [selected, namespace, currentContext, metricsAvailable]
   );
 
   // Load + poll the active resource table.
@@ -330,6 +377,15 @@ export default function App() {
     [namespaces]
   );
 
+  const metricColumns = useMemo<ExtraTableColumn[]>(() => {
+    if (!metricsAvailable || !selected || selected.group !== '' || (selected.name !== 'pods' && selected.name !== 'nodes')) return [];
+    const metricFor = (row: TableRow) => tableMetrics[selected.name === 'pods' ? `${row.namespace}/${row.name}` : row.name];
+    return [
+      { key: 'metric-cpu', label: 'CPU', render: (row) => <Text size="sm">{formatCPU(metricFor(row)?.cpu)}</Text> },
+      { key: 'metric-memory', label: 'Memory', render: (row) => <Text size="sm">{formatBytes(metricFor(row)?.memory)}</Text> },
+    ];
+  }, [metricsAvailable, selected, tableMetrics]);
+
   const noContexts = contexts.length === 0;
 
   return (
@@ -369,17 +425,31 @@ export default function App() {
           <Tooltip label="Aktualisieren">
             <ActionIcon
               variant="subtle"
-              onClick={() => (showFlux ? loadFluxStatus() : loadTable(true))}
-              disabled={!selected && !showFlux}
+              onClick={() => (showFlux ? loadFluxStatus() : showCluster ? setClusterRefreshToken((v) => v + 1) : loadTable(true))}
+              disabled={!selected && !showFlux && !showCluster}
             >
               <IconRefresh size={18} />
             </ActionIcon>
           </Tooltip>
-          <Tooltip label="Kubeconfigs verwalten">
-            <ActionIcon variant="subtle" onClick={() => setConfigModalOpen(true)}>
-              <IconSettings size={18} />
-            </ActionIcon>
-          </Tooltip>
+          <Menu position="bottom-end" withinPortal>
+            <Menu.Target>
+              <ActionIcon variant="subtle" aria-label="Einstellungen">
+                <IconSettings size={18} />
+              </ActionIcon>
+            </Menu.Target>
+            <Menu.Dropdown>
+              <Menu.Item leftSection={<IconFileSettings size={16} />} onClick={() => setConfigModalOpen(true)}>
+                Kubeconfigs verwalten
+              </Menu.Item>
+              <Menu.Item
+                leftSection={<IconSettingsCog size={16} />}
+                onClick={() => setPrometheusModalOpen(true)}
+                disabled={!currentContext || !!connectError}
+              >
+                Prometheus konfigurieren
+              </Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
         </Group>
       </AppShell.Header>
 
@@ -387,7 +457,7 @@ export default function App() {
         <Sidebar
           standard={standardNav}
           crds={crdNav}
-          selected={showFlux ? null : selected}
+          selected={showFlux || showCluster ? null : selected}
           favorites={resourceUI.favorites}
           collapsedSections={resourceUI.collapsedSections}
           hideEmptyCRDs={resourceUI.hideEmptyCRDs}
@@ -400,6 +470,9 @@ export default function App() {
           fluxAvailable={fluxAvailable}
           fluxActive={showFlux}
           onOpenFlux={openFlux}
+          metricsAvailable={metricsAvailable}
+          clusterActive={showCluster}
+          onOpenCluster={openCluster}
         />
       </AppShell.Navbar>
 
@@ -443,6 +516,8 @@ export default function App() {
               </Button>
             </Alert>
           </Center>
+        ) : showCluster ? (
+          <ClusterOverview contextName={currentContext} refreshToken={clusterRefreshToken} />
         ) : showFlux ? (
           <FluxOverview
             status={fluxStatus}
@@ -458,6 +533,7 @@ export default function App() {
             error={tableError}
             allNamespaces={namespace === ''}
             filter={filter}
+            extraColumns={metricColumns}
             onRowClick={openDetail}
           />
         ) : (
@@ -474,6 +550,8 @@ export default function App() {
         name={drawer.name}
         namespace={drawer.namespace}
         onDelete={deleteCurrent}
+        metricsAvailable={metricsAvailable}
+        contextName={currentContext}
       />
 
       <KubeConfigModal
@@ -482,6 +560,12 @@ export default function App() {
         configs={configs}
         onAdd={addKubeConfig}
         onRemove={removeKubeConfig}
+      />
+
+      <PrometheusConfigModal
+        opened={prometheusModalOpen}
+        onClose={() => setPrometheusModalOpen(false)}
+        contextName={currentContext}
       />
     </AppShell>
   );

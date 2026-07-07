@@ -1,6 +1,12 @@
-import { useMemo } from 'react';
+import { ReactNode, useMemo } from 'react';
 import { Badge, Center, Loader, ScrollArea, Table, Text } from '@mantine/core';
 import { APIResource, TableResult, TableRow } from '../types';
+
+export interface ExtraTableColumn {
+  key: string;
+  label: string;
+  render: (row: TableRow) => ReactNode;
+}
 
 interface Props {
   resource: APIResource;
@@ -9,6 +15,7 @@ interface Props {
   error: string;
   allNamespaces: boolean;
   filter: string;
+  extraColumns?: ExtraTableColumn[];
   onRowClick: (row: TableRow) => void;
 }
 
@@ -57,6 +64,7 @@ export default function ResourceTable({
   error,
   allNamespaces,
   filter,
+  extraColumns = [],
   onRowClick,
 }: Props) {
   const showNamespace = resource.namespaced && allNamespaces;
@@ -115,6 +123,9 @@ export default function ResourceTable({
             {columns.map((c) => (
               <Table.Th key={c.name}>{c.name}</Table.Th>
             ))}
+            {extraColumns.map((c) => (
+              <Table.Th key={c.key}>{c.label}</Table.Th>
+            ))}
           </Table.Tr>
         </Table.Thead>
         <Table.Tbody>
@@ -133,6 +144,9 @@ export default function ResourceTable({
               )}
               {columnIndexes.map((ci) => (
                 <Table.Td key={ci}>{renderCell(row.cells[ci], table.columns[ci].name)}</Table.Td>
+              ))}
+              {extraColumns.map((c) => (
+                <Table.Td key={c.key}>{c.render(row)}</Table.Td>
               ))}
             </Table.Tr>
           ))}

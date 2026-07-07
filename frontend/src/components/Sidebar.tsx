@@ -1,6 +1,6 @@
 import { MouseEvent, useMemo, useState } from 'react';
 import { ActionIcon, Divider, Group, NavLink, ScrollArea, Stack, Switch, Text, TextInput, Tooltip } from '@mantine/core';
-import { IconBolt, IconEyeOff, IconPuzzle, IconSearch, IconStar, IconStarFilled } from '@tabler/icons-react';
+import { IconActivityHeartbeat, IconBolt, IconEyeOff, IconPuzzle, IconSearch, IconStar, IconStarFilled } from '@tabler/icons-react';
 import { NavItem, NavSection } from '../resourceCatalog';
 import { APIResource, resourceKey } from '../types';
 
@@ -20,6 +20,9 @@ interface Props {
   fluxAvailable: boolean;
   fluxActive: boolean;
   onOpenFlux: () => void;
+  metricsAvailable: boolean;
+  clusterActive: boolean;
+  onOpenCluster: () => void;
 }
 
 function sectionKey(kind: 'standard' | 'crd', label: string): string {
@@ -68,6 +71,9 @@ export default function Sidebar({
   fluxAvailable,
   fluxActive,
   onOpenFlux,
+  metricsAvailable,
+  clusterActive,
+  onOpenCluster,
 }: Props) {
   const [filter, setFilter] = useState('');
 
@@ -139,19 +145,31 @@ export default function Sidebar({
           </>
         )}
 
-        {fluxAvailable && filter.length === 0 && (
+        {(fluxAvailable || metricsAvailable) && filter.length === 0 && (
           <>
             <Text size="xs" fw={700} c="dimmed" tt="uppercase" px="md" pt="sm" pb={4}>
               Dashboards
             </Text>
-            <NavLink
-              label="Flux"
-              leftSection={<IconBolt size={16} />}
-              active={fluxActive}
-              onClick={onOpenFlux}
-              px="md"
-              py={5}
-            />
+            {metricsAvailable && (
+              <NavLink
+                label="Cluster Overview"
+                leftSection={<IconActivityHeartbeat size={16} />}
+                active={clusterActive}
+                onClick={onOpenCluster}
+                px="md"
+                py={5}
+              />
+            )}
+            {fluxAvailable && (
+              <NavLink
+                label="Flux"
+                leftSection={<IconBolt size={16} />}
+                active={fluxActive}
+                onClick={onOpenFlux}
+                px="md"
+                py={5}
+              />
+            )}
             <Divider my="sm" />
           </>
         )}

@@ -38,6 +38,7 @@ import { main } from '../../wailsjs/go/models';
 import { APIResource } from '../types';
 import { getOverviewRenderer, KubeObject } from './detail';
 import { YamlCode } from './detail/YamlCode';
+import { ResourceMetricsTab } from './metrics/ResourceMetricsTab';
 
 interface Props {
   opened: boolean;
@@ -46,13 +47,15 @@ interface Props {
   name: string;
   namespace: string;
   onDelete: () => Promise<void>;
+  metricsAvailable: boolean;
+  contextName: string | null;
 }
 
 function errText(e: unknown): string {
   return typeof e === 'string' ? e : e instanceof Error ? e.message : String(e);
 }
 
-export default function YamlDrawer({ opened, onClose, resource, name, namespace, onDelete }: Props) {
+export default function YamlDrawer({ opened, onClose, resource, name, namespace, onDelete, metricsAvailable, contextName }: Props) {
   const [tab, setTab] = useState<string>('overview');
 
   const [obj, setObj] = useState<KubeObject | null>(null);
@@ -150,6 +153,8 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
   };
 
   const isFlux = !!resource?.group.endsWith('.fluxcd.io');
+  const metricsSupported = !!resource && (resource.kind === 'Pod' || resource.kind === 'Node');
+  const showMetricsTab = metricsAvailable && metricsSupported;
   const suspended = obj?.spec?.suspend === true;
 
   const runFlux = useCallback(
@@ -175,6 +180,10 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
     },
     [resource, namespace, name, loadObj]
   );
+
+  useEffect(() => {
+    if (tab === 'metrics' && !showMetricsTab) setTab('overview');
+  }, [tab, showMetricsTab]);
 
   const Renderer = resource ? getOverviewRenderer(resource.kind) : null;
 
@@ -280,7 +289,7 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
           <Tabs.Tab value="overview">Übersicht</Tabs.Tab>
           <Tabs.Tab value="yaml">YAML</Tabs.Tab>
           <Tabs.Tab value="events">Events</Tabs.Tab>
-          <Tabs.Tab value="metrics">Metriken</Tabs.Tab>
+          {showMetricsTab && <Tabs.Tab value="metrics">Metriken</Tabs.Tab>}
         </Tabs.List>
 
         <ScrollArea h="calc(100vh - 165px)" type="scroll">
@@ -312,13 +321,11 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
             <EventsView events={events} loading={eventsLoading} error={eventsError} />
           </Tabs.Panel>
 
-          <Tabs.Panel value="metrics">
-            <Center h={200}>
-              <Text c="dimmed" ta="center" maw={360}>
-                Metriken werden mit der Prometheus-Anbindung ergänzt (Milestone B).
-              </Text>
-            </Center>
-          </Tabs.Panel>
+          {showMetricsTab && resource && (
+            <Tabs.Panel value="metrics">
+              <ResourceMetricsTab contextName={contextName} resource={resource} namespace={namespace} name={name} />
+            </Tabs.Panel>
+          )}
         </ScrollArea>
       </Tabs>
 

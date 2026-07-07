@@ -1,16 +1,16 @@
 export namespace main {
-	
+
 	export class APIResource {
 	    group: string;
 	    version: string;
 	    kind: string;
 	    name: string;
 	    namespaced: boolean;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new APIResource(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.group = source["group"];
@@ -20,6 +20,38 @@ export namespace main {
 	        this.namespaced = source["namespaced"];
 	    }
 	}
+	export class ClusterOverviewMetrics {
+	    available: boolean;
+	    cpuUsage: number;
+	    cpuCapacity: number;
+	    memoryUsage: number;
+	    memoryCapacity: number;
+	    nodeReady: number;
+	    nodeNotReady: number;
+	    podsRunning: number;
+	    podsPending: number;
+	    podsFailed: number;
+	    message: string;
+
+	    static createFrom(source: any = {}) {
+	        return new ClusterOverviewMetrics(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.available = source["available"];
+	        this.cpuUsage = source["cpuUsage"];
+	        this.cpuCapacity = source["cpuCapacity"];
+	        this.memoryUsage = source["memoryUsage"];
+	        this.memoryCapacity = source["memoryCapacity"];
+	        this.nodeReady = source["nodeReady"];
+	        this.nodeNotReady = source["nodeNotReady"];
+	        this.podsRunning = source["podsRunning"];
+	        this.podsPending = source["podsPending"];
+	        this.podsFailed = source["podsFailed"];
+	        this.message = source["message"];
+	    }
+	}
 	export class ContextInfo {
 	    name: string;
 	    cluster: string;
@@ -27,11 +59,11 @@ export namespace main {
 	    namespace: string;
 	    source: string;
 	    active: boolean;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new ContextInfo(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.name = source["name"];
@@ -50,11 +82,11 @@ export namespace main {
 	    source: string;
 	    firstTimestamp: string;
 	    lastTimestamp: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new EventInfo(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.type = source["type"];
@@ -75,11 +107,11 @@ export namespace main {
 	    ready: number;
 	    notReady: number;
 	    suspended: number;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new FluxKindStatus(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.kind = source["kind"];
@@ -97,11 +129,11 @@ export namespace main {
 	    isDefault: boolean;
 	    exists: boolean;
 	    error: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new KubeConfigInfo(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.path = source["path"];
@@ -110,15 +142,252 @@ export namespace main {
 	        this.error = source["error"];
 	    }
 	}
+	export class MetricPoint {
+	    timestamp: string;
+	    value: number;
+
+	    static createFrom(source: any = {}) {
+	        return new MetricPoint(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.timestamp = source["timestamp"];
+	        this.value = source["value"];
+	    }
+	}
+	export class MetricSeries {
+	    name: string;
+	    unit: string;
+	    points: MetricPoint[];
+
+	    static createFrom(source: any = {}) {
+	        return new MetricSeries(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.unit = source["unit"];
+	        this.points = this.convertValues(source["points"], MetricPoint);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class MetricsAvailability {
+	    available: boolean;
+	    mode: string;
+	    message: string;
+	    proxyForbidden: boolean;
+
+	    static createFrom(source: any = {}) {
+	        return new MetricsAvailability(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.available = source["available"];
+	        this.mode = source["mode"];
+	        this.message = source["message"];
+	        this.proxyForbidden = source["proxyForbidden"];
+	    }
+	}
+	export class PrometheusClusterSelector {
+	    label: string;
+	    value: string;
+
+	    static createFrom(source: any = {}) {
+	        return new PrometheusClusterSelector(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.label = source["label"];
+	        this.value = source["value"];
+	    }
+	}
+	export class PrometheusConnectionTestResult {
+	    ok: boolean;
+	    mode: string;
+	    message: string;
+	    sampleCount: number;
+	    clusterLabel: string;
+	    clusterValues: string[];
+	    proxyForbidden: boolean;
+
+	    static createFrom(source: any = {}) {
+	        return new PrometheusConnectionTestResult(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.ok = source["ok"];
+	        this.mode = source["mode"];
+	        this.message = source["message"];
+	        this.sampleCount = source["sampleCount"];
+	        this.clusterLabel = source["clusterLabel"];
+	        this.clusterValues = source["clusterValues"];
+	        this.proxyForbidden = source["proxyForbidden"];
+	    }
+	}
+	export class PrometheusTarget {
+	    accessMode: string;
+	    namespace: string;
+	    service: string;
+	    portName: string;
+	    port: number;
+	    pathPrefix: string;
+
+	    static createFrom(source: any = {}) {
+	        return new PrometheusTarget(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.accessMode = source["accessMode"];
+	        this.namespace = source["namespace"];
+	        this.service = source["service"];
+	        this.portName = source["portName"];
+	        this.port = source["port"];
+	        this.pathPrefix = source["pathPrefix"];
+	    }
+	}
+	export class PrometheusContextSettings {
+	    mode: string;
+	    url: string;
+	    headers: Record<string, string>;
+	    clusterSelector: PrometheusClusterSelector;
+	    target: PrometheusTarget;
+
+	    static createFrom(source: any = {}) {
+	        return new PrometheusContextSettings(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.mode = source["mode"];
+	        this.url = source["url"];
+	        this.headers = source["headers"];
+	        this.clusterSelector = this.convertValues(source["clusterSelector"], PrometheusClusterSelector);
+	        this.target = this.convertValues(source["target"], PrometheusTarget);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+
+	export class PrometheusTargetCandidate {
+	    namespace: string;
+	    service: string;
+	    portName: string;
+	    port: number;
+	    score: number;
+	    reasons: string[];
+
+	    static createFrom(source: any = {}) {
+	        return new PrometheusTargetCandidate(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.namespace = source["namespace"];
+	        this.service = source["service"];
+	        this.portName = source["portName"];
+	        this.port = source["port"];
+	        this.score = source["score"];
+	        this.reasons = source["reasons"];
+	    }
+	}
+	export class ResourceListMetric {
+	    namespace: string;
+	    name: string;
+	    cpu: number;
+	    memory: number;
+
+	    static createFrom(source: any = {}) {
+	        return new ResourceListMetric(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.namespace = source["namespace"];
+	        this.name = source["name"];
+	        this.cpu = source["cpu"];
+	        this.memory = source["memory"];
+	    }
+	}
+	export class ResourceMetricsSeries {
+	    available: boolean;
+	    series: MetricSeries[];
+
+	    static createFrom(source: any = {}) {
+	        return new ResourceMetricsSeries(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.available = source["available"];
+	        this.series = this.convertValues(source["series"], MetricSeries);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class ResourceUISettings {
 	    favorites: string[];
 	    collapsedSections: Record<string, boolean>;
 	    hideEmptyCRDs: boolean;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new ResourceUISettings(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.favorites = source["favorites"];
@@ -130,11 +399,11 @@ export namespace main {
 	    name: string;
 	    type: string;
 	    priority: number;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new TableColumn(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.name = source["name"];
@@ -146,11 +415,11 @@ export namespace main {
 	    cells: any[];
 	    name: string;
 	    namespace: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new TableRow(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.cells = source["cells"];
@@ -161,17 +430,17 @@ export namespace main {
 	export class TableResult {
 	    columns: TableColumn[];
 	    rows: TableRow[];
-	
+
 	    static createFrom(source: any = {}) {
 	        return new TableResult(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.columns = this.convertValues(source["columns"], TableColumn);
 	        this.rows = this.convertValues(source["rows"], TableRow);
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;

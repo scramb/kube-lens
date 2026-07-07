@@ -70,11 +70,12 @@ type TableResult struct {
 // ---------- Settings persistence ----------
 
 type Settings struct {
-	KubeConfigs       []string                   `json:"kubeconfigs"`
-	LastContext       string                     `json:"lastContext"`
-	Favorites         map[string][]string        `json:"favorites,omitempty"`
-	CollapsedSections map[string]map[string]bool `json:"collapsedSections,omitempty"`
-	HideEmptyCRDs     bool                       `json:"hideEmptyCRDs,omitempty"`
+	KubeConfigs       []string                             `json:"kubeconfigs"`
+	LastContext       string                               `json:"lastContext"`
+	Favorites         map[string][]string                  `json:"favorites,omitempty"`
+	CollapsedSections map[string]map[string]bool           `json:"collapsedSections,omitempty"`
+	HideEmptyCRDs     bool                                 `json:"hideEmptyCRDs,omitempty"`
+	Prometheus        map[string]PrometheusContextSettings `json:"prometheus,omitempty"`
 }
 
 type ResourceUISettings struct {
@@ -133,10 +134,11 @@ type KubeManager struct {
 	restConfig     *rest.Config
 	discovery      discovery.DiscoveryInterface
 	dynamic        dynamic.Interface
+	promCache      map[string]prometheusCacheEntry
 }
 
 func NewKubeManager() *KubeManager {
-	return &KubeManager{settings: loadSettings()}
+	return &KubeManager{settings: loadSettings(), promCache: map[string]prometheusCacheEntry{}}
 }
 
 func defaultKubeConfigPath() string {

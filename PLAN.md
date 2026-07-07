@@ -140,7 +140,7 @@ Autodiscovery im Cluster **plus** vollständig manuelle Konfiguration. Alles
 umgebungsspezifische ist konfigurierbar (Open-Source-Anforderung, siehe Entscheidungslog).
 
 ### B1 — Settings-Modell & Konfigurations-UI
-- [ ] Settings-Erweiterung **pro Kontext**:
+- [x] Settings-Erweiterung **pro Kontext**:
       ```json
       "prometheus": {
         "mode": "auto | manual | off",
@@ -154,42 +154,43 @@ umgebungsspezifische ist konfigurierbar (Open-Source-Anforderung, siehe Entschei
         spezifische Instanz.**
       - `clusterSelector.label`: frei konfigurierbar (`cluster`, `k8s_cluster`, eigene) —
         **nicht hartkodieren.** Leer = kein Matcher (Single-Cluster-Prometheus).
-- [ ] Konfigurations-Modal (pro Kontext, erreichbar über Header-Settings):
+- [x] Konfigurations-Modal (pro Kontext, erreichbar über Header-Settings):
       Modus-Wahl, URL + Header-Editor, Label-Name-Feld, Werte-Dropdown via
       `/api/v1/label/<label>/values`, „Verbindung testen"-Button (Query `up`, zeigt
       Sample-Count und erkannte Cluster-Label-Werte).
 
 ### B2 — Backend: Zugriffswege
-- [ ] **Autodiscovery:** Services clusterweit scannen nach bekannten Signaturen
+- [x] **Autodiscovery:** Services clusterweit scannen nach bekannten Signaturen
       (Label `app.kubernetes.io/name in (prometheus, thanos-query, mimir)`, Namens-
       Heuristiken `prometheus-operated`, `*-kube-prometheus-*`, Port `9090`/`web`).
       Kandidatenliste zurückgeben; UI lässt den User bestätigen (kein stilles Raten).
-- [ ] Zugriff auf In-Cluster-Instanzen über **API-Server-Service-Proxy**
+- [x] Zugriff auf In-Cluster-Instanzen über **API-Server-Service-Proxy**
       (`/api/v1/namespaces/<ns>/services/<name>:<port>/proxy/`) — nutzt bestehende
       Kubeconfig-Auth, kein Portmanagement.
 - [ ] Fallback **Port-Forward** (client-go SPDY), falls Proxy per RBAC verboten
-      (403 erkennen → automatisch umschalten, Zustand in UI anzeigen).
-- [ ] Manueller Modus: direkter HTTP-Client mit konfigurierten Headern.
+      (403 wird erkannt und im Konfigurations-Modal gemeldet; automatischer
+      Port-Forward bleibt offen, um keine instabile Teilimplementierung zu committen).
+- [x] Manueller Modus: direkter HTTP-Client mit konfigurierten Headern.
 
 ### B3 — Backend: Query-Schicht
 Abhängig von: B1, B2.
-- [ ] Client für `/api/v1/query` und `/api/v1/query_range` mit:
+- [x] Client für `/api/v1/query` und `/api/v1/query_range` mit:
       Matcher-Injektion (`clusterSelector` wird in jede Query eingefügt),
       Timeout, Ergebnis-Cache (~10 s) gegen Polling-Spam.
-- [ ] Query-Katalog (parametrisiert nach Namespace/Pod/Node), Standard-Metriken:
+- [x] Query-Katalog (parametrisiert nach Namespace/Pod/Node), Standard-Metriken:
       cAdvisor (`container_cpu_usage_seconds_total` als Rate,
       `container_memory_working_set_bytes`), kube-state-metrics (Restarts, Phasen),
       node-exporter (Node-CPU/Mem/Disk). Katalog als Datenstruktur, nicht verstreut.
 
 ### B4 — Anzeige
 Abhängig von: A4 (Metriken-Tab), B3.
-- [ ] **Tabellen-Spalten:** CPU/Memory in Pod- und Node-Listen (ein Batch-Instant-Query
+- [x] **Tabellen-Spalten:** CPU/Memory in Pod- und Node-Listen (ein Batch-Instant-Query
       pro Refresh, gejoint über Pod/Node-Name).
-- [ ] **Metriken-Tab im Drawer:** Zeitreihen-Charts (CPU, Memory, Netzwerk; Zeitraum
-      1h/6h/24h) mit `@mantine/charts`.
-- [ ] **Cluster-Übersichtsseite** (oberster Sidebar-Eintrag): Kapazität vs. Nutzung
+- [x] **Metriken-Tab im Drawer:** Zeitreihen-Charts (CPU, Memory, Netzwerk; Zeitraum
+      1h/6h/24h) mit leichtgewichtigem SVG-Chart (kein zusätzliches Chart-Bundle).
+- [x] **Cluster-Übersichtsseite** (oberster Sidebar-Eintrag): Kapazität vs. Nutzung
       (CPU/Mem), Node-Status, Pod-Zähler. Bewusst schlank — kein Grafana-Ersatz.
-- [ ] **Graceful Degradation:** ohne konfigurierte/erreichbare Quelle verschwinden
+- [x] **Graceful Degradation:** ohne konfigurierte/erreichbare Quelle verschwinden
       Spalten/Tabs/Seite kommentarlos; Fehlzustand nur im Konfigurations-Modal sichtbar.
 
 ---
