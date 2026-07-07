@@ -45,7 +45,8 @@ Produktnamen statt roher API-Gruppen) als auch die Ressourcen-Details (strukturi
 Übersicht statt YAML-Dump).
 
 ### A1 — Sidebar: Produkt-Mapping für CRD-Gruppen
-- [ ] Statische Mapping-Tabelle in `resourceCatalog.ts`: API-Gruppen-Muster → Produktname.
+- [x] Statische Mapping-Tabelle in `resourceCatalog.ts`: API-Gruppen-Muster → Produktname
+      (`productForGroup`, Suffix-Regeln für fluxcd.io/istio.io/cert-manager.io/kyverno.io).
       Mehrere Gruppen können in eine Sektion münden:
       - `*.toolkit.fluxcd.io` → **Flux**
       - `monitoring.coreos.com` → **Prometheus Operator**
@@ -55,8 +56,8 @@ Produktnamen statt roher API-Gruppen) als auch die Ressourcen-Details (strukturi
       - `external-secrets.io`, `generators.external-secrets.io` → **External Secrets**
       - `gateway.networking.k8s.io` → **Gateway API**
       - Rest: wie bisher unter dem API-Gruppennamen
-- [ ] Innerhalb einer Produkt-Sektion: bei Kind-Namenskollisionen (z. B. `Gateway` in
-      Istio und Gateway API) Gruppenkürzel als Suffix anzeigen.
+- [x] Innerhalb einer Produkt-Sektion: bei Kind-Namenskollisionen Gruppenkürzel als
+      Suffix anzeigen (nur bei echter Kollision in derselben Sektion).
 
 ### A2 — Sidebar: Favoriten & Zustand
 - [ ] Ressourcen anpinnen (Stern-Icon im NavLink-Hover); Favoriten-Sektion ganz oben.
@@ -66,27 +67,22 @@ Produktnamen statt roher API-Gruppen) als auch die Ressourcen-Details (strukturi
       `limit=1` beim Aufklappen der Sektion — kein Vorab-Scan über alle CRDs.
 
 ### A3 — Backend: Ressource als JSON + Events
-- [ ] `GetResource(gvr, ns, name)` → Objekt als JSON-String (zusätzlich zum
-      bestehenden `GetResourceYAML`; managedFields entfernt).
-- [ ] `GetEventsFor(ns, name, uid)` → Events via Field-Selector auf `involvedObject`
-      (core/v1 Events reichen; `regarding` aus events.k8s.io optional später).
+- [x] `GetResourceJSON(...)` → Objekt als JSON-String (zusätzlich zum
+      bestehenden `GetResourceYAML`; managedFields entfernt). → `detail.go`
+- [x] `GetEventsFor(ns, name, uid)` → Events via Field-Selector auf `involvedObject`
+      (core/v1). EventInfo-Typ + Bindings generiert. → `detail.go`
 
 ### A4 — Detail-Drawer mit Tabs
 Abhängig von: A3.
-- [ ] Drawer umbauen auf Tabs: **Übersicht | YAML | Events | Metriken** (Metriken:
-      Platzhalter „nicht konfiguriert" bis Milestone B).
-- [ ] **Übersicht, generische Schicht** (funktioniert für jede Ressource inkl. CRDs):
-      Metadaten-Karte (Labels, Annotations, Owner-Referenzen, Alter, UID) +
-      Conditions-Tabelle aus `.status.conditions` (Type/Status/Reason/Message/Zeit).
-- [ ] **Übersicht, Kind-Renderer** (Registry `kind → Komponente`, Fallback = generisch):
-      - Pod: Container (Image, Ready, Restarts, Ressourcen-Requests/Limits), Node,
-        Volumes, QoS-Klasse, Tolerations
-      - Deployment/StatefulSet/DaemonSet: Replica-Status, Strategie, Rollout-Zustand
-      - Service: Typ, Ports, Selector, zugehörige EndpointSlices
-      - ConfigMap/Secret: Key-Liste, Werte hinter „anzeigen"-Klick (Secrets dekodiert)
-      - Node: Kapazität/Allocatable, Taints, Kubelet-Version, Conditions
-- [ ] YAML-Tab: Syntax-Highlighting ergänzen (leichtgewichtig, z. B. Prism/highlight.js —
-      kein Monaco).
+- [x] Drawer umgebaut auf Tabs: **Übersicht | YAML | Events | Metriken** (Metriken:
+      Platzhalter bis Milestone B). Lazy-Loading je Tab, Race-Schutz via reqRef.
+- [x] **Übersicht, generische Schicht** (funktioniert für jede Ressource inkl. CRDs):
+      MetadataCard + ConditionsTable → `components/detail/GenericOverview.tsx`.
+- [x] **Übersicht, Kind-Renderer** (Registry `getOverviewRenderer`, Fallback generisch):
+      Pod, Workload (Deploy/StatefulSet/DaemonSet/ReplicaSet), Service,
+      ConfigMap/Secret (Werte-Toggle, base64-Dekodierung), Node.
+- [ ] YAML-Tab: Syntax-Highlighting ergänzen (aktuell schlichtes `<pre>`; verschoben,
+      z. B. CodeMirror-Read-Only zusammen mit E2).
 
 ---
 
@@ -97,10 +93,10 @@ Mechanik identisch zur Flux-CLI. **Scope umfasst Image Automation** (User-Entsch
 
 ### C1 — Backend: generisches Patchen
 Unabhängig umsetzbar; Grundlage auch für spätere Features (YAML-Edit).
-- [ ] `PatchResource(group, version, resource, ns, name, patchJSON string, patchType string)`
-      über den dynamischen Client (merge-patch reicht für Flux; strategic optional).
-- [ ] Convenience im Backend: `AnnotateResource(...)` (setzt/ersetzt eine Annotation)
-      und `SetSuspend(..., suspended bool)` (patcht `spec.suspend`).
+- [x] `PatchResource(group, version, resource, ns, name, patchJSON, patchType)`
+      über den dynamischen Client (merge/strategic/json). → `patch.go`
+- [x] Convenience: `AnnotateResource(...)` und `SetSuspend(..., suspended bool)`
+      (JSON via json.Marshal, kein rohes Sprintf). → `patch.go`
 
 ### C2 — Flux-Erkennung & Übersichtsseite
 Abhängig von: A1 (Flux-Sektion), C1.

@@ -42,6 +42,30 @@ export namespace main {
 	        this.active = source["active"];
 	    }
 	}
+	export class EventInfo {
+	    type: string;
+	    reason: string;
+	    message: string;
+	    count: number;
+	    source: string;
+	    firstTimestamp: string;
+	    lastTimestamp: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new EventInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.type = source["type"];
+	        this.reason = source["reason"];
+	        this.message = source["message"];
+	        this.count = source["count"];
+	        this.source = source["source"];
+	        this.firstTimestamp = source["firstTimestamp"];
+	        this.lastTimestamp = source["lastTimestamp"];
+	    }
+	}
 	export class KubeConfigInfo {
 	    path: string;
 	    isDefault: boolean;

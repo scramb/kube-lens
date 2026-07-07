@@ -24,7 +24,6 @@ import {
   AddKubeConfigDialog,
   DeleteResource,
   DiscoverResources,
-  GetResourceYAML,
   InitialContext,
   ListContexts,
   ListKubeConfigs,
@@ -66,11 +65,10 @@ export default function App() {
   const [configModalOpen, setConfigModalOpen] = useState(false);
   const [drawer, setDrawer] = useState<{
     open: boolean;
+    resource: APIResource | null;
     name: string;
     namespace: string;
-    yaml: string;
-    loading: boolean;
-  }>({ open: false, name: '', namespace: '', yaml: '', loading: false });
+  }>({ open: false, resource: null, name: '', namespace: '' });
 
   const standardNav = useMemo<NavSection[]>(() => buildStandardNav(resources), [resources]);
   const crdNav = useMemo<NavSection[]>(() => buildCrdNav(resources), [resources]);
@@ -155,43 +153,26 @@ export default function App() {
     return () => clearInterval(timer);
   }, [selected, namespace, currentContext, connectError]);
 
-  const openYaml = useCallback(
-    async (row: TableRow) => {
+  const openDetail = useCallback(
+    (row: TableRow) => {
       if (!selected) return;
-      setDrawer({ open: true, name: row.name, namespace: row.namespace, yaml: '', loading: true });
-      try {
-        const yaml = await GetResourceYAML(
-          selected.group,
-          selected.version,
-          selected.name,
-          row.namespace,
-          row.name
-        );
-        setDrawer((d) => ({ ...d, yaml, loading: false }));
-      } catch (e) {
-        setDrawer((d) => ({ ...d, yaml: `Fehler: ${errText(e)}`, loading: false }));
-      }
+      setDrawer({ open: true, resource: selected, name: row.name, namespace: row.namespace });
     },
     [selected]
   );
 
   const deleteCurrent = useCallback(async () => {
-    if (!selected) return;
+    const res = drawer.resource;
+    if (!res) return;
     try {
-      await DeleteResource(
-        selected.group,
-        selected.version,
-        selected.name,
-        drawer.namespace,
-        drawer.name
-      );
-      notifications.show({ message: `${selected.kind} „${drawer.name}" wird gelöscht`, color: 'teal' });
+      await DeleteResource(res.group, res.version, res.name, drawer.namespace, drawer.name);
+      notifications.show({ message: `${res.kind} „${drawer.name}" wird gelöscht`, color: 'teal' });
       loadTableRef.current(false);
     } catch (e) {
       notifications.show({ message: errText(e), color: 'red' });
       throw e;
     }
-  }, [selected, drawer.name, drawer.namespace]);
+  }, [drawer.resource, drawer.name, drawer.namespace]);
 
   const addKubeConfig = useCallback(async () => {
     try {
@@ -319,7 +300,7 @@ export default function App() {
             error={tableError}
             allNamespaces={namespace === ''}
             filter={filter}
-            onRowClick={openYaml}
+            onRowClick={openDetail}
           />
         ) : (
           <Center h="100%">
@@ -331,11 +312,9 @@ export default function App() {
       <YamlDrawer
         opened={drawer.open}
         onClose={() => setDrawer((d) => ({ ...d, open: false }))}
-        resource={selected}
+        resource={drawer.resource}
         name={drawer.name}
         namespace={drawer.namespace}
-        yaml={drawer.yaml}
-        loading={drawer.loading}
         onDelete={deleteCurrent}
       />
 

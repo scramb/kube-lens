@@ -98,19 +98,56 @@ export function buildStandardNav(resources: APIResource[]): NavSection[] {
   return sections;
 }
 
-// buildCrdNav groups every non-standard resource by its API group.
+// Maps a custom-resource API group to a product section name. Rules are
+// checked in order; the first match wins, falling back to the raw group.
+interface ProductRule {
+  test: (g: string) => boolean;
+  product: string;
+}
+
+const PRODUCT_RULES: ProductRule[] = [
+  { test: (g) => g.endsWith('.fluxcd.io'), product: 'Flux' },
+  { test: (g) => g === 'monitoring.coreos.com', product: 'Prometheus Operator' },
+  { test: (g) => g.endsWith('.istio.io'), product: 'Istio' },
+  { test: (g) => g === 'cert-manager.io' || g.endsWith('.cert-manager.io'), product: 'Cert-Manager' },
+  { test: (g) => g === 'kyverno.io' || g.endsWith('.kyverno.io') || g === 'wgpolicyk8s.io', product: 'Kyverno' },
+  { test: (g) => g === 'external-secrets.io' || g === 'generators.external-secrets.io', product: 'External Secrets' },
+  { test: (g) => g === 'gateway.networking.k8s.io', product: 'Gateway API' },
+];
+
+export function productForGroup(group: string): string {
+  for (const rule of PRODUCT_RULES) {
+    if (rule.test(group)) return rule.product;
+  }
+  return group;
+}
+
+// buildCrdNav groups every non-standard resource by its product section.
 export function buildCrdNav(resources: APIResource[]): NavSection[] {
-  const byGroup = new Map<string, NavItem[]>();
+  const byProduct = new Map<string, APIResource[]>();
   for (const r of resources) {
     if (STANDARD_GROUPS.has(r.group)) continue;
-    const items = byGroup.get(r.group) ?? [];
-    items.push({ label: r.kind, resource: r });
-    byGroup.set(r.group, items);
+    const product = productForGroup(r.group);
+    const list = byProduct.get(product) ?? [];
+    list.push(r);
+    byProduct.set(product, list);
   }
-  return [...byGroup.entries()]
+
+  return [...byProduct.entries()]
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([group, items]) => ({
-      label: group,
-      items: items.sort((a, b) => a.label.localeCompare(b.label)),
-    }));
+    .map(([product, list]) => {
+      // Count kind occurrences so we only disambiguate on real collisions.
+      const kindCounts = new Map<string, number>();
+      for (const r of list) kindCounts.set(r.kind, (kindCounts.get(r.kind) ?? 0) + 1);
+
+      const items: NavItem[] = list.map((r) => ({
+        label: (kindCounts.get(r.kind) ?? 0) > 1 ? `${r.kind} (${r.group})` : r.kind,
+        resource: r,
+      }));
+
+      return {
+        label: product,
+        items: items.sort((a, b) => a.label.localeCompare(b.label)),
+      };
+    });
 }

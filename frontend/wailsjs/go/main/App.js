@@ -6,12 +6,24 @@ export function AddKubeConfigDialog() {
   return window['go']['main']['App']['AddKubeConfigDialog']();
 }
 
+export function AnnotateResource(arg1, arg2, arg3, arg4, arg5, arg6, arg7) {
+  return window['go']['main']['App']['AnnotateResource'](arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+}
+
 export function DeleteResource(arg1, arg2, arg3, arg4, arg5) {
   return window['go']['main']['App']['DeleteResource'](arg1, arg2, arg3, arg4, arg5);
 }
 
 export function DiscoverResources() {
   return window['go']['main']['App']['DiscoverResources']();
+}
+
+export function GetEventsFor(arg1, arg2, arg3) {
+  return window['go']['main']['App']['GetEventsFor'](arg1, arg2, arg3);
+}
+
+export function GetResourceJSON(arg1, arg2, arg3, arg4, arg5) {
+  return window['go']['main']['App']['GetResourceJSON'](arg1, arg2, arg3, arg4, arg5);
 }
 
 export function GetResourceYAML(arg1, arg2, arg3, arg4, arg5) {
@@ -38,8 +50,16 @@ export function ListResourceTable(arg1, arg2, arg3, arg4) {
   return window['go']['main']['App']['ListResourceTable'](arg1, arg2, arg3, arg4);
 }
 
+export function PatchResource(arg1, arg2, arg3, arg4, arg5, arg6, arg7) {
+  return window['go']['main']['App']['PatchResource'](arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+}
+
 export function RemoveKubeConfig(arg1) {
   return window['go']['main']['App']['RemoveKubeConfig'](arg1);
+}
+
+export function SetSuspend(arg1, arg2, arg3, arg4, arg5, arg6) {
+  return window['go']['main']['App']['SetSuspend'](arg1, arg2, arg3, arg4, arg5, arg6);
 }
 
 export function UseContext(arg1) {

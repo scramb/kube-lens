@@ -4,9 +4,15 @@ import {main} from '../models';
 
 export function AddKubeConfigDialog():Promise<string>;
 
+export function AnnotateResource(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string,arg6:string,arg7:string):Promise<void>;
+
 export function DeleteResource(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string):Promise<void>;
 
 export function DiscoverResources():Promise<Array<main.APIResource>>;
+
+export function GetEventsFor(arg1:string,arg2:string,arg3:string):Promise<Array<main.EventInfo>>;
+
+export function GetResourceJSON(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string):Promise<string>;
 
 export function GetResourceYAML(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string):Promise<string>;
 
@@ -20,6 +26,10 @@ export function ListNamespaces():Promise<Array<string>>;
 
 export function ListResourceTable(arg1:string,arg2:string,arg3:string,arg4:string):Promise<main.TableResult>;
 
+export function PatchResource(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string,arg6:string,arg7:string):Promise<void>;
+
 export function RemoveKubeConfig(arg1:string):Promise<void>;
+
+export function SetSuspend(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string,arg6:boolean):Promise<void>;
 
 export function UseContext(arg1:string):Promise<void>;
