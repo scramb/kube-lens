@@ -100,32 +100,33 @@ Unabhängig umsetzbar; Grundlage auch für spätere Features (YAML-Edit).
 
 ### C2 — Flux-Erkennung & Übersichtsseite
 Abhängig von: A1 (Flux-Sektion), C1.
-- [ ] Flux-Bereich nur zeigen, wenn Discovery `*.toolkit.fluxcd.io`-Gruppen liefert.
-- [ ] Übersichtsseite (eigener Eintrag oben in der Flux-Sektion):
-      Status-Karten mit Ready/NotReady/Suspended-Zählern je Typ:
-      Kustomizations, HelmReleases, Sources (GitRepository, OCIRepository,
-      HelmRepository, HelmChart, Bucket), **Image Automation** (ImageRepository,
-      ImagePolicy, ImageUpdateAutomation).
-- [ ] Klick auf Karte → gefilterte Liste.
+- [x] Flux-Bereich (Dashboard-Eintrag in Sidebar) nur bei vorhandenen
+      `*.fluxcd.io`-Gruppen. → `fluxAvailable` in App, Sidebar-„Dashboards"-Sektion.
+- [x] Übersichtsseite mit Status-Karten (Ready/NotReady/Suspended je Typ),
+      gruppiert in Appliers/Sources/Image Automation/Notification. Backend
+      `FluxStatus()` aggregiert live. → `flux.go`, `components/flux/*`.
+- [x] Klick auf Karte → navigiert zur gefilterten Ressourcenliste (`openFluxKind`).
 
 ### C3 — Flux-Listen mit Semantik
 Abhängig von: C2.
-- [ ] Listenansicht für Flux-Ressourcen erweitert die generische Tabelle um:
-      Ready-Ampel (aus Conditions), aktuelle Revision, letzter Reconcile-Zeitpunkt,
-      Suspend-Badge, Fehlermeldung (Condition-Message) direkt in der Zeile.
-- [ ] Zeilen-Aktionen (Buttons/Menü): Reconcile, Reconcile with source, Suspend/Resume.
+- [x] Listenansicht: Ready/Status/Age/Revision kommen bereits über die Server-Side-
+      Table-API aus den `additionalPrinterColumns` der Flux-CRDs (kubectl-identisch).
+- [x] Aktionen: im Detail-Drawer für Flux-Kinds (Reconcile, Reconcile with source,
+      Suspend/Resume). → `YamlDrawer.tsx`. Suspend-Badge im Drawer-Titel.
+- [ ] Zeilen-Inline-Aktionen (Schnellzugriff ohne Drawer öffnen) — verschoben.
 
 ### C4 — Aktions-Mechanik & Feedback
 Abhängig von: C1.
-- [ ] **Reconcile:** Annotation `reconcile.fluxcd.io/requestedAt: <RFC3339Nano-jetzt>`.
-- [ ] **Reconcile with source:** erst die referenzierte Source (`spec.sourceRef` bzw.
-      `spec.chartRef`) annotieren, dann die Ressource selbst.
-- [ ] **Suspend/Resume:** `spec.suspend: true|false` patchen.
-- [ ] **Image Automation:** dieselben Aktionen für ImageRepository (Scan antriggern)
-      und ImageUpdateAutomation (Run antriggern); Suspend für alle drei Typen.
-- [ ] Nach Aktion: Fast-Polling (z. B. 1 s für max. 60 s) auf der Ressource bis
-      `status.observedGeneration` aufgeholt hat / Ready-Condition kippt; Fortschritt
-      als Notification („Reconciliation läuft … ✓ Ready, Revision main@sha1:abc123").
+- [x] **Reconcile:** Annotation `reconcile.fluxcd.io/requestedAt` (RFC3339Nano now).
+      → `flux.go: FluxReconcile`.
+- [x] **Reconcile with source:** löst `spec.sourceRef`/`spec.chartRef`/
+      `spec.chart.spec.sourceRef` auf, annotiert Source + Ressource. → `FluxReconcileWithSource`.
+- [x] **Suspend/Resume:** `spec.suspend` patchen (nutzt `SetSuspend` aus patch.go).
+- [x] **Image Automation:** funktioniert generisch — alle `*.fluxcd.io`-Kinds
+      (inkl. ImageRepository/ImagePolicy/ImageUpdateAutomation) erhalten dieselben
+      Aktionen, da Erkennung über Gruppen-Suffix läuft.
+- [ ] Fast-Polling mit observedGeneration-Fortschritt — aktuell leichtes Refetch
+      (400 ms) nach Suspend/Resume; volle Progress-Anzeige verschoben (→ mit F).
 
 ### C5 — Optional / nachgelagert
 - [ ] Dependency-Graph der Kustomizations (`spec.dependsOn`) als Diagramm.

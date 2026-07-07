@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { NavLink, ScrollArea, Text, TextInput, Stack, Divider } from '@mantine/core';
-import { IconSearch, IconPuzzle } from '@tabler/icons-react';
+import { IconSearch, IconPuzzle, IconBolt } from '@tabler/icons-react';
 import { NavSection } from '../resourceCatalog';
 import { APIResource, resourceKey } from '../types';
 
@@ -9,9 +9,20 @@ interface Props {
   crds: NavSection[];
   selected: APIResource | null;
   onSelect: (r: APIResource) => void;
+  fluxAvailable: boolean;
+  fluxActive: boolean;
+  onOpenFlux: () => void;
 }
 
-export default function Sidebar({ standard, crds, selected, onSelect }: Props) {
+export default function Sidebar({
+  standard,
+  crds,
+  selected,
+  onSelect,
+  fluxAvailable,
+  fluxActive,
+  onOpenFlux,
+}: Props) {
   const [filter, setFilter] = useState('');
 
   const filterSections = (sections: NavSection[]) =>
@@ -40,6 +51,22 @@ export default function Sidebar({ standard, crds, selected, onSelect }: Props) {
         onChange={(e) => setFilter(e.currentTarget.value)}
       />
       <ScrollArea flex={1} type="scroll">
+        {fluxAvailable && filter.length === 0 && (
+          <>
+            <Text size="xs" fw={700} c="dimmed" tt="uppercase" px="md" pt="sm" pb={4}>
+              Dashboards
+            </Text>
+            <NavLink
+              label="Flux"
+              leftSection={<IconBolt size={16} />}
+              active={fluxActive}
+              onClick={onOpenFlux}
+              px="md"
+              py={5}
+            />
+            <Divider my="sm" />
+          </>
+        )}
         {visibleStandard.map((section) => (
           <div key={section.label}>
             <Text size="xs" fw={700} c="dimmed" tt="uppercase" px="md" pt="sm" pb={4}>

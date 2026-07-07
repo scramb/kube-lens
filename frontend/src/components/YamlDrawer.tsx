@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActionIcon,
   Badge,
@@ -8,6 +8,7 @@ import {
   Drawer,
   Group,
   Loader,
+  Menu,
   Modal,
   ScrollArea,
   Table,
@@ -15,8 +16,24 @@ import {
   Text,
   Tooltip,
 } from '@mantine/core';
-import { IconCheck, IconCopy, IconTrash } from '@tabler/icons-react';
-import { GetEventsFor, GetResourceJSON, GetResourceYAML } from '../../wailsjs/go/main/App';
+import { notifications } from '@mantine/notifications';
+import {
+  IconCheck,
+  IconChevronDown,
+  IconCopy,
+  IconPlayerPause,
+  IconPlayerPlay,
+  IconRefresh,
+  IconTrash,
+} from '@tabler/icons-react';
+import {
+  FluxReconcile,
+  FluxReconcileWithSource,
+  GetEventsFor,
+  GetResourceJSON,
+  GetResourceYAML,
+  SetSuspend,
+} from '../../wailsjs/go/main/App';
 import { main } from '../../wailsjs/go/models';
 import { APIResource } from '../types';
 import { getOverviewRenderer, KubeObject } from './detail';
@@ -49,30 +66,36 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [fluxBusy, setFluxBusy] = useState(false);
 
   const identity = resource
     ? `${resource.group}/${resource.version}/${resource.name}/${namespace}/${name}`
     : '';
 
-  // Reset + fetch the object as JSON whenever a different resource is opened.
   const reqRef = useRef(0);
+
+  const loadObj = useCallback(async () => {
+    if (!resource) return;
+    const req = reqRef.current;
+    try {
+      const json = await GetResourceJSON(resource.group, resource.version, resource.name, namespace, name);
+      if (reqRef.current === req) setObj(JSON.parse(json));
+    } catch (e) {
+      if (reqRef.current === req) setObjError(errText(e));
+    }
+  }, [resource, namespace, name]);
+
+  // Reset + fetch the object as JSON whenever a different resource is opened.
   useEffect(() => {
     if (!opened || !resource) return;
-    const req = ++reqRef.current;
+    reqRef.current++;
     setTab('overview');
     setObj(null);
     setObjError('');
     setYaml('');
     setEvents(null);
     setEventsError('');
-    (async () => {
-      try {
-        const json = await GetResourceJSON(resource.group, resource.version, resource.name, namespace, name);
-        if (reqRef.current === req) setObj(JSON.parse(json));
-      } catch (e) {
-        if (reqRef.current === req) setObjError(errText(e));
-      }
-    })();
+    loadObj();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [identity, opened]);
 
@@ -125,6 +148,33 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
     }
   };
 
+  const isFlux = !!resource?.group.endsWith('.fluxcd.io');
+  const suspended = obj?.spec?.suspend === true;
+
+  const runFlux = useCallback(
+    async (action: 'reconcile' | 'reconcileSource' | 'suspend' | 'resume', label: string) => {
+      if (!resource) return;
+      setFluxBusy(true);
+      try {
+        if (action === 'reconcile') {
+          await FluxReconcile(resource.group, resource.version, resource.name, namespace, name);
+        } else if (action === 'reconcileSource') {
+          await FluxReconcileWithSource(resource.group, resource.version, resource.name, namespace, name);
+        } else {
+          await SetSuspend(resource.group, resource.version, resource.name, namespace, name, action === 'suspend');
+        }
+        notifications.show({ message: `${label}: ${name}`, color: 'teal' });
+        // Reflect suspend/resume immediately in the overview.
+        setTimeout(() => loadObj(), 400);
+      } catch (e) {
+        notifications.show({ message: errText(e), color: 'red' });
+      } finally {
+        setFluxBusy(false);
+      }
+    },
+    [resource, namespace, name, loadObj]
+  );
+
   const Renderer = resource ? getOverviewRenderer(resource.kind) : null;
 
   return (
@@ -140,26 +190,88 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
             {namespace ? `${namespace} / ` : ''}
             {name}
           </Text>
+          {isFlux && suspended && (
+            <Badge size="sm" color="orange" variant="light">
+              pausiert
+            </Badge>
+          )}
         </Group>
       }
     >
-      <Group justify="flex-end" mb="xs" gap="xs">
-        {tab === 'yaml' && (
-          <CopyButton value={yaml}>
-            {({ copied, copy }) => (
-              <Tooltip label={copied ? 'Kopiert' : 'YAML kopieren'}>
-                <ActionIcon variant="subtle" color={copied ? 'teal' : 'gray'} onClick={copy}>
-                  {copied ? <IconCheck size={16} /> : <IconCopy size={16} />}
-                </ActionIcon>
-              </Tooltip>
-            )}
-          </CopyButton>
-        )}
-        <Tooltip label="Ressource löschen">
-          <ActionIcon variant="subtle" color="red" onClick={() => setConfirmOpen(true)}>
-            <IconTrash size={16} />
-          </ActionIcon>
-        </Tooltip>
+      <Group justify="space-between" mb="xs" gap="xs" wrap="nowrap">
+        <Group gap="xs">
+          {isFlux && (
+            <>
+              <Button.Group>
+                <Button
+                  size="xs"
+                  variant="light"
+                  leftSection={<IconRefresh size={14} />}
+                  loading={fluxBusy}
+                  onClick={() => runFlux('reconcile', 'Reconcile angefordert')}
+                >
+                  Reconcile
+                </Button>
+                <Menu position="bottom-start" withinPortal>
+                  <Menu.Target>
+                    <Button size="xs" variant="light" px={6} disabled={fluxBusy}>
+                      <IconChevronDown size={14} />
+                    </Button>
+                  </Menu.Target>
+                  <Menu.Dropdown>
+                    <Menu.Item
+                      leftSection={<IconRefresh size={14} />}
+                      onClick={() => runFlux('reconcileSource', 'Reconcile mit Source angefordert')}
+                    >
+                      Reconcile with source
+                    </Menu.Item>
+                  </Menu.Dropdown>
+                </Menu>
+              </Button.Group>
+              {suspended ? (
+                <Button
+                  size="xs"
+                  variant="light"
+                  color="teal"
+                  leftSection={<IconPlayerPlay size={14} />}
+                  loading={fluxBusy}
+                  onClick={() => runFlux('resume', 'Fortgesetzt')}
+                >
+                  Resume
+                </Button>
+              ) : (
+                <Button
+                  size="xs"
+                  variant="light"
+                  color="orange"
+                  leftSection={<IconPlayerPause size={14} />}
+                  loading={fluxBusy}
+                  onClick={() => runFlux('suspend', 'Pausiert')}
+                >
+                  Suspend
+                </Button>
+              )}
+            </>
+          )}
+        </Group>
+        <Group gap="xs">
+          {tab === 'yaml' && (
+            <CopyButton value={yaml}>
+              {({ copied, copy }) => (
+                <Tooltip label={copied ? 'Kopiert' : 'YAML kopieren'}>
+                  <ActionIcon variant="subtle" color={copied ? 'teal' : 'gray'} onClick={copy}>
+                    {copied ? <IconCheck size={16} /> : <IconCopy size={16} />}
+                  </ActionIcon>
+                </Tooltip>
+              )}
+            </CopyButton>
+          )}
+          <Tooltip label="Ressource löschen">
+            <ActionIcon variant="subtle" color="red" onClick={() => setConfirmOpen(true)}>
+              <IconTrash size={16} />
+            </ActionIcon>
+          </Tooltip>
+        </Group>
       </Group>
 
       <Tabs value={tab} onChange={(v) => setTab(v ?? 'overview')} keepMounted={false}>

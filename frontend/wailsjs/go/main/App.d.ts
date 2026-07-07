@@ -10,6 +10,12 @@ export function DeleteResource(arg1:string,arg2:string,arg3:string,arg4:string,a
 
 export function DiscoverResources():Promise<Array<main.APIResource>>;
 
+export function FluxReconcile(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string):Promise<void>;
+
+export function FluxReconcileWithSource(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string):Promise<void>;
+
+export function FluxStatus():Promise<Array<main.FluxKindStatus>>;
+
 export function GetEventsFor(arg1:string,arg2:string,arg3:string):Promise<Array<main.EventInfo>>;
 
 export function GetResourceJSON(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string):Promise<string>;

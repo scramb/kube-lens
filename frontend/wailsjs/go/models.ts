@@ -66,6 +66,32 @@ export namespace main {
 	        this.lastTimestamp = source["lastTimestamp"];
 	    }
 	}
+	export class FluxKindStatus {
+	    kind: string;
+	    group: string;
+	    version: string;
+	    resource: string;
+	    total: number;
+	    ready: number;
+	    notReady: number;
+	    suspended: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new FluxKindStatus(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.kind = source["kind"];
+	        this.group = source["group"];
+	        this.version = source["version"];
+	        this.resource = source["resource"];
+	        this.total = source["total"];
+	        this.ready = source["ready"];
+	        this.notReady = source["notReady"];
+	        this.suspended = source["suspended"];
+	    }
+	}
 	export class KubeConfigInfo {
 	    path: string;
 	    isDefault: boolean;

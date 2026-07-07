@@ -18,6 +18,18 @@ export function DiscoverResources() {
   return window['go']['main']['App']['DiscoverResources']();
 }
 
+export function FluxReconcile(arg1, arg2, arg3, arg4, arg5) {
+  return window['go']['main']['App']['FluxReconcile'](arg1, arg2, arg3, arg4, arg5);
+}
+
+export function FluxReconcileWithSource(arg1, arg2, arg3, arg4, arg5) {
+  return window['go']['main']['App']['FluxReconcileWithSource'](arg1, arg2, arg3, arg4, arg5);
+}
+
+export function FluxStatus() {
+  return window['go']['main']['App']['FluxStatus']();
+}
+
 export function GetEventsFor(arg1, arg2, arg3) {
   return window['go']['main']['App']['GetEventsFor'](arg1, arg2, arg3);
 }

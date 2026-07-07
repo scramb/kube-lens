@@ -24,6 +24,7 @@ import {
   AddKubeConfigDialog,
   DeleteResource,
   DiscoverResources,
+  FluxStatus,
   InitialContext,
   ListContexts,
   ListKubeConfigs,
@@ -32,12 +33,14 @@ import {
   RemoveKubeConfig,
   UseContext,
 } from '../wailsjs/go/main/App';
+import { main } from '../wailsjs/go/models';
 import { APIResource, ContextInfo, KubeConfigInfo, TableResult, TableRow } from './types';
 import { buildCrdNav, buildStandardNav, NavSection } from './resourceCatalog';
 import Sidebar from './components/Sidebar';
 import ResourceTable from './components/ResourceTable';
 import YamlDrawer from './components/YamlDrawer';
 import KubeConfigModal from './components/KubeConfigModal';
+import { FluxOverview } from './components/flux';
 
 const REFRESH_INTERVAL_MS = 5000;
 
@@ -62,6 +65,10 @@ export default function App() {
   const [tableError, setTableError] = useState('');
   const [filter, setFilter] = useState('');
 
+  const [showFlux, setShowFlux] = useState(false);
+  const [fluxStatus, setFluxStatus] = useState<main.FluxKindStatus[]>([]);
+  const [fluxLoading, setFluxLoading] = useState(false);
+
   const [configModalOpen, setConfigModalOpen] = useState(false);
   const [drawer, setDrawer] = useState<{
     open: boolean;
@@ -72,6 +79,39 @@ export default function App() {
 
   const standardNav = useMemo<NavSection[]>(() => buildStandardNav(resources), [resources]);
   const crdNav = useMemo<NavSection[]>(() => buildCrdNav(resources), [resources]);
+  const fluxAvailable = useMemo(() => crdNav.some((s) => s.label === 'Flux'), [crdNav]);
+
+  const loadFluxStatus = useCallback(async () => {
+    setFluxLoading(true);
+    try {
+      setFluxStatus((await FluxStatus()) ?? []);
+    } catch (e) {
+      notifications.show({ message: errText(e), color: 'red' });
+    } finally {
+      setFluxLoading(false);
+    }
+  }, []);
+
+  const openFlux = useCallback(() => {
+    setShowFlux(true);
+    loadFluxStatus();
+  }, [loadFluxStatus]);
+
+  const selectResource = useCallback((r: APIResource) => {
+    setShowFlux(false);
+    setSelected(r);
+  }, []);
+
+  const openFluxKind = useCallback(
+    (s: main.FluxKindStatus) => {
+      const r = resources.find((x) => x.group === s.group && x.name === s.resource);
+      if (r) {
+        setShowFlux(false);
+        setSelected(r);
+      }
+    },
+    [resources]
+  );
 
   const refreshConfigsAndContexts = useCallback(async () => {
     setConfigs(await ListKubeConfigs());
@@ -83,6 +123,7 @@ export default function App() {
     setConnectError('');
     setTable(null);
     setTableError('');
+    setShowFlux(false);
     try {
       await UseContext(ctxName);
       setCurrentContext(ctxName);
@@ -236,7 +277,11 @@ export default function App() {
             onChange={(e) => setFilter(e.currentTarget.value)}
           />
           <Tooltip label="Aktualisieren">
-            <ActionIcon variant="subtle" onClick={() => loadTable(true)} disabled={!selected}>
+            <ActionIcon
+              variant="subtle"
+              onClick={() => (showFlux ? loadFluxStatus() : loadTable(true))}
+              disabled={!selected && !showFlux}
+            >
               <IconRefresh size={18} />
             </ActionIcon>
           </Tooltip>
@@ -249,7 +294,15 @@ export default function App() {
       </AppShell.Header>
 
       <AppShell.Navbar>
-        <Sidebar standard={standardNav} crds={crdNav} selected={selected} onSelect={setSelected} />
+        <Sidebar
+          standard={standardNav}
+          crds={crdNav}
+          selected={showFlux ? null : selected}
+          onSelect={selectResource}
+          fluxAvailable={fluxAvailable}
+          fluxActive={showFlux}
+          onOpenFlux={openFlux}
+        />
       </AppShell.Navbar>
 
       <AppShell.Main h="100dvh">
@@ -292,6 +345,13 @@ export default function App() {
               </Button>
             </Alert>
           </Center>
+        ) : showFlux ? (
+          <FluxOverview
+            status={fluxStatus}
+            loading={fluxLoading}
+            onOpenKind={openFluxKind}
+            onRefresh={loadFluxStatus}
+          />
         ) : selected ? (
           <ResourceTable
             resource={selected}
