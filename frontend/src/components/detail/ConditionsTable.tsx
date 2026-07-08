@@ -1,4 +1,5 @@
 import { Badge, Card, Table, Title } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
 import { OverviewProps, age, getPath } from './types';
 
 function statusColor(status?: string): string {
@@ -8,6 +9,7 @@ function statusColor(status?: string): string {
 }
 
 export function ConditionsTable({ obj }: OverviewProps) {
+  const { t } = useTranslation();
   const conditions = getPath(obj, ['status', 'conditions']);
   if (!Array.isArray(conditions) || conditions.length === 0) {
     return null;
@@ -16,17 +18,17 @@ export function ConditionsTable({ obj }: OverviewProps) {
   return (
     <Card withBorder radius="md" padding="md">
       <Title order={5} mb="sm">
-        Conditions
+        {t('detail.conditions')}
       </Title>
       <Table.ScrollContainer minWidth={600}>
         <Table verticalSpacing="xs" horizontalSpacing="sm" fz="sm">
           <Table.Thead>
             <Table.Tr>
-              <Table.Th>Type</Table.Th>
-              <Table.Th>Status</Table.Th>
-              <Table.Th>Reason</Table.Th>
-              <Table.Th>Message</Table.Th>
-              <Table.Th>LastTransitionTime</Table.Th>
+              <Table.Th>{t('detail.conditions.type')}</Table.Th>
+              <Table.Th>{t('detail.conditions.status')}</Table.Th>
+              <Table.Th>{t('detail.conditions.reason')}</Table.Th>
+              <Table.Th>{t('detail.conditions.message')}</Table.Th>
+              <Table.Th>{t('detail.conditions.lastTransitionTime')}</Table.Th>
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>

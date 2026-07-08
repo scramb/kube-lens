@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Alert, Button, Code, Group, Loader, Stack } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
 import { notifications } from '@mantine/notifications';
 import {
   IconAlertTriangle,
@@ -44,6 +45,7 @@ export function YamlEditor({
   onApplied,
   height = 'calc(100vh - 220px)',
 }: YamlEditorProps) {
+  const { t } = useTranslation();
   const [text, setText] = useState<string>(initialYaml ?? '');
   const [dryRunLoading, setDryRunLoading] = useState(false);
   const [applyLoading, setApplyLoading] = useState(false);
@@ -77,18 +79,18 @@ export function YamlEditor({
       if (result.ok) {
         setAlert({
           kind: 'success',
-          title: 'Dry-Run erfolgreich',
-          message: result.message || 'Die Ressource ist gültig und würde angewendet werden.',
+          title: t('forms.editor.dryRunOkTitle'),
+          message: result.message || t('forms.editor.dryRunOkMessage'),
         });
       } else {
         setAlert({
           kind: 'error',
-          title: 'Dry-Run fehlgeschlagen',
-          message: result.message || 'Unbekannter Fehler.',
+          title: t('forms.editor.dryRunFailedTitle'),
+          message: result.message || t('forms.editor.unknownError'),
         });
       }
     } catch (e) {
-      setAlert({ kind: 'error', title: 'Dry-Run fehlgeschlagen', message: errText(e) });
+      setAlert({ kind: 'error', title: t('forms.editor.dryRunFailedTitle'), message: errText(e) });
     } finally {
       setDryRunLoading(false);
     }
@@ -107,30 +109,33 @@ export function YamlEditor({
         notifications.show({
           color: 'green',
           icon: <IconCheck size={16} />,
-          title: 'Angewendet',
+          title: t('forms.editor.appliedTitle'),
           message:
             result.message ||
-            `${result.kind || 'Ressource'} ${result.namespace ? result.namespace + '/' : ''}${result.name || ''} erfolgreich angewendet.`,
+            t('forms.editor.appliedMessage', {
+              kind: result.kind || t('forms.editor.resourceFallback'),
+              name: `${result.namespace ? result.namespace + '/' : ''}${result.name || ''}`,
+            }),
         });
         onApplied?.(result);
       } else if (!force && isConflict(result.message)) {
         setConflict(true);
         setAlert({
           kind: 'error',
-          title: 'Konflikt beim Anwenden',
+          title: t('forms.editor.conflictTitle'),
           message:
-            (result.message || 'Es besteht ein Feld-Konflikt.') +
-            '\n\nSie können den Konflikt mit "Mit Force anwenden" überschreiben.',
+            (result.message || t('forms.editor.conflictDefault')) +
+            t('forms.editor.conflictHint'),
         });
       } else {
         setAlert({
           kind: 'error',
-          title: 'Anwenden fehlgeschlagen',
-          message: result.message || 'Unbekannter Fehler.',
+          title: t('forms.editor.applyFailedTitle'),
+          message: result.message || t('forms.editor.unknownError'),
         });
       }
     } catch (e) {
-      setAlert({ kind: 'error', title: 'Anwenden fehlgeschlagen', message: errText(e) });
+      setAlert({ kind: 'error', title: t('forms.editor.applyFailedTitle'), message: errText(e) });
     } finally {
       setLoading(false);
     }
@@ -161,14 +166,14 @@ export function YamlEditor({
           onClick={handleDryRun}
           disabled={empty || busy}
         >
-          Prüfen (Dry-Run)
+          {t('forms.editor.dryRun')}
         </Button>
         <Button
           leftSection={applyLoading ? <Loader size={16} /> : <IconDeviceFloppy size={16} />}
           onClick={() => runApply(false)}
           disabled={empty || busy}
         >
-          Anwenden
+          {t('forms.editor.apply')}
         </Button>
         {conflict && (
           <Button
@@ -177,7 +182,7 @@ export function YamlEditor({
             onClick={() => runApply(true)}
             disabled={empty || busy}
           >
-            Mit Force anwenden
+            {t('forms.editor.applyForce')}
           </Button>
         )}
         {dirty && (
@@ -188,7 +193,7 @@ export function YamlEditor({
             onClick={handleReset}
             disabled={busy}
           >
-            Zurücksetzen
+            {t('forms.editor.reset')}
           </Button>
         )}
       </Group>

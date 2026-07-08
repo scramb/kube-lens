@@ -312,17 +312,23 @@ Abhängig von: G2.
 **Ziel:** Englisch als Default fürs Open-Source-Release, Deutsch als zweite Locale.
 
 ### H1 — Infrastruktur
-- [ ] `react-i18next` einführen; alle UI-Strings aus den Komponenten in
-      Locale-Dateien (`en.json`, `de.json`) extrahieren; Englisch = Fallback.
-- [ ] **Backend-Fehlermeldungen entdeutschen:** `kube.go` gibt aktuell deutsche
-      Fehlertexte zurück — auf Englisch bzw. strukturierte Fehler-Codes umstellen,
-      Übersetzung passiert im Frontend.
+- [x] `react-i18next` + `i18next-browser-languagedetector`; `src/i18n/index.ts`
+      merged Bundles aus `src/i18n/gen/*.ts` via `import.meta.glob` (konfliktfreie
+      Erweiterung). Englisch = Fallback. Alle sichtbaren UI-Strings über `t()`
+      in 21 Komponenten; Ressourcen in gen/shell|detail|dashboards|forms.ts (EN+DE).
+- [x] **Backend-Fehlermeldungen entdeutschen:** kube.go/apply.go/watch.go geben
+      jetzt englische Fehlertexte zurück.
 
 ### H2 — Sprachwahl & Formate
 Abhängig von: H1.
-- [ ] Sprachumschalter in den Settings (Default: Systemsprache, sonst Englisch);
-      Persistenz in settings.json.
-- [ ] Datums-/Zahlenformatierung über `Intl` an die gewählte Locale koppeln.
+- [x] Sprachumschalter im Einstellungsmenü (Deutsch/English); Default =
+      Systemsprache (LanguageDetector), Persistenz in localStorage (`kube-lens-lang`).
+- [ ] `Intl`-Datums-/Zahlenformatierung an Locale koppeln — offen (aktuell
+      `toLocaleString()` ohne explizite Locale; niedrige Priorität).
+
+**Verifiziert (2026-07-08) live:** EN/DE-Umschaltung über Shell, Sidebar (inkl.
+Sektions-Labels), Detail-Drawer-Tabs (Overview/Metrics ↔ Übersicht/Metriken),
+Kind-Renderer, Dashboards, Modals — keine rohen Keys, kein deutsches Restliteral.
 
 ## Entscheidungslog
 
@@ -339,3 +345,4 @@ Abhängig von: H1.
 | 2026-07-07 | i18n: Englisch wird Default-Sprache, Deutsch zweite Locale; Backend-Fehlertexte werden englisch/strukturiert |
 | 2026-07-08 | Watch (F): statt Table-Watch neu zu bauen, emittiert der Watch ein debounced `watch:changed`-Signal; Frontend lädt die bestehende Server-Side-Tabelle neu. Debounce 2 s gegen Refresh-Storm bei hoher Churn-Rate; 20 s Fallback-Poll wenn Watch per RBAC verboten. |
 | 2026-07-08 | Logs (D2): Zeilen-Cap 5000 statt Virtualisierungs-Lib — genügt, keine Extra-Abhängigkeit. |
+| 2026-07-08 | i18n (H): Locale-Bundles je Bereich unter `src/i18n/gen/*.ts` (EN+DE zusammen), Auto-Merge via `import.meta.glob` — erlaubt konfliktfreie parallele Bearbeitung. Sprach-Persistenz in localStorage statt settings.json (reine UI-Präferenz). |

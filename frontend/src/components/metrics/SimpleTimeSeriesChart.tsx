@@ -1,4 +1,5 @@
 import { Box, Group, Text } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
 import { MetricPoint } from '../../types';
 import { formatMetricValue } from './format';
 
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export function SimpleTimeSeriesChart({ name, unit, points }: Props) {
+  const { t } = useTranslation();
   const clean = points.filter((p) => Number.isFinite(p.value));
   const width = 520;
   const height = 130;
@@ -32,7 +34,7 @@ export function SimpleTimeSeriesChart({ name, unit, points }: Props) {
         <Text size="sm" c="dimmed">{formatMetricValue(latest, unit)}</Text>
       </Group>
       {clean.length === 0 ? (
-        <Text size="sm" c="dimmed" ta="center" py="xl">Keine Daten</Text>
+        <Text size="sm" c="dimmed" ta="center" py="xl">{t('dash.metrics.noData')}</Text>
       ) : (
         <svg viewBox={`0 0 ${width} ${height}`} width="100%" height={height} role="img" aria-label={name}>
           <line x1={pad} y1={height - pad} x2={width - pad} y2={height - pad} stroke="var(--mantine-color-dark-4)" />

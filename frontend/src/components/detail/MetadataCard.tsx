@@ -9,6 +9,7 @@ import {
   Title,
   Tooltip,
 } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
 import { OverviewProps, age, getPath } from './types';
 
 function KeyValueRow({ label, value }: { label: string; value: React.ReactNode }) {
@@ -28,6 +29,7 @@ function KeyValueRow({ label, value }: { label: string; value: React.ReactNode }
 const ANNOTATION_TRUNCATE = 80;
 
 export function MetadataCard({ obj }: OverviewProps) {
+  const { t } = useTranslation();
   const meta = getPath(obj, ['metadata']) ?? {};
 
   const name: string | undefined = meta.name;
@@ -47,15 +49,15 @@ export function MetadataCard({ obj }: OverviewProps) {
   return (
     <Card withBorder radius="md" padding="md">
       <Title order={5} mb="sm">
-        Metadaten
+        {t('detail.metadata')}
       </Title>
 
       <Stack gap={6}>
-        <KeyValueRow label="Name" value={name} />
-        <KeyValueRow label="Namespace" value={namespace} />
-        <KeyValueRow label="UID" value={uid ? <Code>{uid}</Code> : undefined} />
+        <KeyValueRow label={t('detail.metadata.name')} value={name} />
+        <KeyValueRow label={t('detail.metadata.namespace')} value={namespace} />
+        <KeyValueRow label={t('detail.metadata.uid')} value={uid ? <Code>{uid}</Code> : undefined} />
         <KeyValueRow
-          label="Alter"
+          label={t('detail.metadata.age')}
           value={creationTimestamp ? age(creationTimestamp) : undefined}
         />
       </Stack>
@@ -63,7 +65,7 @@ export function MetadataCard({ obj }: OverviewProps) {
       {labelEntries.length > 0 && (
         <>
           <Text size="sm" c="dimmed" mt="md" mb={4}>
-            Labels
+            {t('detail.metadata.labels')}
           </Text>
           <Group gap={6}>
             {labelEntries.map(([k, v]) => (
@@ -78,7 +80,7 @@ export function MetadataCard({ obj }: OverviewProps) {
       {annotationEntries.length > 0 && (
         <>
           <Text size="sm" c="dimmed" mt="md" mb={4}>
-            Annotations
+            {t('detail.metadata.annotations')}
           </Text>
           <Table verticalSpacing={4} horizontalSpacing="sm" fz="xs">
             <Table.Tbody>
@@ -120,7 +122,7 @@ export function MetadataCard({ obj }: OverviewProps) {
       {ownerRefs.length > 0 && (
         <>
           <Text size="sm" c="dimmed" mt="md" mb={4}>
-            Owner-References
+            {t('detail.metadata.ownerReferences')}
           </Text>
           <Group gap={6}>
             {ownerRefs.map((ref, i) => (

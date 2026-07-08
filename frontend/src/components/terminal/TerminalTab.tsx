@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Group, Select, Text } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import '@xterm/xterm/css/xterm.css';
@@ -18,6 +19,7 @@ const SHELLS = [
 ];
 
 export default function TerminalTab({ namespace, pod }: Props) {
+  const { t } = useTranslation();
   const [containers, setContainers] = useState<string[]>([]);
   const [container, setContainer] = useState<string>('');
   const [shell, setShell] = useState<string>('/bin/sh');
@@ -56,7 +58,7 @@ export default function TerminalTab({ namespace, pod }: Props) {
     };
     requestAnimationFrame(doFit);
 
-    term.writeln(`\x1b[90mVerbinde mit ${pod} (${container}) …\x1b[0m`);
+    term.writeln(`\x1b[90m${t('forms.terminal.connecting', { pod, container })}\x1b[0m`);
 
     StartExec(namespace, pod, container, shell)
       .then((id) => {
@@ -67,7 +69,7 @@ export default function TerminalTab({ namespace, pod }: Props) {
         execID = id;
         unsub = EventsOn(`exec:data:${id}`, (data: string) => term.write(data));
         EventsOn(`exec:end:${id}`, (msg: string) => {
-          term.writeln(`\r\n\x1b[90m— Sitzung beendet${msg ? ': ' + msg : ''} —\x1b[0m`);
+          term.writeln(`\r\n\x1b[90m${t('forms.terminal.sessionEnded', { detail: msg ? ': ' + msg : '' })}\x1b[0m`);
         });
         term.onData((d) => ExecWrite(id, d));
         term.onResize(({ cols, rows }) => ExecResize(id, cols, rows));
@@ -75,7 +77,7 @@ export default function TerminalTab({ namespace, pod }: Props) {
         ExecResize(id, term.cols, term.rows);
         term.focus();
       })
-      .catch((e) => term.writeln(`\r\n\x1b[31mFehler: ${String(e)}\x1b[0m`));
+      .catch((e) => term.writeln(`\r\n\x1b[31m${t('forms.terminal.error', { error: String(e) })}\x1b[0m`));
 
     const onWinResize = () => doFit();
     window.addEventListener('resize', onWinResize);
@@ -96,7 +98,7 @@ export default function TerminalTab({ namespace, pod }: Props) {
           size="xs"
           w={200}
           label={undefined}
-          placeholder="Container"
+          placeholder={t('forms.logs.container')}
           data={containers.map((c) => ({ value: c, label: c }))}
           value={container || null}
           onChange={(v) => v && setContainer(v)}
@@ -110,7 +112,7 @@ export default function TerminalTab({ namespace, pod }: Props) {
           allowDeselect={false}
         />
         <Text size="xs" c="dimmed">
-          Shell nicht vorhanden? Anderen Wert wählen.
+          {t('forms.terminal.shellHint')}
         </Text>
       </Group>
       <div

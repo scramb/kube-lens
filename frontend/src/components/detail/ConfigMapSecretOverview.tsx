@@ -11,6 +11,7 @@ import {
   Tooltip,
 } from '@mantine/core';
 import { IconEye, IconEyeOff } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
 import { OverviewProps, getPath } from './types';
 import { MetadataCard } from './MetadataCard';
 
@@ -24,6 +25,7 @@ function decodeBase64(value: string): { text: string; decoded: boolean } {
 }
 
 export function ConfigMapSecretOverview({ obj }: OverviewProps) {
+  const { t } = useTranslation();
   const kind: string | undefined = obj?.kind;
   const isSecret = kind === 'Secret';
 
@@ -42,14 +44,14 @@ export function ConfigMapSecretOverview({ obj }: OverviewProps) {
 
       <Card withBorder radius="md" padding="md">
         <Group justify="space-between" mb="sm">
-          <Title order={5}>Daten</Title>
+          <Title order={5}>{t('detail.data')}</Title>
           {entries.length > 0 && (
-            <Tooltip label={revealAll ? 'Alle verbergen' : 'Alle anzeigen'}>
+            <Tooltip label={revealAll ? t('detail.data.hideAll') : t('detail.data.revealAll')}>
               <ActionIcon
                 variant="subtle"
                 color="gray"
                 onClick={() => setRevealAll((v) => !v)}
-                aria-label="Alle Werte anzeigen"
+                aria-label={t('detail.data.revealAllAria')}
               >
                 {revealAll ? <IconEyeOff size={16} /> : <IconEye size={16} />}
               </ActionIcon>
@@ -59,15 +61,15 @@ export function ConfigMapSecretOverview({ obj }: OverviewProps) {
 
         {entries.length === 0 ? (
           <Text size="sm" c="dimmed">
-            Keine Daten vorhanden.
+            {t('detail.data.none')}
           </Text>
         ) : (
           <Table.ScrollContainer minWidth={480}>
             <Table verticalSpacing="xs" horizontalSpacing="sm" fz="sm">
               <Table.Thead>
                 <Table.Tr>
-                  <Table.Th style={{ width: 200 }}>Key</Table.Th>
-                  <Table.Th>Wert</Table.Th>
+                  <Table.Th style={{ width: 200 }}>{t('detail.data.col.key')}</Table.Th>
+                  <Table.Th>{t('detail.data.col.value')}</Table.Th>
                   <Table.Th style={{ width: 48 }} />
                 </Table.Tr>
               </Table.Thead>
@@ -97,7 +99,7 @@ export function ConfigMapSecretOverview({ obj }: OverviewProps) {
                             </Code>
                             {isSecret && decoded && (
                               <Text size="xs" c="dimmed">
-                                (base64-dekodiert)
+                                {t('detail.data.base64Decoded')}
                               </Text>
                             )}
                           </Stack>
@@ -108,13 +110,13 @@ export function ConfigMapSecretOverview({ obj }: OverviewProps) {
                         )}
                       </Table.Td>
                       <Table.Td style={{ verticalAlign: 'top' }}>
-                        <Tooltip label={show ? 'Verbergen' : 'Anzeigen'}>
+                        <Tooltip label={show ? t('detail.data.hide') : t('detail.data.reveal')}>
                           <ActionIcon
                             variant="subtle"
                             color="gray"
                             size="sm"
                             onClick={() => toggleRow(key)}
-                            aria-label="Wert umschalten"
+                            aria-label={t('detail.data.toggleAria')}
                           >
                             {show ? <IconEyeOff size={14} /> : <IconEye size={14} />}
                           </ActionIcon>

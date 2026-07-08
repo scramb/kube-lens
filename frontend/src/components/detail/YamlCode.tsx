@@ -1,4 +1,5 @@
 import { Code, Text } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   code: string;
@@ -78,10 +79,11 @@ function tokenizeLine(line: string): Segment[] {
 }
 
 export function YamlCode({ code }: Props) {
+  const { t } = useTranslation();
   if (!code) {
     return (
       <Text c="dimmed" p="md" size="sm">
-        Kein YAML geladen.
+        {t('detail.yaml.notLoaded')}
       </Text>
     );
   }

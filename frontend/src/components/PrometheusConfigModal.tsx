@@ -16,6 +16,7 @@ import {
   Tooltip,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
+import { useTranslation } from 'react-i18next';
 import { IconCheck, IconPlus, IconRefresh, IconTrash, IconX } from '@tabler/icons-react';
 import {
   DiscoverPrometheusTargets,
@@ -64,6 +65,7 @@ function rowsToHeaders(rows: HeaderRow[]): Record<string, string> {
 }
 
 export default function PrometheusConfigModal({ opened, onClose, contextName }: Props) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
@@ -174,7 +176,7 @@ export default function PrometheusConfigModal({ opened, onClose, contextName }: 
       const normalized = normalizeSettings(saved);
       setSettings(normalized);
       setHeaders(headersToRows(normalized.headers));
-      notifications.show({ message: 'Prometheus-Konfiguration gespeichert', color: 'teal' });
+      notifications.show({ message: t('forms.prometheus.saved'), color: 'teal' });
       onClose();
     } catch (e) {
       notifications.show({ message: errText(e), color: 'red' });
@@ -212,31 +214,31 @@ export default function PrometheusConfigModal({ opened, onClose, contextName }: 
   const labelValues = clusterValues.map((value) => ({ value, label: value }));
 
   return (
-    <Modal opened={opened} onClose={onClose} title="Prometheus konfigurieren" size="lg" centered>
+    <Modal opened={opened} onClose={onClose} title={t('forms.prometheus.title')} size="lg" centered>
       {!contextName ? (
         <Text c="dimmed" size="sm">
-          Kein Kubernetes-Kontext verbunden.
+          {t('forms.prometheus.noContext')}
         </Text>
       ) : loadError ? (
-        <Alert color="red" title="Konfiguration konnte nicht geladen werden">
+        <Alert color="red" title={t('forms.prometheus.loadFailedTitle')}>
           {loadError}
         </Alert>
       ) : (
         <Stack gap="md" opacity={loading ? 0.55 : 1}>
           <Group gap="xs">
             <Text size="sm" c="dimmed">
-              Kontext:
+              {t('forms.prometheus.contextLabel')}
             </Text>
             <Badge variant="light">{contextName}</Badge>
           </Group>
 
           <Select
-            label="Modus"
-            description="Auto entdeckt In-Cluster-Prometheus und greift über den API-Server-Proxy zu. Manuell nutzt eine frei konfigurierbare URL."
+            label={t('forms.prometheus.mode')}
+            description={t('forms.prometheus.modeDescription')}
             data={[
-              { value: 'off', label: 'Aus' },
-              { value: 'manual', label: 'Manuell' },
-              { value: 'auto', label: 'Auto-Discovery' },
+              { value: 'off', label: t('forms.prometheus.modeOff') },
+              { value: 'manual', label: t('forms.prometheus.modeManual') },
+              { value: 'auto', label: t('forms.prometheus.modeAuto') },
             ]}
             value={settings.mode || 'off'}
             onChange={(value) => updateSettings({ mode: value ?? 'off' })}
@@ -246,12 +248,12 @@ export default function PrometheusConfigModal({ opened, onClose, contextName }: 
           {settings.mode === 'auto' && (
             <Stack gap="xs">
               <Alert color="blue" variant="light">
-                Auto nutzt den Kubernetes API-Server-Service-Proxy. Bitte einen Discovery-Kandidaten bestätigen.
+                {t('forms.prometheus.autoAlert')}
               </Alert>
               <Group justify="space-between">
-                <Text size="sm" fw={500}>Prometheus-Service</Text>
+                <Text size="sm" fw={500}>{t('forms.prometheus.service')}</Text>
                 <Button size="xs" variant="light" leftSection={<IconRefresh size={14} />} loading={targetsLoading} onClick={loadTargets}>
-                  Kandidaten suchen
+                  {t('forms.prometheus.findCandidates')}
                 </Button>
               </Group>
               {settings.target.service ? (
@@ -259,7 +261,7 @@ export default function PrometheusConfigModal({ opened, onClose, contextName }: 
                   {settings.target.namespace}/{settings.target.service}:{settings.target.portName || settings.target.port}
                 </Badge>
               ) : (
-                <Text size="xs" c="dimmed">Noch kein Service ausgewählt.</Text>
+                <Text size="xs" c="dimmed">{t('forms.prometheus.noServiceSelected')}</Text>
               )}
               {targets.length > 0 && (
                 <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xs">
@@ -280,7 +282,7 @@ export default function PrometheusConfigModal({ opened, onClose, contextName }: 
 
           {settings.mode === 'manual' && (
             <TextInput
-              label="Prometheus-kompatible URL"
+              label={t('forms.prometheus.urlLabel')}
               placeholder="https://mimir.example.com/prometheus"
               value={settings.url}
               onChange={(event) => updateSettings({ url: event.currentTarget.value })}
@@ -293,39 +295,38 @@ export default function PrometheusConfigModal({ opened, onClose, contextName }: 
               <Group justify="space-between">
                 <div>
                   <Text size="sm" fw={500}>
-                    HTTP-Header
+                    {t('forms.prometheus.httpHeaders')}
                   </Text>
                   <Text size="xs" c="dimmed">
-                    Freie Key-Value-Liste für Tenant (X-Scope-OrgID), Authorization oder Proxies —
-                    werden auch über den API-Server-Proxy weitergereicht.
+                    {t('forms.prometheus.httpHeadersDescription')}
                   </Text>
                 </div>
                 <Button size="xs" variant="light" leftSection={<IconPlus size={14} />} onClick={addHeader}>
-                  Header hinzufügen
+                  {t('forms.prometheus.addHeader')}
                 </Button>
               </Group>
               {headers.length === 0 ? (
                 <Text size="xs" c="dimmed">
-                  Keine Header konfiguriert.
+                  {t('forms.prometheus.noHeaders')}
                 </Text>
               ) : (
                 headers.map((row) => (
                   <Group key={row.id} gap="xs" wrap="nowrap" align="flex-end">
                     <TextInput
-                      label="Name"
+                      label={t('forms.common.name')}
                       placeholder="X-Scope-OrgID"
                       value={row.key}
                       onChange={(event) => updateHeader(row.id, { key: event.currentTarget.value })}
                       style={{ flex: 1 }}
                     />
                     <PasswordInput
-                      label="Wert"
-                      placeholder="Header-Wert"
+                      label={t('forms.common.value')}
+                      placeholder={t('forms.prometheus.headerValuePlaceholder')}
                       value={row.value}
                       onChange={(event) => updateHeader(row.id, { value: event.currentTarget.value })}
                       style={{ flex: 1 }}
                     />
-                    <Tooltip label="Header entfernen">
+                    <Tooltip label={t('forms.prometheus.removeHeader')}>
                       <ActionIcon color="red" variant="subtle" onClick={() => removeHeader(row.id)}>
                         <IconTrash size={16} />
                       </ActionIcon>
@@ -340,22 +341,22 @@ export default function PrometheusConfigModal({ opened, onClose, contextName }: 
 
           <Stack gap="xs">
             <Text size="sm" fw={500}>
-              Cluster-Selector
+              {t('forms.prometheus.clusterSelector')}
             </Text>
             <Text size="xs" c="dimmed">
-              Label leer lassen für Single-Cluster-Prometheus. Der Label-Name ist frei konfigurierbar.
+              {t('forms.prometheus.clusterSelectorDescription')}
             </Text>
             <Group gap="xs" align="flex-end" wrap="nowrap">
               <TextInput
-                label="Label-Name"
+                label={t('forms.prometheus.labelName')}
                 placeholder="cluster"
                 value={settings.clusterSelector.label}
                 onChange={(event) => updateClusterSelector({ label: event.currentTarget.value, value: '' })}
                 style={{ flex: 1 }}
               />
               <Select
-                label="Wert"
-                placeholder="Kein Matcher"
+                label={t('forms.common.value')}
+                placeholder={t('forms.prometheus.noMatcher')}
                 data={labelValues}
                 value={settings.clusterSelector.value || null}
                 onChange={(value) => updateClusterSelector({ value: value ?? '' })}
@@ -364,7 +365,7 @@ export default function PrometheusConfigModal({ opened, onClose, contextName }: 
                 disabled={!settings.clusterSelector.label.trim()}
                 style={{ flex: 1 }}
               />
-              <Tooltip label="Label-Werte laden">
+              <Tooltip label={t('forms.prometheus.loadLabelValues')}>
                 <ActionIcon
                   variant="light"
                   onClick={loadClusterValues}
@@ -381,13 +382,18 @@ export default function PrometheusConfigModal({ opened, onClose, contextName }: 
             <Alert
               color={testResult.ok ? 'teal' : testResult.mode === 'auto' ? 'blue' : 'yellow'}
               icon={testResult.ok ? <IconCheck size={16} /> : <IconX size={16} />}
-              title={testResult.ok ? 'Verbindung erfolgreich' : 'Verbindung nicht aktiv'}
+              title={testResult.ok ? t('forms.prometheus.connectionOk') : t('forms.prometheus.connectionInactive')}
             >
               <Text size="sm">{testResult.message}</Text>
               {testResult.ok && (
                 <Text size="xs" c="dimmed" mt={4}>
-                  Samples: {testResult.sampleCount}
-                  {testResult.clusterLabel ? ` · ${testResult.clusterLabel}: ${testResult.clusterValues.length} Werte` : ''}
+                  {t('forms.prometheus.samples', { count: testResult.sampleCount })}
+                  {testResult.clusterLabel
+                    ? t('forms.prometheus.clusterValues', {
+                        label: testResult.clusterLabel,
+                        count: testResult.clusterValues.length,
+                      })
+                    : ''}
                 </Text>
               )}
             </Alert>
@@ -395,14 +401,14 @@ export default function PrometheusConfigModal({ opened, onClose, contextName }: 
 
           <Group justify="space-between" mt="xs">
             <Button variant="light" onClick={testConnection} loading={testing} disabled={loading}>
-              Verbindung testen
+              {t('forms.prometheus.testConnection')}
             </Button>
             <Group gap="xs">
               <Button variant="default" onClick={onClose} disabled={saving}>
-                Abbrechen
+                {t('forms.common.cancel')}
               </Button>
               <Button onClick={save} loading={saving} disabled={loading}>
-                Speichern
+                {t('forms.common.save')}
               </Button>
             </Group>
           </Group>

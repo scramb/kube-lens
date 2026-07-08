@@ -1,4 +1,5 @@
 import { Badge, Card, Group, Stack, Table, Text, Title } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
 import { OverviewProps, getPath } from './types';
 import { ConditionsTable } from './ConditionsTable';
 
@@ -17,6 +18,7 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
 }
 
 export function NodeOverview({ obj }: OverviewProps) {
+  const { t } = useTranslation();
   const capacity: Record<string, any> = getPath(obj, ['status', 'capacity']) ?? {};
   const allocatable: Record<string, any> = getPath(obj, ['status', 'allocatable']) ?? {};
 
@@ -34,14 +36,14 @@ export function NodeOverview({ obj }: OverviewProps) {
     <Stack gap="md">
       <Card withBorder radius="md" padding="md">
         <Title order={5} mb="sm">
-          Kapazität
+          {t('detail.node.capacity')}
         </Title>
         <Table verticalSpacing="xs" horizontalSpacing="sm" fz="sm">
           <Table.Thead>
             <Table.Tr>
-              <Table.Th>Ressource</Table.Th>
-              <Table.Th>Capacity</Table.Th>
-              <Table.Th>Allocatable</Table.Th>
+              <Table.Th>{t('detail.node.resource')}</Table.Th>
+              <Table.Th>{t('detail.node.capacityCol')}</Table.Th>
+              <Table.Th>{t('detail.node.allocatable')}</Table.Th>
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
@@ -58,19 +60,19 @@ export function NodeOverview({ obj }: OverviewProps) {
 
       <Card withBorder radius="md" padding="md">
         <Title order={5} mb="sm">
-          System
+          {t('detail.node.system')}
         </Title>
         <Stack gap={6}>
-          <InfoRow label="Kubelet-Version" value={kubeletVersion} />
-          <InfoRow label="OS-Image" value={osImage} />
-          <InfoRow label="Container-Runtime" value={containerRuntime} />
+          <InfoRow label={t('detail.node.kubeletVersion')} value={kubeletVersion} />
+          <InfoRow label={t('detail.node.osImage')} value={osImage} />
+          <InfoRow label={t('detail.node.containerRuntime')} value={containerRuntime} />
         </Stack>
       </Card>
 
       {addresses.length > 0 && (
         <Card withBorder radius="md" padding="md">
           <Title order={5} mb="sm">
-            Adressen
+            {t('detail.node.addresses')}
           </Title>
           <Stack gap={6}>
             {addresses.map((a, i) => (
@@ -83,13 +85,13 @@ export function NodeOverview({ obj }: OverviewProps) {
       {taints.length > 0 && (
         <Card withBorder radius="md" padding="md">
           <Title order={5} mb="sm">
-            Taints
+            {t('detail.node.taints')}
           </Title>
           <Group gap={6}>
-            {taints.map((t, i) => (
-              <Badge key={`${t?.key ?? 'taint'}-${i}`} variant="light" color="orange" size="sm">
-                {t?.key}
-                {t?.value ? `=${t.value}` : ''}:{t?.effect}
+            {taints.map((taint, i) => (
+              <Badge key={`${taint?.key ?? 'taint'}-${i}`} variant="light" color="orange" size="sm">
+                {taint?.key}
+                {taint?.value ? `=${taint.value}` : ''}:{taint?.effect}
               </Badge>
             ))}
           </Group>

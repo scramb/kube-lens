@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Center, Group, Loader, SegmentedControl, SimpleGrid, Stack, Text } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
 import { GetResourceMetricsSeries } from '../../../wailsjs/go/main/App';
 import { APIResource, ResourceMetricsSeries } from '../../types';
 import { SimpleTimeSeriesChart } from './SimpleTimeSeriesChart';
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export function ResourceMetricsTab({ contextName, resource, namespace, name }: Props) {
+  const { t } = useTranslation();
   const [range, setRange] = useState('1h');
   const [data, setData] = useState<ResourceMetricsSeries | null>(null);
   const [loading, setLoading] = useState(false);
@@ -29,7 +31,7 @@ export function ResourceMetricsTab({ contextName, resource, namespace, name }: P
   return (
     <Stack gap="md" p="xs">
       <Group justify="space-between">
-        <Text size="sm" c="dimmed">Prometheus-Metriken</Text>
+        <Text size="sm" c="dimmed">{t('dash.metrics.prometheus')}</Text>
         <SegmentedControl
           size="xs"
           value={range}
@@ -44,7 +46,7 @@ export function ResourceMetricsTab({ contextName, resource, namespace, name }: P
       {loading ? (
         <Center h={220}><Loader /></Center>
       ) : !data?.available || data.series.length === 0 ? (
-        <Center h={180}><Text c="dimmed">Keine Metriken verfügbar</Text></Center>
+        <Center h={180}><Text c="dimmed">{t('dash.metrics.noMetrics')}</Text></Center>
       ) : (
         <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
           {data.series.map((series) => (

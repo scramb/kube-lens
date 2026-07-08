@@ -283,7 +283,7 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
               )}
             </CopyButton>
           )}
-          <Tooltip label="Ressource löschen">
+          <Tooltip label={t('detail.delete.tooltip')}>
             <ActionIcon variant="subtle" color="red" onClick={() => setConfirmOpen(true)}>
               <IconTrash size={16} />
             </ActionIcon>
@@ -293,12 +293,12 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
 
       <Tabs value={tab} onChange={(v) => setTab(v ?? 'overview')} keepMounted={false}>
         <Tabs.List mb="sm">
-          <Tabs.Tab value="overview">Übersicht</Tabs.Tab>
-          <Tabs.Tab value="yaml">YAML</Tabs.Tab>
-          {isPod && <Tabs.Tab value="logs">Logs</Tabs.Tab>}
-          {isPod && <Tabs.Tab value="terminal">Terminal</Tabs.Tab>}
-          <Tabs.Tab value="events">Events</Tabs.Tab>
-          {showMetricsTab && <Tabs.Tab value="metrics">Metriken</Tabs.Tab>}
+          <Tabs.Tab value="overview">{t('detail.tab.overview')}</Tabs.Tab>
+          <Tabs.Tab value="yaml">{t('detail.tab.yaml')}</Tabs.Tab>
+          {isPod && <Tabs.Tab value="logs">{t('detail.tab.logs')}</Tabs.Tab>}
+          {isPod && <Tabs.Tab value="terminal">{t('detail.tab.terminal')}</Tabs.Tab>}
+          <Tabs.Tab value="events">{t('detail.tab.events')}</Tabs.Tab>
+          {showMetricsTab && <Tabs.Tab value="metrics">{t('detail.tab.metrics')}</Tabs.Tab>}
         </Tabs.List>
 
         <Tabs.Panel value="overview">
@@ -365,20 +365,25 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
       <Modal
         opened={confirmOpen}
         onClose={() => setConfirmOpen(false)}
-        title="Ressource löschen?"
+        title={t('detail.delete.title')}
         centered
         zIndex={400}
       >
         <Text size="sm" mb="md">
-          {resource?.kind} <b>{name}</b>
-          {namespace ? ` im Namespace ${namespace}` : ''} wird endgültig gelöscht.
+          {namespace
+            ? t('detail.delete.confirmInNamespace', {
+                kind: resource?.kind,
+                name,
+                namespace,
+              })
+            : t('detail.delete.confirm', { kind: resource?.kind, name })}
         </Text>
         <Group justify="flex-end">
           <Button variant="default" onClick={() => setConfirmOpen(false)}>
-            Abbrechen
+            {t('detail.cancel')}
           </Button>
           <Button color="red" loading={deleting} onClick={handleDelete}>
-            Löschen
+            {t('detail.action.delete')}
           </Button>
         </Group>
       </Modal>
@@ -395,6 +400,7 @@ function EventsView({
   loading: boolean;
   error: string;
 }) {
+  const { t } = useTranslation();
   if (loading) {
     return (
       <Center h={200}>
@@ -412,7 +418,7 @@ function EventsView({
   if (!events || events.length === 0) {
     return (
       <Center h={160}>
-        <Text c="dimmed">Keine Events</Text>
+        <Text c="dimmed">{t('detail.events.none')}</Text>
       </Center>
     );
   }
@@ -420,11 +426,11 @@ function EventsView({
     <Table verticalSpacing={6} highlightOnHover withRowBorders={false}>
       <Table.Thead>
         <Table.Tr>
-          <Table.Th>Typ</Table.Th>
-          <Table.Th>Grund</Table.Th>
-          <Table.Th>Nachricht</Table.Th>
-          <Table.Th>Anzahl</Table.Th>
-          <Table.Th>Zuletzt</Table.Th>
+          <Table.Th>{t('detail.events.type')}</Table.Th>
+          <Table.Th>{t('detail.events.reason')}</Table.Th>
+          <Table.Th>{t('detail.events.message')}</Table.Th>
+          <Table.Th>{t('detail.events.count')}</Table.Th>
+          <Table.Th>{t('detail.events.last')}</Table.Th>
         </Table.Tr>
       </Table.Thead>
       <Table.Tbody>

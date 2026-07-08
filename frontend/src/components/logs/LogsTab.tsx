@@ -12,6 +12,7 @@ import {
   TextInput,
 } from '@mantine/core';
 import { IconAlertCircle, IconDownload, IconSearch, IconTrash } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
 import { ListPodContainers, StartPodLogs, StopPodLogs } from '../../../wailsjs/go/main/App';
 import { main } from '../../../wailsjs/go/models';
 import { EventsOff, EventsOn } from '../../../wailsjs/runtime/runtime';
@@ -32,6 +33,7 @@ const TAIL_OPTIONS = [
 ];
 
 export default function LogsTab({ namespace, pod }: Props) {
+  const { t } = useTranslation();
   const [containers, setContainers] = useState<string[]>([]);
   const [selectedContainer, setSelectedContainer] = useState<string | null>(null);
   const [follow, setFollow] = useState(true);
@@ -68,7 +70,7 @@ export default function LogsTab({ namespace, pod }: Props) {
         if (cancelled) return;
         setContainers([]);
         setSelectedContainer(null);
-        setErrorMsg(`Container konnten nicht geladen werden: ${String(err)}`);
+        setErrorMsg(t('forms.logs.containersLoadFailed', { error: String(err) }));
       });
     return () => {
       cancelled = true;
@@ -130,7 +132,7 @@ export default function LogsTab({ namespace, pod }: Props) {
         const onErr = (payload: unknown) => {
           if (disposed || activeStreamRef.current !== id) return;
           setStreaming(false);
-          setErrorMsg(typeof payload === 'string' && payload ? payload : 'Unbekannter Fehler beim Log-Stream.');
+          setErrorMsg(typeof payload === 'string' && payload ? payload : t('forms.logs.unknownStreamError'));
         };
 
         unsubscribers.push(EventsOn(`logs:data:${id}`, onData));
@@ -141,7 +143,7 @@ export default function LogsTab({ namespace, pod }: Props) {
         if (disposed) return;
         setLoading(false);
         setStreaming(false);
-        setErrorMsg(`Log-Stream konnte nicht gestartet werden: ${String(err)}`);
+        setErrorMsg(t('forms.logs.streamStartFailed', { error: String(err) }));
       });
 
     return () => {
@@ -218,18 +220,18 @@ export default function LogsTab({ namespace, pod }: Props) {
     <Stack gap="sm">
       <Group gap="sm" align="flex-end" wrap="wrap">
         <Select
-          label="Container"
+          label={t('forms.logs.container')}
           data={containerOptions}
           value={selectedContainer}
           onChange={setSelectedContainer}
           disabled={containers.length === 0}
-          placeholder={containers.length === 0 ? 'Keine Container' : undefined}
+          placeholder={containers.length === 0 ? t('forms.logs.noContainers') : undefined}
           w={220}
           allowDeselect={false}
           searchable
         />
         <Select
-          label="Zeilen"
+          label={t('forms.logs.lines')}
           data={TAIL_OPTIONS}
           value={String(tailLines)}
           onChange={(v) => {
@@ -240,30 +242,30 @@ export default function LogsTab({ namespace, pod }: Props) {
           allowDeselect={false}
         />
         <TextInput
-          label="Filter"
+          label={t('forms.logs.filter')}
           value={filter}
           onChange={(e) => setFilter(e.currentTarget.value)}
           leftSection={<IconSearch size={16} />}
-          placeholder="Text filtern"
+          placeholder={t('forms.logs.filterPlaceholder')}
           w={200}
         />
         <Switch
-          label="Folgen"
+          label={t('forms.logs.follow')}
           checked={follow}
           onChange={(e) => setFollow(e.currentTarget.checked)}
         />
         <Switch
-          label="Zeitstempel"
+          label={t('forms.logs.timestamps')}
           checked={timestamps}
           onChange={(e) => setTimestamps(e.currentTarget.checked)}
         />
         <Switch
-          label="Vorherige"
+          label={t('forms.logs.previous')}
           checked={previous}
           onChange={(e) => setPrevious(e.currentTarget.checked)}
         />
         <Switch
-          label="Umbruch"
+          label={t('forms.logs.wrap')}
           checked={wrap}
           onChange={(e) => setWrap(e.currentTarget.checked)}
         />
@@ -272,7 +274,7 @@ export default function LogsTab({ namespace, pod }: Props) {
           leftSection={<IconTrash size={16} />}
           onClick={handleClear}
         >
-          Leeren
+          {t('forms.logs.clear')}
         </Button>
         <Button
           variant="default"
@@ -280,12 +282,12 @@ export default function LogsTab({ namespace, pod }: Props) {
           onClick={handleDownload}
           disabled={lines.length === 0}
         >
-          Download
+          {t('forms.logs.download')}
         </Button>
       </Group>
 
       {errorMsg && (
-        <Alert color="red" icon={<IconAlertCircle size={16} />} title="Log-Fehler">
+        <Alert color="red" icon={<IconAlertCircle size={16} />} title={t('forms.logs.errorTitle')}>
           {errorMsg}
         </Alert>
       )}
@@ -294,10 +296,12 @@ export default function LogsTab({ namespace, pod }: Props) {
         {loading && <Loader size="xs" />}
         <Text size="xs" c="dimmed">
           {loading
-            ? 'Verbinde ...'
+            ? t('forms.logs.connecting')
             : streaming
-              ? `Live${visibleLines.length !== lines.length ? ` · ${visibleLines.length}/${lines.length} Zeilen` : ` · ${lines.length} Zeilen`}`
-              : `Angehalten · ${lines.length} Zeilen`}
+              ? visibleLines.length !== lines.length
+                ? t('forms.logs.liveFiltered', { visible: visibleLines.length, total: lines.length })
+                : t('forms.logs.live', { count: lines.length })
+              : t('forms.logs.paused', { count: lines.length })}
         </Text>
       </Group>
 
@@ -319,7 +323,7 @@ export default function LogsTab({ namespace, pod }: Props) {
       >
         {visibleLines.length === 0 ? (
           <Text size="xs" c="dimmed">
-            {filter.trim() ? 'Keine Zeilen entsprechen dem Filter.' : 'Keine Logzeilen.'}
+            {filter.trim() ? t('forms.logs.noFilterMatch') : t('forms.logs.noLines')}
           </Text>
         ) : (
           visibleLines.map((line, i) => (

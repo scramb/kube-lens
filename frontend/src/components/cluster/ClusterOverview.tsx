@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Badge, Card, Center, Group, Loader, Progress, SimpleGrid, Stack, Text, Title } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
 import { GetClusterOverviewMetrics } from '../../../wailsjs/go/main/App';
 import { ClusterOverviewMetrics } from '../../types';
 import { formatBytes, formatCPU } from '../metrics/format';
@@ -29,6 +30,7 @@ function UsageCard({ title, used, total, formatter }: { title: string; used: num
 }
 
 export function ClusterOverview({ contextName, refreshToken }: Props) {
+  const { t } = useTranslation();
   const [data, setData] = useState<ClusterOverviewMetrics | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -45,33 +47,33 @@ export function ClusterOverview({ contextName, refreshToken }: Props) {
     return <Center h="100%"><Loader /></Center>;
   }
   if (!data?.available) {
-    return <Center h="100%"><Text c="dimmed">Keine Cluster-Metriken verfügbar</Text></Center>;
+    return <Center h="100%"><Text c="dimmed">{t('dash.cluster.noMetrics')}</Text></Center>;
   }
 
   return (
     <Stack p="lg" gap="lg">
       <Group justify="space-between">
-        <Title order={3}>Cluster Overview</Title>
-        {data.message && <Badge color="yellow" variant="light">Teilweise Daten</Badge>}
+        <Title order={3}>{t('dash.cluster.title')}</Title>
+        {data.message && <Badge color="yellow" variant="light">{t('dash.cluster.partialData')}</Badge>}
       </Group>
       <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
-        <UsageCard title="CPU Nutzung" used={data.cpuUsage} total={data.cpuCapacity} formatter={formatCPU} />
-        <UsageCard title="Memory Nutzung" used={data.memoryUsage} total={data.memoryCapacity} formatter={formatBytes} />
+        <UsageCard title={t('dash.cluster.cpuUsage')} used={data.cpuUsage} total={data.cpuCapacity} formatter={formatCPU} />
+        <UsageCard title={t('dash.cluster.memoryUsage')} used={data.memoryUsage} total={data.memoryCapacity} formatter={formatBytes} />
       </SimpleGrid>
       <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
         <Card withBorder radius="md" padding="md">
-          <Text size="sm" c="dimmed">Nodes</Text>
+          <Text size="sm" c="dimmed">{t('dash.cluster.nodes')}</Text>
           <Group mt="sm">
-            <Badge color="green" variant="light">Ready {data.nodeReady}</Badge>
-            <Badge color={data.nodeNotReady ? 'red' : 'gray'} variant="light">NotReady {data.nodeNotReady}</Badge>
+            <Badge color="green" variant="light">{t('dash.cluster.ready')} {data.nodeReady}</Badge>
+            <Badge color={data.nodeNotReady ? 'red' : 'gray'} variant="light">{t('dash.cluster.notReady')} {data.nodeNotReady}</Badge>
           </Group>
         </Card>
         <Card withBorder radius="md" padding="md">
-          <Text size="sm" c="dimmed">Pods</Text>
+          <Text size="sm" c="dimmed">{t('dash.cluster.pods')}</Text>
           <Group mt="sm">
-            <Badge color="green" variant="light">Running {data.podsRunning}</Badge>
-            <Badge color="yellow" variant="light">Pending {data.podsPending}</Badge>
-            <Badge color="red" variant="light">Failed {data.podsFailed}</Badge>
+            <Badge color="green" variant="light">{t('dash.cluster.running')} {data.podsRunning}</Badge>
+            <Badge color="yellow" variant="light">{t('dash.cluster.pending')} {data.podsPending}</Badge>
+            <Badge color="red" variant="light">{t('dash.cluster.failed')} {data.podsFailed}</Badge>
           </Group>
         </Card>
       </SimpleGrid>

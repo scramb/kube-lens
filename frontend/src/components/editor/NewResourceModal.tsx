@@ -1,4 +1,5 @@
 import { Modal, Stack, Text } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
 import { YamlEditor } from './YamlEditor';
 
 interface Props {
@@ -18,11 +19,12 @@ data:
 `;
 
 export default function NewResourceModal({ opened, onClose, onCreated }: Props) {
+  const { t } = useTranslation();
   return (
-    <Modal opened={opened} onClose={onClose} title="Neue Ressource" size="xl">
+    <Modal opened={opened} onClose={onClose} title={t('forms.editor.newResourceTitle')} size="xl">
       <Stack gap="sm">
         <Text size="sm" c="dimmed">
-          Bearbeiten Sie das YAML und wenden Sie es an (Server-Side Apply). Erforderlich sind{' '}
+          {t('forms.editor.newResourceHintApply')}{' '}
           <Text span fw={600}>
             apiVersion
           </Text>
@@ -30,7 +32,7 @@ export default function NewResourceModal({ opened, onClose, onCreated }: Props) 
           <Text span fw={600}>
             kind
           </Text>{' '}
-          und{' '}
+          {t('forms.editor.newResourceHintAnd')}{' '}
           <Text span fw={600}>
             metadata.name
           </Text>

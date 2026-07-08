@@ -1,4 +1,5 @@
 import { Badge, Card, Group, Stack, Table, Text, Title } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
 import { OverviewProps, age, getPath } from './types';
 import { ConditionsTable } from './ConditionsTable';
 
@@ -95,6 +96,7 @@ function ContainerRow({
 }
 
 export function PodOverview({ obj }: OverviewProps) {
+  const { t } = useTranslation();
   const phase: string | undefined = getPath(obj, ['status', 'phase']);
   const nodeName: string | undefined = getPath(obj, ['spec', 'nodeName']);
   const qosClass: string | undefined = getPath(obj, ['status', 'qosClass']);
@@ -125,12 +127,12 @@ export function PodOverview({ obj }: OverviewProps) {
     <Stack gap="md">
       <Card withBorder radius="md" padding="md">
         <Title order={5} mb="sm">
-          Pod
+          {t('detail.pod')}
         </Title>
         <Group gap="lg" wrap="wrap">
           <Group gap={6}>
             <Text size="sm" c="dimmed">
-              Phase
+              {t('detail.pod.phase')}
             </Text>
             <Badge color={phaseColor(phase)} variant="light" size="sm">
               {phase ?? 'Unknown'}
@@ -139,7 +141,7 @@ export function PodOverview({ obj }: OverviewProps) {
           {nodeName && (
             <Group gap={6}>
               <Text size="sm" c="dimmed">
-                Node
+                {t('detail.pod.node')}
               </Text>
               <Text size="sm">{nodeName}</Text>
             </Group>
@@ -147,7 +149,7 @@ export function PodOverview({ obj }: OverviewProps) {
           {qosClass && (
             <Group gap={6}>
               <Text size="sm" c="dimmed">
-                QoS
+                {t('detail.pod.qos')}
               </Text>
               <Text size="sm">{qosClass}</Text>
             </Group>
@@ -155,7 +157,7 @@ export function PodOverview({ obj }: OverviewProps) {
           {podIP && (
             <Group gap={6}>
               <Text size="sm" c="dimmed">
-                Pod-IP
+                {t('detail.pod.podIp')}
               </Text>
               <Text size="sm">{podIP}</Text>
             </Group>
@@ -163,7 +165,7 @@ export function PodOverview({ obj }: OverviewProps) {
           {startTime && (
             <Group gap={6}>
               <Text size="sm" c="dimmed">
-                Start
+                {t('detail.pod.start')}
               </Text>
               <Text size="sm">{age(startTime)}</Text>
             </Group>
@@ -174,19 +176,19 @@ export function PodOverview({ obj }: OverviewProps) {
       {(containers.length > 0 || initContainers.length > 0) && (
         <Card withBorder radius="md" padding="md">
           <Title order={5} mb="sm">
-            Container
+            {t('detail.pod.containers')}
           </Title>
           <Table.ScrollContainer minWidth={720}>
             <Table verticalSpacing="xs" horizontalSpacing="sm" fz="sm">
               <Table.Thead>
                 <Table.Tr>
-                  <Table.Th>Name</Table.Th>
-                  <Table.Th>Image</Table.Th>
-                  <Table.Th>Ready</Table.Th>
-                  <Table.Th>Restarts</Table.Th>
-                  <Table.Th>State</Table.Th>
-                  <Table.Th>CPU (req/lim)</Table.Th>
-                  <Table.Th>Mem (req/lim)</Table.Th>
+                  <Table.Th>{t('detail.pod.col.name')}</Table.Th>
+                  <Table.Th>{t('detail.pod.col.image')}</Table.Th>
+                  <Table.Th>{t('detail.pod.col.ready')}</Table.Th>
+                  <Table.Th>{t('detail.pod.col.restarts')}</Table.Th>
+                  <Table.Th>{t('detail.pod.col.state')}</Table.Th>
+                  <Table.Th>{t('detail.pod.col.cpu')}</Table.Th>
+                  <Table.Th>{t('detail.pod.col.mem')}</Table.Th>
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>
@@ -215,7 +217,7 @@ export function PodOverview({ obj }: OverviewProps) {
       {volumes.length > 0 && (
         <Card withBorder radius="md" padding="md">
           <Title order={5} mb="sm">
-            Volumes
+            {t('detail.pod.volumes')}
           </Title>
           <Stack gap={4}>
             {volumes.map((v, i) => {
