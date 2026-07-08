@@ -3,10 +3,17 @@ import { useTranslation } from 'react-i18next';
 import { MetricPoint } from '../../types';
 import { formatMetricValue } from './format';
 
+export interface ReferenceLine {
+  label: string;
+  value: number;
+  color?: string;
+}
+
 interface Props {
   name: string;
   unit: string;
   points: MetricPoint[];
+  referenceLines?: ReferenceLine[];
 }
 
 interface ChartPoint {
@@ -117,7 +124,7 @@ function dayKey(date: Date): string {
   return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
 }
 
-export function SimpleTimeSeriesChart({ name, unit, points }: Props) {
+export function SimpleTimeSeriesChart({ name, unit, points, referenceLines = [] }: Props) {
   const { t, i18n } = useTranslation();
 
   const clean: ChartPoint[] = points
@@ -148,8 +155,10 @@ export function SimpleTimeSeriesChart({ name, unit, points }: Props) {
     );
   }
 
-  const minValue = Math.min(...clean.map((p) => p.value));
-  const maxValue = Math.max(...clean.map((p) => p.value));
+  const validReferenceLines = referenceLines.filter((line) => Number.isFinite(line.value));
+  const referenceValues = validReferenceLines.map((line) => line.value);
+  const minValue = Math.min(...clean.map((p) => p.value), ...referenceValues);
+  const maxValue = Math.max(...clean.map((p) => p.value), ...referenceValues);
   const yTicks = computeYTicks(minValue, maxValue, unit);
   const yMin = yTicks[0];
   const yMax = yTicks[yTicks.length - 1];
@@ -282,6 +291,32 @@ export function SimpleTimeSeriesChart({ name, unit, points }: Props) {
             </text>
           </g>
         ))}
+
+        {validReferenceLines.map((line) => {
+          const y = yForValue(line.value);
+          return (
+            <g key={`ref-${line.label}-${line.value}`}>
+              <line
+                x1={leftPad}
+                y1={y}
+                x2={width - rightPad}
+                y2={y}
+                stroke={line.color ?? 'var(--mantine-color-orange-4)'}
+                strokeDasharray="4 3"
+                strokeWidth={1.5}
+              />
+              <text
+                x={width - rightPad - 4}
+                y={y - 3}
+                textAnchor="end"
+                fontSize={10}
+                fill={line.color ?? 'var(--mantine-color-orange-4)'}
+              >
+                {line.label} {formatMetricValue(line.value, unit)}
+              </text>
+            </g>
+          );
+        })}
 
         {clean.length === 1 ? (
           <circle

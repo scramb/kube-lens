@@ -83,12 +83,28 @@ func (a *App) SetCRDGroupingSettings(settings CRDGroupingSettings) ResourceUISet
 	return a.kube.SetCRDGroupingSettings(settings)
 }
 
+func (a *App) GetTableViewSettings(contextName, resourceKey string) TableViewSettings {
+	return a.kube.TableViewSettings(contextName, resourceKey)
+}
+
+func (a *App) SetTableViewSettings(contextName, resourceKey string, settings TableViewSettings) TableViewSettings {
+	return a.kube.SetTableViewSettings(contextName, resourceKey, settings)
+}
+
 func (a *App) DiscoverResources() ([]APIResource, error) {
 	return a.kube.DiscoverResources()
 }
 
 func (a *App) ListResourceTable(group, version, resource, namespace string) (*TableResult, error) {
 	return a.kube.ListResourceTable(group, version, resource, namespace)
+}
+
+func (a *App) GetResourceQuantities(group, version, resourceName, namespace string, names []string) ([]ResourceQuantityInfo, error) {
+	return a.kube.GetResourceQuantities(group, version, resourceName, namespace, names)
+}
+
+func (a *App) GetResourceQuantity(group, version, resourceName, namespace, name string) (ResourceQuantitySummary, error) {
+	return a.kube.GetResourceQuantity(group, version, resourceName, namespace, name)
 }
 
 func (a *App) ResourceHasItems(group, version, resource, namespace string) (bool, error) {

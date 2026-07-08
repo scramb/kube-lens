@@ -393,6 +393,66 @@ export namespace main {
 	        this.reasons = source["reasons"];
 	    }
 	}
+	export class ResourceQuantitySummary {
+	    cpuRequest: number;
+	    cpuLimit: number;
+	    memoryRequest: number;
+	    memoryLimit: number;
+	    hasCPURequest: boolean;
+	    hasCPULimit: boolean;
+	    hasMemRequest: boolean;
+	    hasMemLimit: boolean;
+
+	    static createFrom(source: any = {}) {
+	        return new ResourceQuantitySummary(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.cpuRequest = source["cpuRequest"];
+	        this.cpuLimit = source["cpuLimit"];
+	        this.memoryRequest = source["memoryRequest"];
+	        this.memoryLimit = source["memoryLimit"];
+	        this.hasCPURequest = source["hasCPURequest"];
+	        this.hasCPULimit = source["hasCPULimit"];
+	        this.hasMemRequest = source["hasMemRequest"];
+	        this.hasMemLimit = source["hasMemLimit"];
+	    }
+	}
+	export class ResourceQuantityInfo {
+	    namespace: string;
+	    name: string;
+	    summary: ResourceQuantitySummary;
+
+	    static createFrom(source: any = {}) {
+	        return new ResourceQuantityInfo(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.namespace = source["namespace"];
+	        this.name = source["name"];
+	        this.summary = this.convertValues(source["summary"], ResourceQuantitySummary);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class ResourceListMetric {
 	    namespace: string;
 	    name: string;
@@ -528,6 +588,20 @@ export namespace main {
 		    }
 		    return a;
 		}
+	}
+	export class TableViewSettings {
+	    columnOrder: string[];
+	    hiddenColumns: string[];
+
+	    static createFrom(source: any = {}) {
+	        return new TableViewSettings(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.columnOrder = source["columnOrder"];
+	        this.hiddenColumns = source["hiddenColumns"];
+	    }
 	}
 	export class TableColumn {
 	    name: string;

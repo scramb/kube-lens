@@ -37,7 +37,9 @@ import {
   GetMetricsAvailability,
   GetNodeListMetrics,
   GetPodListMetrics,
+  GetResourceQuantities,
   GetResourceUISettings,
+  GetTableViewSettings,
   InitialContext,
   ListContexts,
   ListKubeConfigs,
@@ -49,13 +51,14 @@ import {
   SetHideEmptyCRDs,
   SetResourceFavorite,
   SetSectionCollapsed,
+  SetTableViewSettings,
   StartResourceWatch,
   StopResourceWatch,
   UseContext,
 } from '../wailsjs/go/main/App';
 import { EventsOn } from '../wailsjs/runtime/runtime';
 import { main } from '../wailsjs/go/models';
-import { APIResource, ContextInfo, CRDGroupingSettings, KubeConfigInfo, ResourceListMetric, ResourceUISettings, TableResult, TableRow, resourceKey } from './types';
+import { APIResource, ContextInfo, CRDGroupingSettings, KubeConfigInfo, ResourceListMetric, ResourceQuantityInfo, ResourceUISettings, TableResult, TableRow, TableViewSettings, resourceKey } from './types';
 import { buildCrdNav, buildStandardNav, NavSection, normalizeCRDGroupingSettings } from './resourceCatalog';
 import Sidebar from './components/Sidebar';
 import ResourceTable, { ExtraTableColumn } from './components/ResourceTable';
@@ -108,6 +111,8 @@ export default function App() {
   const [fluxLoading, setFluxLoading] = useState(false);
   const [metricsAvailable, setMetricsAvailable] = useState(false);
   const [tableMetrics, setTableMetrics] = useState<Record<string, ResourceListMetric>>({});
+  const [tableQuantities, setTableQuantities] = useState<Record<string, ResourceQuantityInfo>>({});
+  const [tableViewSettings, setTableViewSettings] = useState<TableViewSettings>({ columnOrder: [], hiddenColumns: [] });
   const [clusterRefreshToken, setClusterRefreshToken] = useState(0);
 
   const [configModalOpen, setConfigModalOpen] = useState(false);
@@ -193,6 +198,8 @@ export default function App() {
     setShowCluster(false);
     setMetricsAvailable(false);
     setTableMetrics({});
+    setTableQuantities({});
+    setTableViewSettings({ columnOrder: [], hiddenColumns: [] });
     setCrdItemPresence({});
     try {
       await UseContext(ctxName);
@@ -253,6 +260,28 @@ export default function App() {
         setTable(result);
         setTableError('');
         setTableMetrics({});
+        setTableQuantities({});
+
+        if (currentContext) {
+          GetTableViewSettings(currentContext, resourceKey(selected))
+            .then((settings) => setTableViewSettings({ columnOrder: settings?.columnOrder ?? [], hiddenColumns: settings?.hiddenColumns ?? [] }))
+            .catch(() => setTableViewSettings({ columnOrder: [], hiddenColumns: [] }));
+        }
+
+        if (selected.name === 'pods' || (selected.group === 'apps' && ['deployments', 'statefulsets', 'daemonsets', 'replicasets'].includes(selected.name))) {
+          try {
+            const names = (result.rows ?? []).map((row) => row.name).filter(Boolean);
+            const quantities = await GetResourceQuantities(selected.group, selected.version, selected.name, selected.namespaced ? namespace : '', names);
+            const mapped: Record<string, ResourceQuantityInfo> = {};
+            for (const q of quantities ?? []) {
+              mapped[`${q.namespace}/${q.name}`] = q;
+              mapped[q.name] = q;
+            }
+            setTableQuantities(mapped);
+          } catch {
+            setTableQuantities({});
+          }
+        }
 
         if (currentContext && metricsAvailable && selected.group === '' && (selected.name === 'pods' || selected.name === 'nodes')) {
           try {
@@ -444,6 +473,33 @@ export default function App() {
     ];
   }, [metricsAvailable, selected, tableMetrics]);
 
+  const quantityColumns = useMemo<ExtraTableColumn[]>(() => {
+    if (!selected || !(selected.name === 'pods' || (selected.group === 'apps' && ['deployments', 'statefulsets', 'daemonsets', 'replicasets'].includes(selected.name)))) return [];
+    const quantityFor = (row: TableRow) => tableQuantities[`${row.namespace}/${row.name}`] ?? tableQuantities[row.name];
+    const hasAny = Object.values(tableQuantities).some((q) => q.summary?.hasCPURequest || q.summary?.hasCPULimit || q.summary?.hasMemRequest || q.summary?.hasMemLimit);
+    if (!hasAny) return [];
+    return [
+      { key: 'resource-cpu-request', label: 'CPU Request', render: (row) => <Text size="sm">{quantityFor(row)?.summary?.hasCPURequest ? formatCPU(quantityFor(row).summary.cpuRequest) : '—'}</Text> },
+      { key: 'resource-cpu-limit', label: 'CPU Limit', render: (row) => <Text size="sm">{quantityFor(row)?.summary?.hasCPULimit ? formatCPU(quantityFor(row).summary.cpuLimit) : '—'}</Text> },
+      { key: 'resource-memory-request', label: 'Memory Request', render: (row) => <Text size="sm">{quantityFor(row)?.summary?.hasMemRequest ? formatBytes(quantityFor(row).summary.memoryRequest) : '—'}</Text> },
+      { key: 'resource-memory-limit', label: 'Memory Limit', render: (row) => <Text size="sm">{quantityFor(row)?.summary?.hasMemLimit ? formatBytes(quantityFor(row).summary.memoryLimit) : '—'}</Text> },
+    ];
+  }, [selected, tableQuantities]);
+
+  const updateTableViewSettings = useCallback(
+    async (settings: TableViewSettings) => {
+      if (!currentContext || !selected) return;
+      setTableViewSettings(settings);
+      try {
+        const saved = await SetTableViewSettings(currentContext, resourceKey(selected), new main.TableViewSettings(settings));
+        setTableViewSettings({ columnOrder: saved?.columnOrder ?? [], hiddenColumns: saved?.hiddenColumns ?? [] });
+      } catch (e) {
+        notifications.show({ message: errText(e), color: 'red' });
+      }
+    },
+    [currentContext, selected]
+  );
+
   const noContexts = contexts.length === 0;
 
   return (
@@ -630,7 +686,9 @@ export default function App() {
             error={tableError}
             allNamespaces={namespace === ''}
             filter={filter}
-            extraColumns={metricColumns}
+            extraColumns={[...metricColumns, ...quantityColumns]}
+            viewSettings={tableViewSettings}
+            onViewSettingsChange={updateTableViewSettings}
             onRowClick={openDetail}
           />
         ) : (
@@ -651,6 +709,7 @@ export default function App() {
         onDelete={deleteCurrent}
         metricsAvailable={metricsAvailable}
         contextName={currentContext}
+        quantitySummary={tableQuantities[`${drawer.namespace}/${drawer.name}`]?.summary ?? tableQuantities[drawer.name]?.summary ?? null}
       />
 
       <KubeConfigModal

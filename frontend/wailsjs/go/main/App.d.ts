@@ -42,9 +42,15 @@ export function GetResourceJSON(arg1:string,arg2:string,arg3:string,arg4:string,
 
 export function GetResourceMetricsSeries(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string):Promise<main.ResourceMetricsSeries>;
 
+export function GetResourceQuantities(arg1:string,arg2:string,arg3:string,arg4:string,arg5:Array<string>):Promise<Array<main.ResourceQuantityInfo>>;
+
+export function GetResourceQuantity(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string):Promise<main.ResourceQuantitySummary>;
+
 export function GetResourceUISettings(arg1:string):Promise<main.ResourceUISettings>;
 
 export function GetResourceYAML(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string):Promise<string>;
+
+export function GetTableViewSettings(arg1:string,arg2:string):Promise<main.TableViewSettings>;
 
 export function InitialContext():Promise<string>;
 
@@ -77,6 +83,8 @@ export function SetCRDGroupingSettings(arg1:main.CRDGroupingSettings):Promise<ma
 export function SetResourceFavorite(arg1:string,arg2:string,arg3:boolean):Promise<main.ResourceUISettings>;
 
 export function SetSectionCollapsed(arg1:string,arg2:string,arg3:boolean):Promise<main.ResourceUISettings>;
+
+export function SetTableViewSettings(arg1:string,arg2:string,arg3:main.TableViewSettings):Promise<main.TableViewSettings>;
 
 export function SetSuspend(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string,arg6:boolean):Promise<void>;
 

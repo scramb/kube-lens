@@ -70,13 +70,14 @@ type TableResult struct {
 // ---------- Settings persistence ----------
 
 type Settings struct {
-	KubeConfigs       []string                             `json:"kubeconfigs"`
-	LastContext       string                               `json:"lastContext"`
-	Favorites         map[string][]string                  `json:"favorites,omitempty"`
-	CollapsedSections map[string]map[string]bool           `json:"collapsedSections,omitempty"`
-	HideEmptyCRDs     bool                                 `json:"hideEmptyCRDs,omitempty"`
-	Prometheus        map[string]PrometheusContextSettings `json:"prometheus,omitempty"`
-	CRDGrouping       CRDGroupingSettings                  `json:"crdGrouping,omitempty"`
+	KubeConfigs       []string                                `json:"kubeconfigs"`
+	LastContext       string                                  `json:"lastContext"`
+	Favorites         map[string][]string                     `json:"favorites,omitempty"`
+	CollapsedSections map[string]map[string]bool              `json:"collapsedSections,omitempty"`
+	HideEmptyCRDs     bool                                    `json:"hideEmptyCRDs,omitempty"`
+	Prometheus        map[string]PrometheusContextSettings    `json:"prometheus,omitempty"`
+	CRDGrouping       CRDGroupingSettings                     `json:"crdGrouping,omitempty"`
+	Tables            map[string]map[string]TableViewSettings `json:"tables,omitempty"`
 }
 
 type ResourceUISettings struct {
@@ -96,6 +97,28 @@ type CRDGroupRule struct {
 
 type CRDGroupingSettings struct {
 	Rules []CRDGroupRule `json:"rules"`
+}
+
+type TableViewSettings struct {
+	ColumnOrder   []string `json:"columnOrder"`
+	HiddenColumns []string `json:"hiddenColumns"`
+}
+
+type ResourceQuantitySummary struct {
+	CPURequest    float64 `json:"cpuRequest"`
+	CPULimit      float64 `json:"cpuLimit"`
+	MemoryRequest float64 `json:"memoryRequest"`
+	MemoryLimit   float64 `json:"memoryLimit"`
+	HasCPURequest bool    `json:"hasCPURequest"`
+	HasCPULimit   bool    `json:"hasCPULimit"`
+	HasMemRequest bool    `json:"hasMemRequest"`
+	HasMemLimit   bool    `json:"hasMemLimit"`
+}
+
+type ResourceQuantityInfo struct {
+	Namespace string                  `json:"namespace"`
+	Name      string                  `json:"name"`
+	Summary   ResourceQuantitySummary `json:"summary"`
 }
 
 func settingsPath() string {
@@ -151,6 +174,10 @@ func cloneCRDGroupingSettings(in CRDGroupingSettings) CRDGroupingSettings {
 		})
 	}
 	return out
+}
+
+func cloneTableViewSettings(in TableViewSettings) TableViewSettings {
+	return TableViewSettings{ColumnOrder: cloneStringSlice(in.ColumnOrder), HiddenColumns: cloneStringSlice(in.HiddenColumns)}
 }
 
 func resourceUISettingsFromSettings(s Settings, contextName string) ResourceUISettings {
@@ -388,6 +415,29 @@ func (m *KubeManager) SetCRDGroupingSettings(settings CRDGroupingSettings) Resou
 	contextName := m.currentContext
 	m.settings.save()
 	return resourceUISettingsFromSettings(m.settings, contextName)
+}
+
+func (m *KubeManager) TableViewSettings(contextName, resourceKey string) TableViewSettings {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.settings.Tables == nil || m.settings.Tables[contextName] == nil {
+		return TableViewSettings{ColumnOrder: []string{}, HiddenColumns: []string{}}
+	}
+	return cloneTableViewSettings(m.settings.Tables[contextName][resourceKey])
+}
+
+func (m *KubeManager) SetTableViewSettings(contextName, resourceKey string, settings TableViewSettings) TableViewSettings {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.settings.Tables == nil {
+		m.settings.Tables = map[string]map[string]TableViewSettings{}
+	}
+	if m.settings.Tables[contextName] == nil {
+		m.settings.Tables[contextName] = map[string]TableViewSettings{}
+	}
+	m.settings.Tables[contextName][resourceKey] = cloneTableViewSettings(settings)
+	m.settings.save()
+	return cloneTableViewSettings(m.settings.Tables[contextName][resourceKey])
 }
 
 // InitialContext returns the context to auto-connect on startup:

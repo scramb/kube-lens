@@ -139,6 +139,7 @@ export const detail = {
     // Resource table
     'detail.table.namespace': 'Namespace',
     'detail.table.empty': 'No {{kind}} resources found',
+    'detail.table.resetColumns': 'Reset column order',
   },
   de: {
     // Tabs
@@ -280,5 +281,6 @@ export const detail = {
     // Resource table
     'detail.table.namespace': 'Namespace',
     'detail.table.empty': 'Keine {{kind}}-Ressourcen gefunden',
+    'detail.table.resetColumns': 'Spaltenreihenfolge zurücksetzen',
   },
 };

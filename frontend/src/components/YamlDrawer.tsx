@@ -36,7 +36,7 @@ import {
   SetSuspend,
 } from '../../wailsjs/go/main/App';
 import { main } from '../../wailsjs/go/models';
-import { APIResource } from '../types';
+import { APIResource, ResourceQuantitySummary } from '../types';
 import { getOverviewRenderer, KubeObject } from './detail';
 import { ResourceMetricsTab } from './metrics/ResourceMetricsTab';
 import { LogsTab } from './logs';
@@ -52,13 +52,14 @@ interface Props {
   onDelete: () => Promise<void>;
   metricsAvailable: boolean;
   contextName: string | null;
+  quantitySummary?: ResourceQuantitySummary | null;
 }
 
 function errText(e: unknown): string {
   return typeof e === 'string' ? e : e instanceof Error ? e.message : String(e);
 }
 
-export default function YamlDrawer({ opened, onClose, resource, name, namespace, onDelete, metricsAvailable, contextName }: Props) {
+export default function YamlDrawer({ opened, onClose, resource, name, namespace, onDelete, metricsAvailable, contextName, quantitySummary }: Props) {
   const { t } = useTranslation();
   const [tab, setTab] = useState<string>('overview');
 
@@ -356,7 +357,7 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
         {showMetricsTab && resource && (
           <Tabs.Panel value="metrics">
             <ScrollArea h="calc(100vh - 165px)" type="scroll">
-              <ResourceMetricsTab contextName={contextName} resource={resource} namespace={namespace} name={name} />
+              <ResourceMetricsTab contextName={contextName} resource={resource} namespace={namespace} name={name} quantitySummary={quantitySummary} />
             </ScrollArea>
           </Tabs.Panel>
         )}

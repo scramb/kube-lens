@@ -34,6 +34,8 @@ export const dashboards = {
     'dash.metrics.prometheus': 'Prometheus metrics',
     'dash.metrics.noMetrics': 'No metrics available',
     'dash.metrics.noData': 'No data',
+    'dash.metrics.request': 'request',
+    'dash.metrics.limit': 'limit',
   },
   de: {
     // Flux overview
@@ -70,5 +72,7 @@ export const dashboards = {
     'dash.metrics.prometheus': 'Prometheus-Metriken',
     'dash.metrics.noMetrics': 'Keine Metriken verfügbar',
     'dash.metrics.noData': 'Keine Daten',
+    'dash.metrics.request': 'request',
+    'dash.metrics.limit': 'limit',
   },
 };

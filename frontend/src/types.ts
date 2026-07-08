@@ -113,6 +113,28 @@ export interface ResourceListMetric {
   memory: number;
 }
 
+export interface ResourceQuantitySummary {
+  cpuRequest: number;
+  cpuLimit: number;
+  memoryRequest: number;
+  memoryLimit: number;
+  hasCPURequest: boolean;
+  hasCPULimit: boolean;
+  hasMemRequest: boolean;
+  hasMemLimit: boolean;
+}
+
+export interface ResourceQuantityInfo {
+  namespace: string;
+  name: string;
+  summary: ResourceQuantitySummary;
+}
+
+export interface TableViewSettings {
+  columnOrder: string[];
+  hiddenColumns: string[];
+}
+
 export interface MetricPoint {
   timestamp: string;
   value: number;

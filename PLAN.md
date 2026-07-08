@@ -529,7 +529,7 @@ werden Kubernetes Resource Requests/Limits sichtbar gemacht — sowohl als Konte
 den Metriken als auch als zusätzliche Tabellenspalten für Workloads.
 
 ### L1 — Settings-Modell: Spaltenreihenfolge pro Ressource
-- [ ] Settings um eine pro Kontext und Ressource gespeicherte Table-Konfiguration
+- [x] Settings um eine pro Kontext und Ressource gespeicherte Table-Konfiguration
       erweitern, z. B.:
       ```json
       "tables": {
@@ -543,56 +543,56 @@ den Metriken als auch als zusätzliche Tabellenspalten für Workloads.
       ```
       Keying über GVR/GVK stabil definieren; Server-Side-Table-Spaltennamen bleiben
       Grundlage, damit CRD-`additionalPrinterColumns` weiter funktionieren.
-- [ ] Merge-Verhalten definieren: neue Server-Side-Spalten werden automatisch hinten
+- [x] Merge-Verhalten definieren: neue Server-Side-Spalten werden automatisch hinten
       angehängt; entfernte/umbenannte Spalten werden ignoriert, aber nicht fatal;
       App-eigene Zusatzspalten (Metrics, Requests/Limits) werden in denselben
       Ordnungsmechanismus integriert.
-- [ ] Reset-Möglichkeit pro Ressource: Spaltenreihenfolge auf Server/API-Default
+- [x] Reset-Möglichkeit pro Ressource: Spaltenreihenfolge auf Server/API-Default
       plus App-Zusatzspalten zurücksetzen.
 
 ### L2 — Frontend: Drag-&-Drop-Spalten in der Table View
 Abhängig von: L1.
-- [ ] `ResourceTable` um Drag-&-Drop für Header-Zellen erweitern; horizontales Ziehen
+- [x] `ResourceTable` um Drag-&-Drop für Header-Zellen erweitern; horizontales Ziehen
       ändert nur die Reihenfolge, nicht Sortierung/Filter/Row-Click-Verhalten.
-- [ ] Persistenz nach Drop in Settings schreiben; Wechsel zwischen Ressourcen und
+- [x] Persistenz nach Drop in Settings schreiben; Wechsel zwischen Ressourcen und
       App-Neustart behalten die Reihenfolge bei.
-- [ ] UX-Kanten: erste Spalte/Name sinnvoll greifbar lassen, Actions-/Inline-Spalten
+- [x] UX-Kanten: erste Spalte/Name sinnvoll greifbar lassen, Actions-/Inline-Spalten
       falls vorhanden separat behandeln, Drag-Handle oder Cursor klar anzeigen,
       Tastatur-/Reset-Fallback anbieten.
-- [ ] i18n für neue Labels/Tooltips/Reset-Aktion ergänzen.
+- [x] i18n für neue Labels/Tooltips/Reset-Aktion ergänzen.
 
 ### L3 — Backend/Frontend: Requests & Limits aus Pod-Specs normalisieren
-- [ ] Gemeinsame Datenstruktur für Resource Requests/Limits definieren:
+- [x] Gemeinsame Datenstruktur für Resource Requests/Limits definieren:
       CPU Request, CPU Limit, Memory Request, Memory Limit, jeweils Summe über
       Container; Init-Container-Regeln korrekt berücksichtigen (effektiver Pod-Wert =
       max(sum(app containers), max(init containers)) pro Resource).
-- [ ] Pod-Listen um App-Zusatzspalten für Requests/Limits erweitern, sofern gepflegt:
+- [x] Pod-Listen um App-Zusatzspalten für Requests/Limits erweitern, sofern gepflegt:
       CPU Request, CPU Limit, Memory Request, Memory Limit. Darstellung mit denselben
       Formatierungsfunktionen wie Metrics (`m`, `Mi`, `Gi`).
-- [ ] Fehlende Werte klar, aber unaufdringlich darstellen (`—`), ohne Tabellen mit
+- [x] Fehlende Werte klar, aber unaufdringlich darstellen (`—`), ohne Tabellen mit
       leeren Zusatzspalten zu überladen; ggf. Spalten nur anzeigen, wenn mindestens ein
       sichtbarer Datensatz Werte enthält oder User sie explizit aktiviert.
 
 ### L4 — Workload-Tabellen: Limits/Requests für Deployments, StatefulSets, DaemonSets, ReplicaSets
 Abhängig von: L3.
-- [ ] Für Workloads die PodTemplate-Spec (`spec.template.spec.containers` und
+- [x] Für Workloads die PodTemplate-Spec (`spec.template.spec.containers` und
       `initContainers`) auswerten und Requests/Limits aggregieren.
-- [ ] Tabellen für Deployments, StatefulSets, DaemonSets und ReplicaSets um die
+- [x] Tabellen für Deployments, StatefulSets, DaemonSets und ReplicaSets um die
       gleichen Request/Limit-Spalten erweitern: CPU Request, CPU Limit, Memory
       Request, Memory Limit.
-- [ ] Semantik dokumentieren/anzeigen: Werte sind pro Pod-Template, nicht auf Replica-
+- [x] Semantik dokumentieren/anzeigen: Werte sind pro Pod-Template, nicht auf Replica-
       Anzahl hochgerechnet. Optional ergänzend prüfen, ob zusätzlich „total requested"
       sinnvoll ist; falls ja als separater späterer Punkt statt heimlich andere
       Bedeutung in dieselbe Spalte zu legen.
 
 ### L5 — Metrics-Drawer: Requests/Limits als Kontext anzeigen
 Abhängig von: L3.
-- [ ] Im Metriken-Tab für Pods CPU-/Memory-Requests und Limits anzeigen, wenn gesetzt:
+- [x] Im Metriken-Tab für Pods CPU-/Memory-Requests und Limits anzeigen, wenn gesetzt:
       als horizontale Referenzlinien in den Charts und/oder kompakte Summary oberhalb
       der Charts.
-- [ ] Einheiten sauber matchen: CPU-Chart gegen CPU request/limit, Memory-Chart gegen
+- [x] Einheiten sauber matchen: CPU-Chart gegen CPU request/limit, Memory-Chart gegen
       Memory request/limit; keine Linien in Netzwerk-Charts.
-- [ ] Bei fehlenden Prometheus-Daten, aber vorhandenen Requests/Limits: Metriken-Tab
+- [x] Bei fehlenden Prometheus-Daten, aber vorhandenen Requests/Limits: Metriken-Tab
       soll weiterhin sinnvoll degradieren (z. B. Summary sichtbar, Charts verborgen
       oder leerer Zustand mit Hinweis im Tab).
 - [ ] Optional für Workloads im Drawer prüfen: Requests/Limits aus PodTemplate auch in

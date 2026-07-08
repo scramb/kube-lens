@@ -82,12 +82,24 @@ export function GetResourceMetricsSeries(arg1, arg2, arg3, arg4, arg5) {
   return window['go']['main']['App']['GetResourceMetricsSeries'](arg1, arg2, arg3, arg4, arg5);
 }
 
+export function GetResourceQuantities(arg1, arg2, arg3, arg4, arg5) {
+  return window['go']['main']['App']['GetResourceQuantities'](arg1, arg2, arg3, arg4, arg5);
+}
+
+export function GetResourceQuantity(arg1, arg2, arg3, arg4, arg5) {
+  return window['go']['main']['App']['GetResourceQuantity'](arg1, arg2, arg3, arg4, arg5);
+}
+
 export function GetResourceUISettings(arg1) {
   return window['go']['main']['App']['GetResourceUISettings'](arg1);
 }
 
 export function GetResourceYAML(arg1, arg2, arg3, arg4, arg5) {
   return window['go']['main']['App']['GetResourceYAML'](arg1, arg2, arg3, arg4, arg5);
+}
+
+export function GetTableViewSettings(arg1, arg2) {
+  return window['go']['main']['App']['GetTableViewSettings'](arg1, arg2);
 }
 
 export function InitialContext() {
@@ -152,6 +164,10 @@ export function SetResourceFavorite(arg1, arg2, arg3) {
 
 export function SetSectionCollapsed(arg1, arg2, arg3) {
   return window['go']['main']['App']['SetSectionCollapsed'](arg1, arg2, arg3);
+}
+
+export function SetTableViewSettings(arg1, arg2, arg3) {
+  return window['go']['main']['App']['SetTableViewSettings'](arg1, arg2, arg3);
 }
 
 export function SetSuspend(arg1, arg2, arg3, arg4, arg5, arg6) {
