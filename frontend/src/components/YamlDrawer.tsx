@@ -37,8 +37,10 @@ import {
 import { main } from '../../wailsjs/go/models';
 import { APIResource } from '../types';
 import { getOverviewRenderer, KubeObject } from './detail';
-import { YamlCode } from './detail/YamlCode';
 import { ResourceMetricsTab } from './metrics/ResourceMetricsTab';
+import { LogsTab } from './logs';
+import TerminalTab from './terminal/TerminalTab';
+import { YamlEditor } from './editor';
 
 interface Props {
   opened: boolean;
@@ -153,6 +155,7 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
   };
 
   const isFlux = !!resource?.group.endsWith('.fluxcd.io');
+  const isPod = resource?.kind === 'Pod' && resource?.group === '';
   const metricsSupported = !!resource && (resource.kind === 'Pod' || resource.kind === 'Node');
   const showMetricsTab = metricsAvailable && metricsSupported;
   const suspended = obj?.spec?.suspend === true;
@@ -288,12 +291,14 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
         <Tabs.List mb="sm">
           <Tabs.Tab value="overview">Übersicht</Tabs.Tab>
           <Tabs.Tab value="yaml">YAML</Tabs.Tab>
+          {isPod && <Tabs.Tab value="logs">Logs</Tabs.Tab>}
+          {isPod && <Tabs.Tab value="terminal">Terminal</Tabs.Tab>}
           <Tabs.Tab value="events">Events</Tabs.Tab>
           {showMetricsTab && <Tabs.Tab value="metrics">Metriken</Tabs.Tab>}
         </Tabs.List>
 
-        <ScrollArea h="calc(100vh - 165px)" type="scroll">
-          <Tabs.Panel value="overview">
+        <Tabs.Panel value="overview">
+          <ScrollArea h="calc(100vh - 165px)" type="scroll">
             {objError ? (
               <Text c="red" p="md">
                 {objError}
@@ -305,28 +310,52 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
             ) : (
               <Renderer obj={obj} />
             )}
-          </Tabs.Panel>
+          </ScrollArea>
+        </Tabs.Panel>
 
-          <Tabs.Panel value="yaml">
-            {yamlLoading ? (
-              <Center h={200}>
-                <Loader />
-              </Center>
-            ) : (
-              <YamlCode code={yaml} />
-            )}
-          </Tabs.Panel>
-
-          <Tabs.Panel value="events">
-            <EventsView events={events} loading={eventsLoading} error={eventsError} />
-          </Tabs.Panel>
-
-          {showMetricsTab && resource && (
-            <Tabs.Panel value="metrics">
-              <ResourceMetricsTab contextName={contextName} resource={resource} namespace={namespace} name={name} />
-            </Tabs.Panel>
+        <Tabs.Panel value="yaml">
+          {yamlLoading ? (
+            <Center h={200}>
+              <Loader />
+            </Center>
+          ) : (
+            <YamlEditor
+              initialYaml={yaml}
+              editable
+              height="calc(100vh - 210px)"
+              onApplied={() => {
+                setYaml('');
+                loadObj();
+              }}
+            />
           )}
-        </ScrollArea>
+        </Tabs.Panel>
+
+        {isPod && (
+          <Tabs.Panel value="logs">
+            <LogsTab namespace={namespace} pod={name} />
+          </Tabs.Panel>
+        )}
+
+        {isPod && (
+          <Tabs.Panel value="terminal">
+            <TerminalTab namespace={namespace} pod={name} />
+          </Tabs.Panel>
+        )}
+
+        <Tabs.Panel value="events">
+          <ScrollArea h="calc(100vh - 165px)" type="scroll">
+            <EventsView events={events} loading={eventsLoading} error={eventsError} />
+          </ScrollArea>
+        </Tabs.Panel>
+
+        {showMetricsTab && resource && (
+          <Tabs.Panel value="metrics">
+            <ScrollArea h="calc(100vh - 165px)" type="scroll">
+              <ResourceMetricsTab contextName={contextName} resource={resource} namespace={namespace} name={name} />
+            </ScrollArea>
+          </Tabs.Panel>
+        )}
       </Tabs>
 
       <Modal

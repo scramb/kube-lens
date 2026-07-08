@@ -10,6 +10,10 @@ export function AnnotateResource(arg1, arg2, arg3, arg4, arg5, arg6, arg7) {
   return window['go']['main']['App']['AnnotateResource'](arg1, arg2, arg3, arg4, arg5, arg6, arg7);
 }
 
+export function ApplyResourceYAML(arg1, arg2, arg3) {
+  return window['go']['main']['App']['ApplyResourceYAML'](arg1, arg2, arg3);
+}
+
 export function DeleteResource(arg1, arg2, arg3, arg4, arg5) {
   return window['go']['main']['App']['DeleteResource'](arg1, arg2, arg3, arg4, arg5);
 }
@@ -20,6 +24,14 @@ export function DiscoverPrometheusTargets(arg1) {
 
 export function DiscoverResources() {
   return window['go']['main']['App']['DiscoverResources']();
+}
+
+export function ExecResize(arg1, arg2, arg3) {
+  return window['go']['main']['App']['ExecResize'](arg1, arg2, arg3);
+}
+
+export function ExecWrite(arg1, arg2) {
+  return window['go']['main']['App']['ExecWrite'](arg1, arg2);
 }
 
 export function FluxReconcile(arg1, arg2, arg3, arg4, arg5) {
@@ -94,6 +106,10 @@ export function ListNamespaces() {
   return window['go']['main']['App']['ListNamespaces']();
 }
 
+export function ListPodContainers(arg1, arg2) {
+  return window['go']['main']['App']['ListPodContainers'](arg1, arg2);
+}
+
 export function ListResourceTable(arg1, arg2, arg3, arg4) {
   return window['go']['main']['App']['ListResourceTable'](arg1, arg2, arg3, arg4);
 }
@@ -128,6 +144,30 @@ export function SetSectionCollapsed(arg1, arg2, arg3) {
 
 export function SetSuspend(arg1, arg2, arg3, arg4, arg5, arg6) {
   return window['go']['main']['App']['SetSuspend'](arg1, arg2, arg3, arg4, arg5, arg6);
+}
+
+export function StartExec(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['StartExec'](arg1, arg2, arg3, arg4);
+}
+
+export function StartPodLogs(arg1, arg2, arg3) {
+  return window['go']['main']['App']['StartPodLogs'](arg1, arg2, arg3);
+}
+
+export function StartResourceWatch(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['StartResourceWatch'](arg1, arg2, arg3, arg4);
+}
+
+export function StopExec(arg1) {
+  return window['go']['main']['App']['StopExec'](arg1);
+}
+
+export function StopPodLogs(arg1) {
+  return window['go']['main']['App']['StopPodLogs'](arg1);
+}
+
+export function StopResourceWatch(arg1) {
+  return window['go']['main']['App']['StopResourceWatch'](arg1);
 }
 
 export function TestPrometheusConnection(arg1, arg2) {

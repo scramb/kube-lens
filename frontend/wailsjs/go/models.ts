@@ -20,6 +20,34 @@ export namespace main {
 	        this.namespaced = source["namespaced"];
 	    }
 	}
+	export class ApplyResult {
+	    ok: boolean;
+	    message: string;
+	    group: string;
+	    version: string;
+	    resource: string;
+	    kind: string;
+	    namespace: string;
+	    name: string;
+	    yaml: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ApplyResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.ok = source["ok"];
+	        this.message = source["message"];
+	        this.group = source["group"];
+	        this.version = source["version"];
+	        this.resource = source["resource"];
+	        this.kind = source["kind"];
+	        this.namespace = source["namespace"];
+	        this.name = source["name"];
+	        this.yaml = source["yaml"];
+	    }
+	}
 	export class ClusterOverviewMetrics {
 	    available: boolean;
 	    cpuUsage: number;
@@ -140,6 +168,26 @@ export namespace main {
 	        this.isDefault = source["isDefault"];
 	        this.exists = source["exists"];
 	        this.error = source["error"];
+	    }
+	}
+	export class LogStreamOptions {
+	    container: string;
+	    tailLines: number;
+	    previous: boolean;
+	    timestamps: boolean;
+	    sinceSeconds: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new LogStreamOptions(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.container = source["container"];
+	        this.tailLines = source["tailLines"];
+	        this.previous = source["previous"];
+	        this.timestamps = source["timestamps"];
+	        this.sinceSeconds = source["sinceSeconds"];
 	    }
 	}
 	export class MetricPoint {

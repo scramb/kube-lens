@@ -18,6 +18,7 @@ import { notifications } from '@mantine/notifications';
 import {
   IconAlertCircle,
   IconFileSettings,
+  IconPlus,
   IconRefresh,
   IconSearch,
   IconSettings,
@@ -42,8 +43,11 @@ import {
   SetHideEmptyCRDs,
   SetResourceFavorite,
   SetSectionCollapsed,
+  StartResourceWatch,
+  StopResourceWatch,
   UseContext,
 } from '../wailsjs/go/main/App';
+import { EventsOn } from '../wailsjs/runtime/runtime';
 import { main } from '../wailsjs/go/models';
 import { APIResource, ContextInfo, KubeConfigInfo, ResourceListMetric, ResourceUISettings, TableResult, TableRow, resourceKey } from './types';
 import { buildCrdNav, buildStandardNav, NavSection } from './resourceCatalog';
@@ -55,8 +59,11 @@ import PrometheusConfigModal from './components/PrometheusConfigModal';
 import { ClusterOverview } from './components/cluster/ClusterOverview';
 import { formatBytes, formatCPU } from './components/metrics/format';
 import { FluxOverview } from './components/flux';
+import { NewResourceModal } from './components/editor';
 
-const REFRESH_INTERVAL_MS = 5000;
+// Watch pushes live updates; this slow poll is only a safety net for when the
+// watch is unavailable (e.g. forbidden by RBAC).
+const WATCH_FALLBACK_INTERVAL_MS = 20000;
 
 const EMPTY_UI_SETTINGS: ResourceUISettings = {
   favorites: [],
@@ -95,6 +102,7 @@ export default function App() {
 
   const [configModalOpen, setConfigModalOpen] = useState(false);
   const [prometheusModalOpen, setPrometheusModalOpen] = useState(false);
+  const [newResourceOpen, setNewResourceOpen] = useState(false);
   const [drawer, setDrawer] = useState<{
     open: boolean;
     resource: APIResource | null;
@@ -258,7 +266,8 @@ export default function App() {
     [selected, namespace, currentContext, metricsAvailable]
   );
 
-  // Load + poll the active resource table.
+  // Load the active resource table, keep it live via a watch, and fall back to
+  // slow polling in case the watch is unavailable (e.g. forbidden by RBAC).
   const loadTableRef = useRef(loadTable);
   loadTableRef.current = loadTable;
   useEffect(() => {
@@ -266,8 +275,31 @@ export default function App() {
     setTable(null);
     setTableError('');
     loadTableRef.current(true);
-    const timer = setInterval(() => loadTableRef.current(false), REFRESH_INTERVAL_MS);
-    return () => clearInterval(timer);
+
+    let cancelled = false;
+    let watchID = '';
+    let unsub: (() => void) | undefined;
+    const ns = selected.namespaced ? namespace : '';
+    StartResourceWatch(selected.group, selected.version, selected.name, ns)
+      .then((id) => {
+        if (cancelled) {
+          StopResourceWatch(id);
+          return;
+        }
+        watchID = id;
+        unsub = EventsOn(`watch:changed:${id}`, () => loadTableRef.current(false));
+      })
+      .catch(() => {
+        /* watch unavailable — the fallback poll below keeps the table fresh */
+      });
+
+    const timer = setInterval(() => loadTableRef.current(false), WATCH_FALLBACK_INTERVAL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+      if (unsub) unsub();
+      if (watchID) StopResourceWatch(watchID);
+    };
   }, [selected, namespace, currentContext, connectError]);
 
   const openDetail = useCallback(
@@ -422,6 +454,16 @@ export default function App() {
             value={filter}
             onChange={(e) => setFilter(e.currentTarget.value)}
           />
+          <Tooltip label="Neue Ressource (YAML anwenden)">
+            <ActionIcon
+              variant="subtle"
+              aria-label="Neue Ressource"
+              onClick={() => setNewResourceOpen(true)}
+              disabled={!currentContext || !!connectError}
+            >
+              <IconPlus size={18} />
+            </ActionIcon>
+          </Tooltip>
           <Tooltip label="Aktualisieren">
             <ActionIcon
               variant="subtle"
@@ -566,6 +608,12 @@ export default function App() {
         opened={prometheusModalOpen}
         onClose={() => setPrometheusModalOpen(false)}
         contextName={currentContext}
+      />
+
+      <NewResourceModal
+        opened={newResourceOpen}
+        onClose={() => setNewResourceOpen(false)}
+        onCreated={() => loadTableRef.current(false)}
       />
     </AppShell>
   );

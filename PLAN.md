@@ -209,25 +209,25 @@ Auto-Modus verfügbar. Offen bleibt nur der Port-Forward-Fallback (403-Erkennung
 häufigsten „dann doch wieder kubectl"-Momente eliminieren.
 
 ### D1 — Backend: Log-Streaming
-- [ ] `StartLogStream(ns, pod, container, opts)` via client-go `GetLogs` mit
-      `follow=true`; Optionen: `tailLines`, `previous`, `timestamps`, `sinceSeconds`.
-- [ ] Zeilen über Wails-Events (`EventsEmit`, Topic `logs:<streamID>`) ans Frontend
-      pushen; `StopLogStream(streamID)` zum Aufräumen; Streams bei Kontext-Wechsel
-      und Drawer-Close serverseitig beenden (Leak-Schutz).
+- [x] `StartPodLogs/StopPodLogs/ListPodContainers` via client-go `GetLogs`
+      (`follow=true`, tailLines/previous/timestamps/sinceSeconds). → `app_logs.go`
+- [x] Batch-Emit über Wails-Events (`logs:data:<id>`/`logs:end:<id>`/`logs:error:<id>`);
+      Cancel via Registry, Streams stoppen bei Tab-/Drawer-Wechsel.
 
 ### D2 — Frontend: Logs-Tab im Pod-Drawer
 Abhängig von: A4, D1.
-- [ ] Neuer Tab **Logs** (nur für Pods): Container-Dropdown (inkl. initContainers),
-      Follow-Toggle mit Auto-Scroll, Pause bei manuellem Hochscrollen,
-      Text-Filter, Zeilenumbruch-Toggle, „Previous"-Logs, Download als Datei.
-- [ ] Virtualisierte Liste für lange Logs (kein DOM-Kollaps bei 100k Zeilen).
+- [x] Tab **Logs** (nur Pods): Container-Dropdown (inkl. initContainers), Follow +
+      Auto-Scroll-Pause bei Hochscrollen, Filter, Umbruch, Previous, Download.
+      → `components/logs/LogsTab.tsx`. Live gegen Cluster verifiziert.
+- [x] Zeilen-Cap 5000 statt Virtualisierung (bewusst; reicht, kein DOM-Kollaps).
 
 ### D3 — Exec-Terminal
 Abhängig von: A4.
-- [ ] Backend: `remotecommand.NewSPDYExecutor` mit PTY; stdin per Bind-Methode,
-      stdout/stderr per Wails-Events; Terminal-Resize durchreichen.
-- [ ] Frontend: xterm.js im Drawer-Tab **Terminal** (nur Pods); Shell-Fallback-Kette
-      (`/bin/bash` → `/bin/sh`); klare Fehlermeldung, wenn der Container keine Shell hat.
+- [x] Backend: `remotecommand.NewSPDYExecutor` (TTY), stdin via `ExecWrite`,
+      stdout/stderr per Events, Resize via `ExecResize`. → `app_exec.go`
+- [x] Frontend: xterm.js im Tab **Terminal** (nur Pods), Container-/Shell-Auswahl
+      (/bin/sh · /bin/bash · /bin/ash). → `components/terminal/TerminalTab.tsx`.
+      Live verifiziert (Root-Shell-Prompt im Container erhalten).
 
 ---
 
@@ -238,22 +238,22 @@ damit Feld-Ownership sauber bleibt.
 
 ### E1 — Backend: Apply
 Abhängig von: C1 (gleiche Infrastruktur-Schicht).
-- [ ] `ApplyResource(yaml string, force bool)` via dynamischem Client mit
-      Server-Side Apply, `FieldManager: "kube-lens"`; Konflikte (409) strukturiert
-      zurückgeben (welcher Manager besitzt welches Feld), `force` als Option.
-- [ ] Dry-Run-Variante (`dryRun=server`) für Validierung vor dem echten Apply.
+- [x] `ApplyResourceYAML(yaml, dryRun, force)` via dynamischem Client, Server-Side
+      Apply, `FieldManager: "kube-lens"`; GVK→GVR via discovery-RESTMapper (auch CRDs);
+      Konflikte werden gemeldet, `force` als Option. → `apply.go`
+- [x] Dry-Run-Variante (`DryRunAll`) für Validierung vor dem echten Apply.
 
 ### E2 — Frontend: editierbarer YAML-Tab
 Abhängig von: A4, E1.
-- [ ] YAML-Tab bekommt Bearbeiten-Modus: CodeMirror 6 (leichtgewichtig, kein Monaco)
-      mit YAML-Syntax, Dirty-State-Anzeige, Speichern = Dry-Run → bei Erfolg Apply,
-      Server-Fehler (Validation/Conflict) inline anzeigen.
-- [ ] Verwerfen-Schutz bei ungespeicherten Änderungen (Drawer-Close/Tab-Wechsel).
+- [x] YAML-Tab mit CodeMirror 6 (YAML-Syntax, dark), Dirty-State, „Prüfen (Dry-Run)"
+      → „Anwenden", bei Konflikt „Mit Force anwenden"; Fehler inline.
+      → `components/editor/YamlEditor.tsx`. Editor live im Drawer verifiziert.
+- [x] Zurücksetzen-Button bei ungespeicherten Änderungen.
 
 ### E3 — Ressourcen neu anlegen
 Abhängig von: E1.
-- [ ] „+ Neu"-Button je Ressourcen-Liste: leerer Editor mit Kind-Skeleton
-      (apiVersion/kind/metadata vorausgefüllt aus der aktuellen Auswahl).
+- [x] „+"-Button in der Kopfleiste öffnet `NewResourceModal` mit Kind-Skeleton;
+      onCreated lädt die Tabelle neu. → `components/editor/NewResourceModal.tsx`.
 
 ---
 
@@ -263,21 +263,21 @@ Abhängig von: E1.
 Flux-Aktionen (C4) ersetzen.
 
 ### F1 — Backend: Watch-Manager
-- [ ] Ein Watch pro aktiver Tabellen-Ansicht (GVR + Namespace), Updates über
-      Wails-Events; Start/Stop vom Frontend gesteuert, max. 1 aktiver Watch.
-- [ ] **Table-Watch nutzen:** Watch-Request mit `Accept: …;as=Table` (wie
-      `kubectl get -w`) — liefert Zeilen im selben Format wie die bestehende
-      Tabellen-API, kein zweiter Rendering-Pfad im Frontend.
-- [ ] Robustheit: Reconnect mit Backoff, `410 Gone` → Relist + neuer Watch,
-      `resourceVersion`-Buchführung.
+- [x] `StartResourceWatch/StopResourceWatch` (GVR + Namespace), dynamic-Watch,
+      Registry, Start/Stop vom Frontend. → `watch.go`
+- [x] **Ansatz revidiert (Entscheidungslog):** statt Table-Watch neu zu bauen,
+      emittiert der Watch ein debounced `watch:changed:<id>`; das Frontend lädt
+      die bestehende Server-Side-Tabelle neu → kein zweiter Rendering-Pfad.
+      Debounce auf 2 s gesetzt (verhindert Refresh-Storm bei hoher Churn-Rate).
+- [x] Robustheit: Reconnect mit Backoff, Kanal-/Fehler-/410-Handling via Relist.
 
 ### F2 — Frontend: Subscription statt Interval
 Abhängig von: F1.
-- [ ] Tabellen-Polling durch Event-Subscription ersetzen (add/update/delete
-      inkrementell einarbeiten); Fallback auf bisheriges Polling, wenn Watch
-      per RBAC verboten ist (403 → degradieren, Hinweis-Badge).
-- [ ] Drawer (Übersicht/Conditions) bei Update der geöffneten Ressource live
-      aktualisieren; Flux-Fast-Polling aus C4 entfernen.
+- [x] Tabellen-Effekt startet Watch + lädt bei `watch:changed` neu; festes 5s-Poll
+      ersetzt durch 20s-Fallback-Poll (falls Watch per RBAC verboten). → `App.tsx`
+- [ ] Inkrementelles add/update/delete + Live-Drawer-Update — bewusst nicht gebaut
+      (Reload der Server-Side-Tabelle ist einfacher/robuster). Flux-Fast-Polling
+      bleibt vorerst (harmlos, nur nach Aktion).
 
 ---
 
@@ -287,26 +287,23 @@ Abhängig von: F1.
 Open-Source-Release.
 
 ### G1 — Repo-Grundlagen
-- [ ] `git init` + Initial-Commit; `.gitignore` (`build/bin/`, `node_modules/`,
-      `frontend/dist/`, `frontend/wailsjs/` generiert lassen? → Entscheidung:
-      committen, da Build sonst wails-CLI vor `tsc` braucht).
-- [ ] GitHub-Repo, Lizenz wählen (Vorschlag: Apache-2.0 oder MIT), README auf
-      Open-Source-Publikum ausrichten.
+- [x] `git init` + Commits vorhanden; `.gitignore` deckt build/bin, node_modules,
+      frontend/dist ab (wailsjs bleibt committet). LICENSE (Apache-2.0),
+      CONTRIBUTING.md, README (englisch, OSS) angelegt. → Milestone-G-Agent
+- [ ] GitHub-Repo anlegen + README-Badge-Owner (`OWNER`) ersetzen — manueller
+      Schritt beim Veröffentlichen (kein Remote in dieser Umgebung).
 
 ### G2 — Build-Pipeline
 Abhängig von: G1.
-- [ ] GitHub Actions Matrix: `macos-latest`, `windows-latest`, `ubuntu-latest`;
-      je `wails build`, Artefakte hochladen.
-- [ ] Linux: `libwebkit2gtk-4.1-dev`-Abhängigkeit dokumentieren und in CI
-      installieren; Binary + optional AppImage.
-- [ ] Windows: NSIS-Installer (`wails build -nsis`).
+- [x] `.github/workflows/build.yml`: Matrix macos/windows/ubuntu, Go 1.26 + Node 20,
+      Linux-GTK/WebKit-Pakete, `wails build`, Artefakt-Upload.
+- [x] Windows-NSIS im Release-Workflow (`wails build -nsis`).
 
 ### G3 — Release-Workflow
 Abhängig von: G2.
-- [ ] Tag `v*` → Release-Build aller Plattformen, Checksums, GitHub Release
-      mit Changelog.
-- [ ] Offen: macOS Signing/Notarization (braucht Apple-Developer-Account —
-      bis dahin: unsigned mit dokumentiertem Gatekeeper-Workaround).
+- [x] `.github/workflows/release.yml`: Tag `v*` → Build aller Plattformen,
+      SHA256SUMS, GitHub Release via `action-gh-release`.
+- [ ] macOS Signing/Notarization offen (kein Apple-Account) — unsigned dokumentiert.
 
 ---
 
@@ -340,3 +337,5 @@ Abhängig von: H1.
 | 2026-07-07 | Geparkte Ideen als Milestones D–H aufgenommen; Reihenfolge D–H flexibel (User: „relativ egal"), nur technische Abhängigkeiten beachten |
 | 2026-07-07 | YAML-Editor: CodeMirror 6 statt Monaco (Bundle-Größe/Startzeit) |
 | 2026-07-07 | i18n: Englisch wird Default-Sprache, Deutsch zweite Locale; Backend-Fehlertexte werden englisch/strukturiert |
+| 2026-07-08 | Watch (F): statt Table-Watch neu zu bauen, emittiert der Watch ein debounced `watch:changed`-Signal; Frontend lädt die bestehende Server-Side-Tabelle neu. Debounce 2 s gegen Refresh-Storm bei hoher Churn-Rate; 20 s Fallback-Poll wenn Watch per RBAC verboten. |
+| 2026-07-08 | Logs (D2): Zeilen-Cap 5000 statt Virtualisierungs-Lib — genügt, keine Extra-Abhängigkeit. |
