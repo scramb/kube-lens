@@ -17,6 +17,7 @@ import {
   Tooltip,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
+import { useTranslation } from 'react-i18next';
 import {
   IconCheck,
   IconChevronDown,
@@ -58,6 +59,7 @@ function errText(e: unknown): string {
 }
 
 export default function YamlDrawer({ opened, onClose, resource, name, namespace, onDelete, metricsAvailable, contextName }: Props) {
+  const { t } = useTranslation();
   const [tab, setTab] = useState<string>('overview');
 
   const [obj, setObj] = useState<KubeObject | null>(null);
@@ -115,7 +117,7 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
         const y = await GetResourceYAML(resource.group, resource.version, resource.name, namespace, name);
         if (reqRef.current === req) setYaml(y);
       } catch (e) {
-        if (reqRef.current === req) setYaml(`Fehler: ${errText(e)}`);
+        if (reqRef.current === req) setYaml(t('detail.yaml.error', { message: errText(e) }));
       } finally {
         if (reqRef.current === req) setYamlLoading(false);
       }
@@ -205,7 +207,7 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
           </Text>
           {isFlux && suspended && (
             <Badge size="sm" color="orange" variant="light">
-              pausiert
+              {t('detail.suspended')}
             </Badge>
           )}
         </Group>
@@ -221,9 +223,9 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
                   variant="light"
                   leftSection={<IconRefresh size={14} />}
                   loading={fluxBusy}
-                  onClick={() => runFlux('reconcile', 'Reconcile angefordert')}
+                  onClick={() => runFlux('reconcile', t('detail.notify.reconcileRequested'))}
                 >
-                  Reconcile
+                  {t('detail.action.reconcile')}
                 </Button>
                 <Menu position="bottom-start" withinPortal>
                   <Menu.Target>
@@ -234,9 +236,11 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
                   <Menu.Dropdown>
                     <Menu.Item
                       leftSection={<IconRefresh size={14} />}
-                      onClick={() => runFlux('reconcileSource', 'Reconcile mit Source angefordert')}
+                      onClick={() =>
+                        runFlux('reconcileSource', t('detail.notify.reconcileWithSourceRequested'))
+                      }
                     >
-                      Reconcile with source
+                      {t('detail.action.reconcileWithSource')}
                     </Menu.Item>
                   </Menu.Dropdown>
                 </Menu>
@@ -248,9 +252,9 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
                   color="teal"
                   leftSection={<IconPlayerPlay size={14} />}
                   loading={fluxBusy}
-                  onClick={() => runFlux('resume', 'Fortgesetzt')}
+                  onClick={() => runFlux('resume', t('detail.notify.resumed'))}
                 >
-                  Resume
+                  {t('detail.action.resume')}
                 </Button>
               ) : (
                 <Button
@@ -259,9 +263,9 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
                   color="orange"
                   leftSection={<IconPlayerPause size={14} />}
                   loading={fluxBusy}
-                  onClick={() => runFlux('suspend', 'Pausiert')}
+                  onClick={() => runFlux('suspend', t('detail.notify.suspended'))}
                 >
-                  Suspend
+                  {t('detail.action.suspend')}
                 </Button>
               )}
             </>
@@ -271,7 +275,7 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
           {tab === 'yaml' && (
             <CopyButton value={yaml}>
               {({ copied, copy }) => (
-                <Tooltip label={copied ? 'Kopiert' : 'YAML kopieren'}>
+                <Tooltip label={copied ? t('detail.yaml.copied') : t('detail.yaml.copy')}>
                   <ActionIcon variant="subtle" color={copied ? 'teal' : 'gray'} onClick={copy}>
                     {copied ? <IconCheck size={16} /> : <IconCopy size={16} />}
                   </ActionIcon>

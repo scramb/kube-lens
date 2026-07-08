@@ -1,5 +1,6 @@
 import { ActionIcon, Badge, Button, Group, Modal, Stack, Text, Tooltip } from '@mantine/core';
 import { IconPlus, IconTrash } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
 import { KubeConfigInfo } from '../types';
 
 interface Props {
@@ -11,8 +12,9 @@ interface Props {
 }
 
 export default function KubeConfigModal({ opened, onClose, configs, onAdd, onRemove }: Props) {
+  const { t } = useTranslation();
   return (
-    <Modal opened={opened} onClose={onClose} title="Kubeconfig-Dateien" size="lg" centered>
+    <Modal opened={opened} onClose={onClose} title={t('forms.kubeconfig.title')} size="lg" centered>
       <Stack gap="xs">
         {configs.map((c) => (
           <Group key={c.path} justify="space-between" wrap="nowrap">
@@ -23,17 +25,17 @@ export default function KubeConfigModal({ opened, onClose, configs, onAdd, onRem
               <Group gap={6}>
                 {c.isDefault && (
                   <Badge size="xs" variant="light">
-                    Standard
+                    {t('forms.kubeconfig.default')}
                   </Badge>
                 )}
                 {!c.exists && (
                   <Badge size="xs" variant="light" color="yellow">
-                    nicht vorhanden
+                    {t('forms.kubeconfig.missing')}
                   </Badge>
                 )}
                 {c.error && (
                   <Badge size="xs" variant="light" color="red" title={c.error}>
-                    fehlerhaft
+                    {t('forms.kubeconfig.invalid')}
                   </Badge>
                 )}
               </Group>

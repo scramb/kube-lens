@@ -15,9 +15,12 @@ import {
   Tooltip,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
+import { useTranslation } from 'react-i18next';
 import {
   IconAlertCircle,
+  IconCheck,
   IconFileSettings,
+  IconLanguage,
   IconPlus,
   IconRefresh,
   IconSearch,
@@ -76,6 +79,7 @@ function errText(e: unknown): string {
 }
 
 export default function App() {
+  const { t, i18n } = useTranslation();
   const [configs, setConfigs] = useState<KubeConfigInfo[]>([]);
   const [contexts, setContexts] = useState<ContextInfo[]>([]);
   const [currentContext, setCurrentContext] = useState<string | null>(null);
@@ -327,7 +331,7 @@ export default function App() {
     try {
       const path = await AddKubeConfigDialog();
       if (path) {
-        notifications.show({ message: `${path} hinzugefügt`, color: 'teal' });
+        notifications.show({ message: t('shell.toast.kubeconfigAdded', { path }), color: 'teal' });
         await refreshConfigsAndContexts();
       }
     } catch (e) {
@@ -405,8 +409,8 @@ export default function App() {
   );
 
   const namespaceData = useMemo(
-    () => [{ value: '', label: 'Alle Namespaces' }, ...namespaces.map((n) => ({ value: n, label: n }))],
-    [namespaces]
+    () => [{ value: '', label: t('shell.select.allNamespaces') }, ...namespaces.map((n) => ({ value: n, label: n }))],
+    [namespaces, t]
   );
 
   const metricColumns = useMemo<ExtraTableColumn[]>(() => {
@@ -430,7 +434,7 @@ export default function App() {
           <Select
             size="xs"
             w={260}
-            placeholder="Kontext wählen"
+            placeholder={t('shell.select.context')}
             data={contexts.map((c) => ({ value: c.name, label: c.name }))}
             value={currentContext}
             onChange={(v) => v && connect(v)}
@@ -449,22 +453,22 @@ export default function App() {
           <TextInput
             size="xs"
             flex={1}
-            placeholder="Suchen …"
+            placeholder={t('shell.search')}
             leftSection={<IconSearch size={14} />}
             value={filter}
             onChange={(e) => setFilter(e.currentTarget.value)}
           />
-          <Tooltip label="Neue Ressource (YAML anwenden)">
+          <Tooltip label={t('shell.tooltip.newResource')}>
             <ActionIcon
               variant="subtle"
-              aria-label="Neue Ressource"
+              aria-label={t('shell.tooltip.newResource')}
               onClick={() => setNewResourceOpen(true)}
               disabled={!currentContext || !!connectError}
             >
               <IconPlus size={18} />
             </ActionIcon>
           </Tooltip>
-          <Tooltip label="Aktualisieren">
+          <Tooltip label={t('shell.tooltip.refresh')}>
             <ActionIcon
               variant="subtle"
               onClick={() => (showFlux ? loadFluxStatus() : showCluster ? setClusterRefreshToken((v) => v + 1) : loadTable(true))}
@@ -475,20 +479,36 @@ export default function App() {
           </Tooltip>
           <Menu position="bottom-end" withinPortal>
             <Menu.Target>
-              <ActionIcon variant="subtle" aria-label="Einstellungen">
+              <ActionIcon variant="subtle" aria-label={t('shell.settings')}>
                 <IconSettings size={18} />
               </ActionIcon>
             </Menu.Target>
             <Menu.Dropdown>
               <Menu.Item leftSection={<IconFileSettings size={16} />} onClick={() => setConfigModalOpen(true)}>
-                Kubeconfigs verwalten
+                {t('shell.menu.kubeconfigs')}
               </Menu.Item>
               <Menu.Item
                 leftSection={<IconSettingsCog size={16} />}
                 onClick={() => setPrometheusModalOpen(true)}
                 disabled={!currentContext || !!connectError}
               >
-                Prometheus konfigurieren
+                {t('shell.menu.prometheus')}
+              </Menu.Item>
+              <Menu.Divider />
+              <Menu.Label>{t('shell.menu.language')}</Menu.Label>
+              <Menu.Item
+                leftSection={<IconLanguage size={16} />}
+                rightSection={i18n.language?.startsWith('de') ? <IconCheck size={14} /> : undefined}
+                onClick={() => i18n.changeLanguage('de')}
+              >
+                {t('shell.lang.de')}
+              </Menu.Item>
+              <Menu.Item
+                leftSection={<IconLanguage size={16} />}
+                rightSection={i18n.language?.startsWith('en') ? <IconCheck size={14} /> : undefined}
+                onClick={() => i18n.changeLanguage('en')}
+              >
+                {t('shell.lang.en')}
               </Menu.Item>
             </Menu.Dropdown>
           </Menu>
@@ -523,25 +543,25 @@ export default function App() {
           <Center h="100%">
             <div style={{ textAlign: 'center' }}>
               <Text c="dimmed" mb="md">
-                Keine Kubernetes-Kontexte gefunden.
+                {t('shell.empty.noContexts')}
                 <br />
-                Lege eine ~/.kube/config an oder füge eine kubeconfig-Datei hinzu.
+                {t('shell.empty.noContextsHint')}
               </Text>
-              <Button onClick={addKubeConfig}>Kubeconfig hinzufügen</Button>
+              <Button onClick={addKubeConfig}>{t('shell.addKubeconfig')}</Button>
             </div>
           </Center>
         ) : connecting ? (
           <Center h="100%">
             <Group>
               <Loader size="sm" />
-              <Text c="dimmed">Verbinde mit {currentContext} …</Text>
+              <Text c="dimmed">{t('shell.connecting', { context: currentContext ?? '' })}</Text>
             </Group>
           </Center>
         ) : connectError ? (
           <Center h="100%" p="xl">
             <Alert
               icon={<IconAlertCircle />}
-              title="Verbindung fehlgeschlagen"
+              title={t('shell.connectFailed')}
               color="red"
               maw={600}
             >
@@ -554,7 +574,7 @@ export default function App() {
                 variant="light"
                 onClick={() => currentContext && connect(currentContext)}
               >
-                Erneut versuchen
+                {t('shell.retry')}
               </Button>
             </Alert>
           </Center>
@@ -580,7 +600,7 @@ export default function App() {
           />
         ) : (
           <Center h="100%">
-            <Text c="dimmed">Ressource in der Sidebar auswählen</Text>
+            <Text c="dimmed">{t('shell.selectResource')}</Text>
           </Center>
         )}
       </AppShell.Main>

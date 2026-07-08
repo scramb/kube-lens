@@ -38,19 +38,19 @@ func (m *KubeManager) ApplyResourceYAML(yamlStr string, dryRun bool, force bool)
 	// unmarshals into the same shape as JSON.
 	raw := map[string]interface{}{}
 	if err := sigsyaml.Unmarshal([]byte(yamlStr), &raw); err != nil {
-		return ApplyResult{}, fmt.Errorf("YAML konnte nicht gelesen werden: %w", err)
+		return ApplyResult{}, fmt.Errorf("could not parse YAML: %w", err)
 	}
 	obj := &unstructured.Unstructured{Object: raw}
 
 	apiVersion := obj.GetAPIVersion()
 	kind := obj.GetKind()
 	if apiVersion == "" || kind == "" {
-		return ApplyResult{}, fmt.Errorf("apiVersion und kind erforderlich")
+		return ApplyResult{}, fmt.Errorf("apiVersion and kind are required")
 	}
 
 	gv, err := schema.ParseGroupVersion(apiVersion)
 	if err != nil {
-		return ApplyResult{}, fmt.Errorf("ungültige apiVersion %q: %w", apiVersion, err)
+		return ApplyResult{}, fmt.Errorf("invalid apiVersion %q: %w", apiVersion, err)
 	}
 	gvk := gv.WithKind(kind)
 
@@ -62,19 +62,19 @@ func (m *KubeManager) ApplyResourceYAML(yamlStr string, dryRun bool, force bool)
 	// Resolve GVK -> GVR + scope via the discovery-backed RESTMapper.
 	grs, err := restmapper.GetAPIGroupResources(disc)
 	if err != nil {
-		return ApplyResult{}, fmt.Errorf("API-Ressourcen konnten nicht ermittelt werden: %w", err)
+		return ApplyResult{}, fmt.Errorf("could not resolve API resources: %w", err)
 	}
 	mapper := restmapper.NewDiscoveryRESTMapper(grs)
 	mapping, err := mapper.RESTMapping(gvk.GroupKind(), gvk.Version)
 	if err != nil {
-		return ApplyResult{}, fmt.Errorf("Ressourcentyp %s konnte nicht aufgelöst werden: %w", gvk.String(), err)
+		return ApplyResult{}, fmt.Errorf("could not resolve resource type %s: %w", gvk.String(), err)
 	}
 	gvr := mapping.Resource
 	namespaced := mapping.Scope.Name() == meta.RESTScopeNameNamespace
 
 	name := obj.GetName()
 	if name == "" {
-		return ApplyResult{}, fmt.Errorf("metadata.name erforderlich")
+		return ApplyResult{}, fmt.Errorf("metadata.name is required")
 	}
 
 	ns := obj.GetNamespace()
@@ -118,12 +118,12 @@ func (m *KubeManager) ApplyResourceYAML(yamlStr string, dryRun bool, force bool)
 	unstructured.RemoveNestedField(res.Object, "metadata", "managedFields")
 	yamlOut, err := sigsyaml.Marshal(res.Object)
 	if err != nil {
-		return ApplyResult{}, fmt.Errorf("Ergebnis konnte nicht serialisiert werden: %w", err)
+		return ApplyResult{}, fmt.Errorf("could not serialize result: %w", err)
 	}
 
-	message := "Angewendet"
+	message := "Applied"
 	if dryRun {
-		message = "Dry-Run erfolgreich"
+		message = "Dry run successful"
 	}
 
 	return ApplyResult{

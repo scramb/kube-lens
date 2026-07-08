@@ -1,6 +1,7 @@
 import { MouseEvent, useMemo, useState } from 'react';
 import { ActionIcon, Divider, Group, NavLink, ScrollArea, Stack, Switch, Text, TextInput, Tooltip } from '@mantine/core';
 import { IconActivityHeartbeat, IconBolt, IconEyeOff, IconPuzzle, IconSearch, IconStar, IconStarFilled } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
 import { NavItem, NavSection } from '../resourceCatalog';
 import { APIResource, resourceKey } from '../types';
 
@@ -30,14 +31,16 @@ function sectionKey(kind: 'standard' | 'crd', label: string): string {
 }
 
 function FavoriteStar({ resource, active, onToggle }: { resource: APIResource; active: boolean; onToggle: (r: APIResource, favorite: boolean) => void }) {
+  const { t } = useTranslation();
   const stopAndToggle = (event: MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
     onToggle(resource, !active);
   };
 
+  const label = active ? t('shell.favoriteRemove') : t('shell.favoriteAdd');
   return (
-    <Tooltip label={active ? 'Favorit entfernen' : 'Als Favorit anpinnen'} openDelay={300}>
+    <Tooltip label={label} openDelay={300}>
       <ActionIcon
         component="span"
         size="xs"
@@ -45,7 +48,7 @@ function FavoriteStar({ resource, active, onToggle }: { resource: APIResource; a
         color={active ? 'yellow' : 'gray'}
         className="favorite-star"
         data-active={active || undefined}
-        aria-label={active ? 'Favorit entfernen' : 'Als Favorit anpinnen'}
+        aria-label={label}
         onClick={stopAndToggle}
         onMouseDown={(event) => event.stopPropagation()}
       >
@@ -75,7 +78,9 @@ export default function Sidebar({
   clusterActive,
   onOpenCluster,
 }: Props) {
+  const { t } = useTranslation();
   const [filter, setFilter] = useState('');
+  const sectionLabel = (label: string) => t(`shell.section.${label}`, label);
 
   const favoriteSet = useMemo(() => new Set(favorites), [favorites]);
   const allItems = useMemo(() => [...standard, ...crds].flatMap((s) => s.items), [standard, crds]);
@@ -129,7 +134,7 @@ export default function Sidebar({
       <TextInput
         m="sm"
         size="xs"
-        placeholder="Ressourcen filtern …"
+        placeholder={t('shell.filterResources')}
         leftSection={<IconSearch size={14} />}
         value={filter}
         onChange={(e) => setFilter(e.currentTarget.value)}
@@ -138,7 +143,7 @@ export default function Sidebar({
         {favoriteItems.length > 0 && (
           <>
             <Text size="xs" fw={700} c="dimmed" tt="uppercase" px="md" pt="sm" pb={4}>
-              Favoriten
+              {t('shell.favorites')}
             </Text>
             {favoriteItems.map((item) => renderItem(item))}
             <Divider my="sm" />
@@ -148,11 +153,11 @@ export default function Sidebar({
         {(fluxAvailable || metricsAvailable) && filter.length === 0 && (
           <>
             <Text size="xs" fw={700} c="dimmed" tt="uppercase" px="md" pt="sm" pb={4}>
-              Dashboards
+              {t('shell.dashboards')}
             </Text>
             {metricsAvailable && (
               <NavLink
-                label="Cluster Overview"
+                label={t('shell.clusterOverview')}
                 leftSection={<IconActivityHeartbeat size={16} />}
                 active={clusterActive}
                 onClick={onOpenCluster}
@@ -162,7 +167,7 @@ export default function Sidebar({
             )}
             {fluxAvailable && (
               <NavLink
-                label="Flux"
+                label={t('shell.flux')}
                 leftSection={<IconBolt size={16} />}
                 active={fluxActive}
                 onClick={onOpenFlux}
@@ -179,7 +184,7 @@ export default function Sidebar({
           return (
             <NavLink
               key={key}
-              label={section.label}
+              label={sectionLabel(section.label)}
               opened={isOpened(key)}
               onChange={(opened) => onSectionCollapsedChange(key, !opened)}
               childrenOffset={16}
@@ -197,15 +202,15 @@ export default function Sidebar({
             <Divider my="sm" />
             <Group justify="space-between" px="md" pb={4} wrap="nowrap">
               <Text size="xs" fw={700} c="dimmed" tt="uppercase">
-                Custom Resources
+                {t('shell.customResources')}
               </Text>
-              <Tooltip label="Leere CRDs lazy beim Aufklappen ausblenden" openDelay={300}>
+              <Tooltip label={t('shell.hideEmptyCRDsTooltip')} openDelay={300}>
                 <Switch
                   size="xs"
                   checked={hideEmptyCRDs}
                   onChange={(event) => onHideEmptyCRDsChange(event.currentTarget.checked)}
                   thumbIcon={<IconEyeOff size={10} />}
-                  aria-label="Leere CRDs ausblenden"
+                  aria-label={t('shell.hideEmptyCRDs')}
                 />
               </Tooltip>
             </Group>

@@ -177,7 +177,7 @@ func (m *KubeManager) ListKubeConfigs() []KubeConfigInfo {
 		if _, err := os.Stat(p); err != nil {
 			info.Exists = false
 			if !info.IsDefault {
-				info.Error = "Datei nicht gefunden"
+				info.Error = "file not found"
 			}
 		} else {
 			info.Exists = true
@@ -194,7 +194,7 @@ func (m *KubeManager) AddKubeConfig(path string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if _, err := clientcmd.LoadFromFile(path); err != nil {
-		return fmt.Errorf("ungültige kubeconfig: %w", err)
+		return fmt.Errorf("invalid kubeconfig: %w", err)
 	}
 	for _, p := range m.settings.KubeConfigs {
 		if p == path {
@@ -264,7 +264,7 @@ func (m *KubeManager) UseContext(name string) error {
 	)
 	restCfg, err := cc.ClientConfig()
 	if err != nil {
-		return fmt.Errorf("Kontext %q konnte nicht geladen werden: %w", name, err)
+		return fmt.Errorf("could not load context %q: %w", name, err)
 	}
 	restCfg.QPS = 50
 	restCfg.Burst = 100
@@ -385,7 +385,7 @@ func (m *KubeManager) clients() (discovery.DiscoveryInterface, dynamic.Interface
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if m.restConfig == nil {
-		return nil, nil, nil, fmt.Errorf("kein Cluster verbunden")
+		return nil, nil, nil, fmt.Errorf("no cluster connected")
 	}
 	return m.discovery, m.dynamic, m.restConfig, nil
 }
@@ -524,7 +524,7 @@ func (m *KubeManager) ListResourceTable(group, version, resource, namespace stri
 	// Fallback for API servers that don't support Table rendering.
 	var list unstructured.UnstructuredList
 	if err := json.Unmarshal(raw, &list); err != nil {
-		return nil, fmt.Errorf("Antwort konnte nicht gelesen werden: %w", err)
+		return nil, fmt.Errorf("could not read response: %w", err)
 	}
 	result := &TableResult{
 		Columns: []TableColumn{{Name: "Name", Type: "string"}, {Name: "Age", Type: "string"}},

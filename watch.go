@@ -212,7 +212,7 @@ func consumeWatch(
 }
 
 // sleepOrDone wartet d lang oder bricht früher ab, wenn der Kontext beendet
-// wird. Rückgabe false bedeutet "Kontext abgebrochen".
+// wird. Rückgabe false bedeutet "context cancelled".
 func sleepOrDone(ctx context.Context, d time.Duration) bool {
 	t := time.NewTimer(d)
 	defer t.Stop()

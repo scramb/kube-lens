@@ -18,6 +18,7 @@ import {
   IconPlayerPause,
   IconRefresh,
 } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
 import { FLUX_CATEGORIES, type FluxKindStatus } from './types';
 import { FluxStatusCard } from './FluxStatusCard';
 
@@ -29,7 +30,8 @@ interface FluxOverviewProps {
 }
 
 interface CategorySection {
-  label: string;
+  // Category identifier; resolved to a display label via t() at render time.
+  labelKey: string;
   items: FluxKindStatus[];
 }
 
@@ -52,13 +54,16 @@ function buildSections(status: FluxKindStatus[]): CategorySection[] {
       }
     }
     if (items.length > 0) {
-      sections.push({ label: category.label, items });
+      sections.push({
+        labelKey: `dash.flux.category.${category.label}`,
+        items,
+      });
     }
   }
 
   const rest = status.filter((s) => !used.has(s.kind));
   if (rest.length > 0) {
-    sections.push({ label: 'Weitere', items: rest });
+    sections.push({ labelKey: 'dash.flux.category.rest', items: rest });
   }
 
   return sections;
@@ -118,6 +123,7 @@ export default function FluxOverview({
   onOpenKind,
   onRefresh,
 }: FluxOverviewProps) {
+  const { t } = useTranslation();
   const totals = useMemo(() => {
     return status.reduce(
       (acc, s) => {
@@ -149,15 +155,15 @@ export default function FluxOverview({
         <Stack gap={2}>
           <Title order={3}>Flux</Title>
           <Text size="sm" c="dimmed">
-            Status der Flux-Ressourcen im Cluster
+            {t('dash.flux.subtitle')}
           </Text>
         </Stack>
-        <Tooltip label="Aktualisieren">
+        <Tooltip label={t('dash.flux.refresh')}>
           <ActionIcon
             variant="default"
             size="lg"
             onClick={onRefresh}
-            aria-label="Aktualisieren"
+            aria-label={t('dash.flux.refresh')}
             loading={loading}
           >
             <IconRefresh size={18} />
@@ -167,26 +173,26 @@ export default function FluxOverview({
 
       <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm">
         <SummaryTile
-          label="Gesamt"
+          label={t('dash.flux.total')}
           value={totals.total}
           color="gray"
           icon={<IconCircleCheck size={20} />}
         />
         <SummaryTile
-          label="Bereit"
+          label={t('dash.status.ready')}
           value={totals.ready}
           color="green"
           icon={<IconCircleCheck size={20} />}
         />
         <SummaryTile
-          label="Nicht bereit"
+          label={t('dash.status.notReady')}
           value={totals.notReady}
           color="red"
           icon={<IconAlertTriangle size={20} />}
           prominent={hasNotReady}
         />
         <SummaryTile
-          label="Pausiert"
+          label={t('dash.status.suspended')}
           value={totals.suspended}
           color="yellow"
           icon={<IconPlayerPause size={20} />}
@@ -195,14 +201,14 @@ export default function FluxOverview({
 
       {sections.length === 0 ? (
         <Center py="xl">
-          <Text c="dimmed">Keine Flux-Ressourcen gefunden</Text>
+          <Text c="dimmed">{t('dash.flux.empty')}</Text>
         </Center>
       ) : (
         sections.map((section) => (
-          <Stack key={section.label} gap="xs">
+          <Stack key={section.labelKey} gap="xs">
             <Group gap="xs">
               <Text tt="uppercase" fw={700} size="xs" c="dimmed">
-                {section.label}
+                {t(section.labelKey)}
               </Text>
               <Badge variant="light" color="gray" size="xs">
                 {section.items.length}
