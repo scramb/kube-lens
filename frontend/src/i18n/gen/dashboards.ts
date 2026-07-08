@@ -1,0 +1,74 @@
+export const dashboards = {
+  en: {
+    // Flux overview
+    'dash.flux.subtitle': 'Status of Flux resources in the cluster',
+    'dash.flux.refresh': 'Refresh',
+    'dash.flux.empty': 'No Flux resources found',
+    'dash.flux.total': 'Total',
+    'dash.flux.suspended': 'Paused',
+    'dash.flux.none': 'none',
+    // Flux category labels
+    'dash.flux.category.Appliers': 'Appliers',
+    'dash.flux.category.Sources': 'Sources',
+    'dash.flux.category.Image Automation': 'Image Automation',
+    'dash.flux.category.Notification': 'Notification',
+    'dash.flux.category.rest': 'Other',
+    // Shared status words
+    'dash.status.ready': 'Ready',
+    'dash.status.notReady': 'Not ready',
+    'dash.status.suspended': 'Paused',
+    // Cluster overview
+    'dash.cluster.title': 'Cluster Overview',
+    'dash.cluster.cpuUsage': 'CPU Usage',
+    'dash.cluster.memoryUsage': 'Memory Usage',
+    'dash.cluster.nodes': 'Nodes',
+    'dash.cluster.pods': 'Pods',
+    'dash.cluster.partialData': 'Partial data',
+    'dash.cluster.noMetrics': 'No cluster metrics available',
+    'dash.cluster.ready': 'Ready',
+    'dash.cluster.notReady': 'NotReady',
+    'dash.cluster.running': 'Running',
+    'dash.cluster.pending': 'Pending',
+    'dash.cluster.failed': 'Failed',
+    // Metrics
+    'dash.metrics.prometheus': 'Prometheus metrics',
+    'dash.metrics.noMetrics': 'No metrics available',
+    'dash.metrics.noData': 'No data',
+  },
+  de: {
+    // Flux overview
+    'dash.flux.subtitle': 'Status der Flux-Ressourcen im Cluster',
+    'dash.flux.refresh': 'Aktualisieren',
+    'dash.flux.empty': 'Keine Flux-Ressourcen gefunden',
+    'dash.flux.total': 'Gesamt',
+    'dash.flux.suspended': 'Pausiert',
+    'dash.flux.none': 'keine',
+    // Flux category labels
+    'dash.flux.category.Appliers': 'Appliers',
+    'dash.flux.category.Sources': 'Sources',
+    'dash.flux.category.Image Automation': 'Image Automation',
+    'dash.flux.category.Notification': 'Notification',
+    'dash.flux.category.rest': 'Weitere',
+    // Shared status words
+    'dash.status.ready': 'Bereit',
+    'dash.status.notReady': 'Nicht bereit',
+    'dash.status.suspended': 'Pausiert',
+    // Cluster overview
+    'dash.cluster.title': 'Cluster Overview',
+    'dash.cluster.cpuUsage': 'CPU Nutzung',
+    'dash.cluster.memoryUsage': 'Memory Nutzung',
+    'dash.cluster.nodes': 'Nodes',
+    'dash.cluster.pods': 'Pods',
+    'dash.cluster.partialData': 'Teilweise Daten',
+    'dash.cluster.noMetrics': 'Keine Cluster-Metriken verfügbar',
+    'dash.cluster.ready': 'Ready',
+    'dash.cluster.notReady': 'NotReady',
+    'dash.cluster.running': 'Running',
+    'dash.cluster.pending': 'Pending',
+    'dash.cluster.failed': 'Failed',
+    // Metrics
+    'dash.metrics.prometheus': 'Prometheus-Metriken',
+    'dash.metrics.noMetrics': 'Keine Metriken verfügbar',
+    'dash.metrics.noData': 'Keine Daten',
+  },
+};

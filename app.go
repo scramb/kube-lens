@@ -63,12 +63,32 @@ func (a *App) ListNamespaces() ([]string, error) {
 	return a.kube.ListNamespaces()
 }
 
+func (a *App) GetResourceUISettings(contextName string) ResourceUISettings {
+	return a.kube.ResourceUISettings(contextName)
+}
+
+func (a *App) SetResourceFavorite(contextName, resourceKey string, favorite bool) ResourceUISettings {
+	return a.kube.SetResourceFavorite(contextName, resourceKey, favorite)
+}
+
+func (a *App) SetSectionCollapsed(contextName, sectionKey string, collapsed bool) ResourceUISettings {
+	return a.kube.SetSectionCollapsed(contextName, sectionKey, collapsed)
+}
+
+func (a *App) SetHideEmptyCRDs(hide bool) ResourceUISettings {
+	return a.kube.SetHideEmptyCRDs(hide)
+}
+
 func (a *App) DiscoverResources() ([]APIResource, error) {
 	return a.kube.DiscoverResources()
 }
 
 func (a *App) ListResourceTable(group, version, resource, namespace string) (*TableResult, error) {
 	return a.kube.ListResourceTable(group, version, resource, namespace)
+}
+
+func (a *App) ResourceHasItems(group, version, resource, namespace string) (bool, error) {
+	return a.kube.ResourceHasItems(group, version, resource, namespace)
 }
 
 func (a *App) GetResourceYAML(group, version, resource, namespace, name string) (string, error) {

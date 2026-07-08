@@ -5,6 +5,7 @@ import { Notifications } from '@mantine/notifications';
 import '@mantine/core/styles.css';
 import '@mantine/notifications/styles.css';
 import './style.css';
+import './i18n';
 import App from './App';
 
 const theme = createTheme({

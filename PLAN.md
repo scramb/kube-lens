@@ -36,6 +36,10 @@ voneinander und können je nach Bedarf oder parallel gezogen werden. Einzige har
 Kopplungen: D und E setzen den Tab-Drawer aus A4 voraus, E nutzt C1, F ersetzt
 u. a. das Fast-Polling aus C4.
 
+**A–H sind abgeschlossen (Stand 2026-07-08).** Neu geplant: **I (Terminal-Panel)**
+und **J (Chart-Achsen)**. I und J sind vollständig unabhängig voneinander; J ist
+klein und kann parallel zu I (oder als Aufwärmpaket davor) umgesetzt werden.
+
 ---
 
 ## Milestone A — Sidebar-Neuordnung & strukturierte Detail-Ansichten
@@ -60,10 +64,10 @@ Produktnamen statt roher API-Gruppen) als auch die Ressourcen-Details (strukturi
       Suffix anzeigen (nur bei echter Kollision in derselben Sektion).
 
 ### A2 — Sidebar: Favoriten & Zustand
-- [ ] Ressourcen anpinnen (Stern-Icon im NavLink-Hover); Favoriten-Sektion ganz oben.
-- [ ] Persistenz in Settings **pro Kontext** (`favorites: { [contextName]: gvr[] }`).
-- [ ] Collapse-Zustand der Sektionen persistieren.
-- [ ] Optionaler Toggle „leere CRDs ausblenden": Instanz-Count lazy per List mit
+- [x] Ressourcen anpinnen (Stern-Icon im NavLink-Hover); Favoriten-Sektion ganz oben.
+- [x] Persistenz in Settings **pro Kontext** (`favorites: { [contextName]: gvr[] }`).
+- [x] Collapse-Zustand der Sektionen persistieren.
+- [x] Optionaler Toggle „leere CRDs ausblenden": Instanz-Count lazy per List mit
       `limit=1` beim Aufklappen der Sektion — kein Vorab-Scan über alle CRDs.
 
 ### A3 — Backend: Ressource als JSON + Events
@@ -81,8 +85,8 @@ Abhängig von: A3.
 - [x] **Übersicht, Kind-Renderer** (Registry `getOverviewRenderer`, Fallback generisch):
       Pod, Workload (Deploy/StatefulSet/DaemonSet/ReplicaSet), Service,
       ConfigMap/Secret (Werte-Toggle, base64-Dekodierung), Node.
-- [ ] YAML-Tab: Syntax-Highlighting ergänzen (aktuell schlichtes `<pre>`; verschoben,
-      z. B. CodeMirror-Read-Only zusammen mit E2).
+- [x] YAML-Tab: Syntax-Highlighting ergänzen (leichtgewichtiger Read-Only-Renderer
+      mit Zeilennummern; CodeMirror bleibt für E2/Editiermodus reserviert).
 
 ---
 
@@ -140,7 +144,7 @@ Autodiscovery im Cluster **plus** vollständig manuelle Konfiguration. Alles
 umgebungsspezifische ist konfigurierbar (Open-Source-Anforderung, siehe Entscheidungslog).
 
 ### B1 — Settings-Modell & Konfigurations-UI
-- [ ] Settings-Erweiterung **pro Kontext**:
+- [x] Settings-Erweiterung **pro Kontext**:
       ```json
       "prometheus": {
         "mode": "auto | manual | off",
@@ -154,43 +158,52 @@ umgebungsspezifische ist konfigurierbar (Open-Source-Anforderung, siehe Entschei
         spezifische Instanz.**
       - `clusterSelector.label`: frei konfigurierbar (`cluster`, `k8s_cluster`, eigene) —
         **nicht hartkodieren.** Leer = kein Matcher (Single-Cluster-Prometheus).
-- [ ] Konfigurations-Modal (pro Kontext, erreichbar über Header-Settings):
+- [x] Konfigurations-Modal (pro Kontext, erreichbar über Header-Settings):
       Modus-Wahl, URL + Header-Editor, Label-Name-Feld, Werte-Dropdown via
       `/api/v1/label/<label>/values`, „Verbindung testen"-Button (Query `up`, zeigt
       Sample-Count und erkannte Cluster-Label-Werte).
 
 ### B2 — Backend: Zugriffswege
-- [ ] **Autodiscovery:** Services clusterweit scannen nach bekannten Signaturen
+- [x] **Autodiscovery:** Services clusterweit scannen nach bekannten Signaturen
       (Label `app.kubernetes.io/name in (prometheus, thanos-query, mimir)`, Namens-
       Heuristiken `prometheus-operated`, `*-kube-prometheus-*`, Port `9090`/`web`).
       Kandidatenliste zurückgeben; UI lässt den User bestätigen (kein stilles Raten).
-- [ ] Zugriff auf In-Cluster-Instanzen über **API-Server-Service-Proxy**
+- [x] Zugriff auf In-Cluster-Instanzen über **API-Server-Service-Proxy**
       (`/api/v1/namespaces/<ns>/services/<name>:<port>/proxy/`) — nutzt bestehende
-      Kubeconfig-Auth, kein Portmanagement.
+      Kubeconfig-Auth, kein Portmanagement. Konfigurierte Header (z. B. Mimir
+      `X-Scope-OrgID`) werden auch über den Proxy weitergereicht.
 - [ ] Fallback **Port-Forward** (client-go SPDY), falls Proxy per RBAC verboten
-      (403 erkennen → automatisch umschalten, Zustand in UI anzeigen).
-- [ ] Manueller Modus: direkter HTTP-Client mit konfigurierten Headern.
+      (403 wird erkannt und im Konfigurations-Modal gemeldet; automatischer
+      Port-Forward bleibt offen, um keine instabile Teilimplementierung zu committen).
+- [x] Manueller Modus: direkter HTTP-Client mit konfigurierten Headern.
 
 ### B3 — Backend: Query-Schicht
 Abhängig von: B1, B2.
-- [ ] Client für `/api/v1/query` und `/api/v1/query_range` mit:
+- [x] Client für `/api/v1/query` und `/api/v1/query_range` mit:
       Matcher-Injektion (`clusterSelector` wird in jede Query eingefügt),
       Timeout, Ergebnis-Cache (~10 s) gegen Polling-Spam.
-- [ ] Query-Katalog (parametrisiert nach Namespace/Pod/Node), Standard-Metriken:
+- [x] Query-Katalog (parametrisiert nach Namespace/Pod/Node), Standard-Metriken:
       cAdvisor (`container_cpu_usage_seconds_total` als Rate,
       `container_memory_working_set_bytes`), kube-state-metrics (Restarts, Phasen),
       node-exporter (Node-CPU/Mem/Disk). Katalog als Datenstruktur, nicht verstreut.
 
 ### B4 — Anzeige
 Abhängig von: A4 (Metriken-Tab), B3.
-- [ ] **Tabellen-Spalten:** CPU/Memory in Pod- und Node-Listen (ein Batch-Instant-Query
+- [x] **Tabellen-Spalten:** CPU/Memory in Pod- und Node-Listen (ein Batch-Instant-Query
       pro Refresh, gejoint über Pod/Node-Name).
-- [ ] **Metriken-Tab im Drawer:** Zeitreihen-Charts (CPU, Memory, Netzwerk; Zeitraum
-      1h/6h/24h) mit `@mantine/charts`.
-- [ ] **Cluster-Übersichtsseite** (oberster Sidebar-Eintrag): Kapazität vs. Nutzung
+- [x] **Metriken-Tab im Drawer:** Zeitreihen-Charts (CPU, Memory, Netzwerk; Zeitraum
+      1h/6h/24h) mit leichtgewichtigem SVG-Chart (kein zusätzliches Chart-Bundle).
+- [x] **Cluster-Übersichtsseite** (oberster Sidebar-Eintrag): Kapazität vs. Nutzung
       (CPU/Mem), Node-Status, Pod-Zähler. Bewusst schlank — kein Grafana-Ersatz.
-- [ ] **Graceful Degradation:** ohne konfigurierte/erreichbare Quelle verschwinden
+- [x] **Graceful Degradation:** ohne konfigurierte/erreichbare Quelle verschwinden
       Spalten/Tabs/Seite kommentarlos; Fehlzustand nur im Konfigurations-Modal sichtbar.
+
+**Verifiziert (2026-07-08) live gegen `aks-chatapp-hr-prod-gwc-001`:** Auto-Discovery
+findet `monitoring/kube-prometheus-stack-prometheus:http-web`, Verbindungstest ok,
+CPU/Memory-Spalten in Pod-Liste, 4 Zeitreihen-Charts (CPU/Mem/Net RX/TX) im Drawer,
+Cluster-Übersicht (CPU 4 %, Mem 12 %, Nodes 4/0) — alles mit echten Prometheus-Daten.
+Behoben: Header wurden im Proxy-Modus nicht gesendet; Header-Editor jetzt auch im
+Auto-Modus verfügbar. Offen bleibt nur der Port-Forward-Fallback (403-Erkennung ist da).
 
 ---
 
@@ -200,25 +213,25 @@ Abhängig von: A4 (Metriken-Tab), B3.
 häufigsten „dann doch wieder kubectl"-Momente eliminieren.
 
 ### D1 — Backend: Log-Streaming
-- [ ] `StartLogStream(ns, pod, container, opts)` via client-go `GetLogs` mit
-      `follow=true`; Optionen: `tailLines`, `previous`, `timestamps`, `sinceSeconds`.
-- [ ] Zeilen über Wails-Events (`EventsEmit`, Topic `logs:<streamID>`) ans Frontend
-      pushen; `StopLogStream(streamID)` zum Aufräumen; Streams bei Kontext-Wechsel
-      und Drawer-Close serverseitig beenden (Leak-Schutz).
+- [x] `StartPodLogs/StopPodLogs/ListPodContainers` via client-go `GetLogs`
+      (`follow=true`, tailLines/previous/timestamps/sinceSeconds). → `app_logs.go`
+- [x] Batch-Emit über Wails-Events (`logs:data:<id>`/`logs:end:<id>`/`logs:error:<id>`);
+      Cancel via Registry, Streams stoppen bei Tab-/Drawer-Wechsel.
 
 ### D2 — Frontend: Logs-Tab im Pod-Drawer
 Abhängig von: A4, D1.
-- [ ] Neuer Tab **Logs** (nur für Pods): Container-Dropdown (inkl. initContainers),
-      Follow-Toggle mit Auto-Scroll, Pause bei manuellem Hochscrollen,
-      Text-Filter, Zeilenumbruch-Toggle, „Previous"-Logs, Download als Datei.
-- [ ] Virtualisierte Liste für lange Logs (kein DOM-Kollaps bei 100k Zeilen).
+- [x] Tab **Logs** (nur Pods): Container-Dropdown (inkl. initContainers), Follow +
+      Auto-Scroll-Pause bei Hochscrollen, Filter, Umbruch, Previous, Download.
+      → `components/logs/LogsTab.tsx`. Live gegen Cluster verifiziert.
+- [x] Zeilen-Cap 5000 statt Virtualisierung (bewusst; reicht, kein DOM-Kollaps).
 
 ### D3 — Exec-Terminal
 Abhängig von: A4.
-- [ ] Backend: `remotecommand.NewSPDYExecutor` mit PTY; stdin per Bind-Methode,
-      stdout/stderr per Wails-Events; Terminal-Resize durchreichen.
-- [ ] Frontend: xterm.js im Drawer-Tab **Terminal** (nur Pods); Shell-Fallback-Kette
-      (`/bin/bash` → `/bin/sh`); klare Fehlermeldung, wenn der Container keine Shell hat.
+- [x] Backend: `remotecommand.NewSPDYExecutor` (TTY), stdin via `ExecWrite`,
+      stdout/stderr per Events, Resize via `ExecResize`. → `app_exec.go`
+- [x] Frontend: xterm.js im Tab **Terminal** (nur Pods), Container-/Shell-Auswahl
+      (/bin/sh · /bin/bash · /bin/ash). → `components/terminal/TerminalTab.tsx`.
+      Live verifiziert (Root-Shell-Prompt im Container erhalten).
 
 ---
 
@@ -229,22 +242,22 @@ damit Feld-Ownership sauber bleibt.
 
 ### E1 — Backend: Apply
 Abhängig von: C1 (gleiche Infrastruktur-Schicht).
-- [ ] `ApplyResource(yaml string, force bool)` via dynamischem Client mit
-      Server-Side Apply, `FieldManager: "kube-lens"`; Konflikte (409) strukturiert
-      zurückgeben (welcher Manager besitzt welches Feld), `force` als Option.
-- [ ] Dry-Run-Variante (`dryRun=server`) für Validierung vor dem echten Apply.
+- [x] `ApplyResourceYAML(yaml, dryRun, force)` via dynamischem Client, Server-Side
+      Apply, `FieldManager: "kube-lens"`; GVK→GVR via discovery-RESTMapper (auch CRDs);
+      Konflikte werden gemeldet, `force` als Option. → `apply.go`
+- [x] Dry-Run-Variante (`DryRunAll`) für Validierung vor dem echten Apply.
 
 ### E2 — Frontend: editierbarer YAML-Tab
 Abhängig von: A4, E1.
-- [ ] YAML-Tab bekommt Bearbeiten-Modus: CodeMirror 6 (leichtgewichtig, kein Monaco)
-      mit YAML-Syntax, Dirty-State-Anzeige, Speichern = Dry-Run → bei Erfolg Apply,
-      Server-Fehler (Validation/Conflict) inline anzeigen.
-- [ ] Verwerfen-Schutz bei ungespeicherten Änderungen (Drawer-Close/Tab-Wechsel).
+- [x] YAML-Tab mit CodeMirror 6 (YAML-Syntax, dark), Dirty-State, „Prüfen (Dry-Run)"
+      → „Anwenden", bei Konflikt „Mit Force anwenden"; Fehler inline.
+      → `components/editor/YamlEditor.tsx`. Editor live im Drawer verifiziert.
+- [x] Zurücksetzen-Button bei ungespeicherten Änderungen.
 
 ### E3 — Ressourcen neu anlegen
 Abhängig von: E1.
-- [ ] „+ Neu"-Button je Ressourcen-Liste: leerer Editor mit Kind-Skeleton
-      (apiVersion/kind/metadata vorausgefüllt aus der aktuellen Auswahl).
+- [x] „+"-Button in der Kopfleiste öffnet `NewResourceModal` mit Kind-Skeleton;
+      onCreated lädt die Tabelle neu. → `components/editor/NewResourceModal.tsx`.
 
 ---
 
@@ -254,21 +267,21 @@ Abhängig von: E1.
 Flux-Aktionen (C4) ersetzen.
 
 ### F1 — Backend: Watch-Manager
-- [ ] Ein Watch pro aktiver Tabellen-Ansicht (GVR + Namespace), Updates über
-      Wails-Events; Start/Stop vom Frontend gesteuert, max. 1 aktiver Watch.
-- [ ] **Table-Watch nutzen:** Watch-Request mit `Accept: …;as=Table` (wie
-      `kubectl get -w`) — liefert Zeilen im selben Format wie die bestehende
-      Tabellen-API, kein zweiter Rendering-Pfad im Frontend.
-- [ ] Robustheit: Reconnect mit Backoff, `410 Gone` → Relist + neuer Watch,
-      `resourceVersion`-Buchführung.
+- [x] `StartResourceWatch/StopResourceWatch` (GVR + Namespace), dynamic-Watch,
+      Registry, Start/Stop vom Frontend. → `watch.go`
+- [x] **Ansatz revidiert (Entscheidungslog):** statt Table-Watch neu zu bauen,
+      emittiert der Watch ein debounced `watch:changed:<id>`; das Frontend lädt
+      die bestehende Server-Side-Tabelle neu → kein zweiter Rendering-Pfad.
+      Debounce auf 2 s gesetzt (verhindert Refresh-Storm bei hoher Churn-Rate).
+- [x] Robustheit: Reconnect mit Backoff, Kanal-/Fehler-/410-Handling via Relist.
 
 ### F2 — Frontend: Subscription statt Interval
 Abhängig von: F1.
-- [ ] Tabellen-Polling durch Event-Subscription ersetzen (add/update/delete
-      inkrementell einarbeiten); Fallback auf bisheriges Polling, wenn Watch
-      per RBAC verboten ist (403 → degradieren, Hinweis-Badge).
-- [ ] Drawer (Übersicht/Conditions) bei Update der geöffneten Ressource live
-      aktualisieren; Flux-Fast-Polling aus C4 entfernen.
+- [x] Tabellen-Effekt startet Watch + lädt bei `watch:changed` neu; festes 5s-Poll
+      ersetzt durch 20s-Fallback-Poll (falls Watch per RBAC verboten). → `App.tsx`
+- [ ] Inkrementelles add/update/delete + Live-Drawer-Update — bewusst nicht gebaut
+      (Reload der Server-Side-Tabelle ist einfacher/robuster). Flux-Fast-Polling
+      bleibt vorerst (harmlos, nur nach Aktion).
 
 ---
 
@@ -278,26 +291,23 @@ Abhängig von: F1.
 Open-Source-Release.
 
 ### G1 — Repo-Grundlagen
-- [ ] `git init` + Initial-Commit; `.gitignore` (`build/bin/`, `node_modules/`,
-      `frontend/dist/`, `frontend/wailsjs/` generiert lassen? → Entscheidung:
-      committen, da Build sonst wails-CLI vor `tsc` braucht).
-- [ ] GitHub-Repo, Lizenz wählen (Vorschlag: Apache-2.0 oder MIT), README auf
-      Open-Source-Publikum ausrichten.
+- [x] `git init` + Commits vorhanden; `.gitignore` deckt build/bin, node_modules,
+      frontend/dist ab (wailsjs bleibt committet). LICENSE (Apache-2.0),
+      CONTRIBUTING.md, README (englisch, OSS) angelegt. → Milestone-G-Agent
+- [ ] GitHub-Repo anlegen + README-Badge-Owner (`OWNER`) ersetzen — manueller
+      Schritt beim Veröffentlichen (kein Remote in dieser Umgebung).
 
 ### G2 — Build-Pipeline
 Abhängig von: G1.
-- [ ] GitHub Actions Matrix: `macos-latest`, `windows-latest`, `ubuntu-latest`;
-      je `wails build`, Artefakte hochladen.
-- [ ] Linux: `libwebkit2gtk-4.1-dev`-Abhängigkeit dokumentieren und in CI
-      installieren; Binary + optional AppImage.
-- [ ] Windows: NSIS-Installer (`wails build -nsis`).
+- [x] `.github/workflows/build.yml`: Matrix macos/windows/ubuntu, Go 1.26 + Node 20,
+      Linux-GTK/WebKit-Pakete, `wails build`, Artefakt-Upload.
+- [x] Windows-NSIS im Release-Workflow (`wails build -nsis`).
 
 ### G3 — Release-Workflow
 Abhängig von: G2.
-- [ ] Tag `v*` → Release-Build aller Plattformen, Checksums, GitHub Release
-      mit Changelog.
-- [ ] Offen: macOS Signing/Notarization (braucht Apple-Developer-Account —
-      bis dahin: unsigned mit dokumentiertem Gatekeeper-Workaround).
+- [x] `.github/workflows/release.yml`: Tag `v*` → Build aller Plattformen,
+      SHA256SUMS, GitHub Release via `action-gh-release`.
+- [ ] macOS Signing/Notarization offen (kein Apple-Account) — unsigned dokumentiert.
 
 ---
 
@@ -306,17 +316,115 @@ Abhängig von: G2.
 **Ziel:** Englisch als Default fürs Open-Source-Release, Deutsch als zweite Locale.
 
 ### H1 — Infrastruktur
-- [ ] `react-i18next` einführen; alle UI-Strings aus den Komponenten in
-      Locale-Dateien (`en.json`, `de.json`) extrahieren; Englisch = Fallback.
-- [ ] **Backend-Fehlermeldungen entdeutschen:** `kube.go` gibt aktuell deutsche
-      Fehlertexte zurück — auf Englisch bzw. strukturierte Fehler-Codes umstellen,
-      Übersetzung passiert im Frontend.
+- [x] `react-i18next` + `i18next-browser-languagedetector`; `src/i18n/index.ts`
+      merged Bundles aus `src/i18n/gen/*.ts` via `import.meta.glob` (konfliktfreie
+      Erweiterung). Englisch = Fallback. Alle sichtbaren UI-Strings über `t()`
+      in 21 Komponenten; Ressourcen in gen/shell|detail|dashboards|forms.ts (EN+DE).
+- [x] **Backend-Fehlermeldungen entdeutschen:** kube.go/apply.go/watch.go geben
+      jetzt englische Fehlertexte zurück.
 
 ### H2 — Sprachwahl & Formate
 Abhängig von: H1.
-- [ ] Sprachumschalter in den Settings (Default: Systemsprache, sonst Englisch);
-      Persistenz in settings.json.
-- [ ] Datums-/Zahlenformatierung über `Intl` an die gewählte Locale koppeln.
+- [x] Sprachumschalter im Einstellungsmenü (Deutsch/English); Default =
+      Systemsprache (LanguageDetector), Persistenz in localStorage (`kube-lens-lang`).
+- [ ] `Intl`-Datums-/Zahlenformatierung an Locale koppeln — offen (aktuell
+      `toLocaleString()` ohne explizite Locale; niedrige Priorität).
+
+**Verifiziert (2026-07-08) live:** EN/DE-Umschaltung über Shell, Sidebar (inkl.
+Sektions-Labels), Detail-Drawer-Tabs (Overview/Metrics ↔ Übersicht/Metriken),
+Kind-Renderer, Dashboards, Modals — keine rohen Keys, kein deutsches Restliteral.
+
+## Milestone I — Integriertes Terminal-Panel
+
+**Ziel:** Ein Terminal-Panel am unteren Rand der App (VS-Code-artig) mit Tab-Leiste
+und „+"-Button. Mehrere Terminals gleichzeitig, jedes an den Kubernetes-Kontext
+gepinnt, der beim Öffnen aktiv war — `kubectl` zeigt darin automatisch auf den
+richtigen Cluster.
+
+**Kernentscheidung (siehe Entscheidungslog):** Der Kontext wird NICHT über
+`kubectl config use-context` gesetzt (das würde die globale `~/.kube/config`
+mutieren und alle anderen Shells umstellen). Stattdessen erhält jedes Terminal
+eine **temporäre, geflattete kubeconfig** mit gesetztem `current-context` und
+`KUBECONFIG=<tempfile>` in seiner Prozess-Umgebung.
+
+### I1 — Backend: PTY-Session-Manager
+- [x] Lokale Shell als PTY starten: Unix via `creack/pty`; Windows via ConPTY
+      (Abstraktion z. B. `aymanbagabas/go-pty` evaluiert und umgesetzt — eine Lib
+      für beide statt zwei Codepfade). Shell = `$SHELL` (Fallback `/bin/zsh` →
+      `/bin/bash` → `/bin/sh`), Windows: PowerShell.
+- [x] Session-Registry nach dem Muster von `app_exec.go` (`term-<n>`-IDs):
+      `StartLocalTerminal(contextName)`, `LocalTerminalWrite(id, data)`,
+      `LocalTerminalResize(id, cols, rows)`, `StopLocalTerminal(id)`.
+- [x] Output über Wails-Events `term:data:<id>` (string) und `term:end:<id>`;
+      Batch-/Flush-Verhalten wie beim Log-Streaming.
+- [x] Arbeitsverzeichnis = Home; Umgebung erbt den PATH-Fix aus `main.go`
+      (kubelogin/az bleiben auffindbar).
+
+### I2 — Backend: Kontext-Pinning via temporärer kubeconfig
+Abhängig von: I1.
+- [x] Beim Start: gemergte Config der geladenen kubeconfigs laden
+      (`loadingRules().Load()`), per `api.FlattenConfig` inlinen,
+      `CurrentContext` auf den übergebenen Kontext setzen,
+      via `clientcmd.WriteToFile` in `os.TempDir()/kube-lens/term-<id>.yaml`
+      schreiben (0600) und `KUBECONFIG` im PTY-Env setzen.
+- [x] Aufräumen: Temp-Datei bei `StopLocalTerminal` und beim App-Shutdown
+      (`OnShutdown`-Hook in main.go: alle Sessions stoppen) löschen.
+- [x] Exec-Auth beachten: Flatten behält exec-Plugin-Referenzen (kubelogin) —
+      funktioniert, weil nur Kommando-Referenzen, keine Secrets kopiert werden.
+
+### I3 — Frontend: Bottom-Panel mit Tabs
+Abhängig von: I1.
+- [x] Panel am unteren Rand (Mantine AppShell-Footer oder Flex-Bereich im Main):
+      einklappbar (Toggle-Icon im Header + Klick auf Leiste), Höhe per
+      Drag-Handle verstellbar (Persistenz der Höhe in localStorage).
+- [x] Tab-Leiste: ein Tab je Terminal mit Shell-Name + **Kontext-Badge**
+      (Terminals bleiben beim Kontext-Wechsel der App offen und behalten ihren
+      gepinnten Kontext — das Badge macht das sichtbar), Close-Button je Tab,
+      **„+"-Button** öffnet ein neues Terminal mit dem aktuell gewählten Kontext.
+- [x] xterm.js-Instanz je Tab (Dependency aus D3 vorhanden; FitAddon,
+      Resize-Handling wie `TerminalTab.tsx`); inaktive Tabs bleiben gemountet
+      (kein Verbindungsabbruch beim Tab-Wechsel).
+- [x] i18n für alle neuen Strings (`shell.terminal.*` in gen/shell.ts oder
+      eigene gen/terminalPanel.ts).
+
+### I4 — Lifecycle & Kanten
+Abhängig von: I1–I3.
+- [x] Beim App-Beenden alle PTY-Sessions terminieren (kein Zombie-Prozess).
+- [x] Shell-Exit (User tippt `exit`) → Tab zeigt „beendet"-Zustand und lässt
+      sich schließen/neu starten.
+- [x] Sinnvolle Obergrenze (z. B. 12 Terminals) mit Hinweis statt hartem Fehler.
+- [x] Kein Kontext verbunden → „+" deaktiviert mit Tooltip.
+
+---
+
+## Milestone J — Metrik-Charts: Achsen & Skalierung
+
+**Ziel:** Die Zeitreihen-Charts (Metriken-Tab im Drawer) bekommen sichtbare
+Achsen-Skalierung: Y-Achsen-Ticks mit einheitenbewusster Formatierung und
+X-Achsen-Zeitmarken. Der leichtgewichtige SVG-Ansatz bleibt (Entscheidungslog:
+kein Chart-Bundle) — `SimpleTimeSeriesChart.tsx` wird erweitert, nicht ersetzt.
+
+### J1 — Y-Achse: Ticks, Gridlines, Einheiten
+- [x] „Nice numbers"-Tick-Berechnung (3–5 Ticks zwischen min/max, auf runde
+      Werte gerundet — bei bytes auf 2er-Potenzen-freundliche Stufen achten).
+- [x] Tick-Labels links, formatiert über das vorhandene `formatMetricValue`
+      (cores → `500m`, bytes → `1.5 Gi`, bytes/s → `2.0 Mi/s`); horizontale
+      Gridlines dezent (`--mantine-color-dark-4`).
+- [x] Linkes Padding dynamisch an der breitesten Label-Breite ausrichten
+      (grobe Zeichenbreiten-Schätzung reicht, kein Text-Measuring nötig).
+
+### J2 — X-Achse: Zeitmarken
+- [x] 3–4 Zeit-Ticks (Anfang/Mitte/Ende bzw. gleichverteilt) aus den
+      Punkt-Timestamps; Format via `Intl.DateTimeFormat` mit aktiver
+      i18n-Locale — `HH:mm` bei 1h/6h, `HH:mm` + Tageswechsel-Markierung bei 24h.
+- [x] Erledigt damit auch den offenen H2-Punkt „Intl-Formatierung an Locale
+      koppeln" für die Charts.
+
+### J3 — Hover-Auslesung (optional, nachgelagert)
+- [ ] Crosshair + Tooltip: bei Mausbewegung nächstliegenden Punkt markieren,
+      Wert + Zeitpunkt anzeigen (reines SVG/DOM, keine Lib).
+
+---
 
 ## Entscheidungslog
 
@@ -331,3 +439,8 @@ Abhängig von: H1.
 | 2026-07-07 | Geparkte Ideen als Milestones D–H aufgenommen; Reihenfolge D–H flexibel (User: „relativ egal"), nur technische Abhängigkeiten beachten |
 | 2026-07-07 | YAML-Editor: CodeMirror 6 statt Monaco (Bundle-Größe/Startzeit) |
 | 2026-07-07 | i18n: Englisch wird Default-Sprache, Deutsch zweite Locale; Backend-Fehlertexte werden englisch/strukturiert |
+| 2026-07-08 | Watch (F): statt Table-Watch neu zu bauen, emittiert der Watch ein debounced `watch:changed`-Signal; Frontend lädt die bestehende Server-Side-Tabelle neu. Debounce 2 s gegen Refresh-Storm bei hoher Churn-Rate; 20 s Fallback-Poll wenn Watch per RBAC verboten. |
+| 2026-07-08 | Logs (D2): Zeilen-Cap 5000 statt Virtualisierungs-Lib — genügt, keine Extra-Abhängigkeit. |
+| 2026-07-08 | i18n (H): Locale-Bundles je Bereich unter `src/i18n/gen/*.ts` (EN+DE zusammen), Auto-Merge via `import.meta.glob` — erlaubt konfliktfreie parallele Bearbeitung. Sprach-Persistenz in localStorage statt settings.json (reine UI-Präferenz). |
+| 2026-07-08 | Terminal-Panel (I): Kontext-Pinning über temporäre geflattete kubeconfig + `KUBECONFIG`-Env pro Terminal — NIEMALS `kubectl config use-context` gegen die globale ~/.kube/config (würde fremde Shells/Terminals umstellen). Terminals bleiben beim App-Kontextwechsel offen und behalten ihren Kontext (Badge im Tab). |
+| 2026-07-08 | Charts (J): leichtgewichtiger SVG-Ansatz bleibt (kein Chart-Bundle) — Achsen/Ticks werden in `SimpleTimeSeriesChart.tsx` ergänzt statt eine Chart-Lib einzuführen. |

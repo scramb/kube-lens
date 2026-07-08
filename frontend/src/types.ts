@@ -39,6 +39,97 @@ export interface TableResult {
   rows: TableRow[];
 }
 
+export interface ResourceUISettings {
+  favorites: string[];
+  collapsedSections: Record<string, boolean>;
+  hideEmptyCRDs: boolean;
+}
+
+export interface PrometheusClusterSelector {
+  label: string;
+  value: string;
+}
+
+export interface PrometheusContextSettings {
+  mode: string;
+  url: string;
+  headers: Record<string, string>;
+  clusterSelector: PrometheusClusterSelector;
+  target: PrometheusTarget;
+}
+
+export interface PrometheusTarget {
+  accessMode: string;
+  namespace: string;
+  service: string;
+  portName: string;
+  port: number;
+  pathPrefix: string;
+}
+
+export interface PrometheusTargetCandidate {
+  namespace: string;
+  service: string;
+  portName: string;
+  port: number;
+  score: number;
+  reasons: string[];
+}
+
+export interface PrometheusConnectionTestResult {
+  ok: boolean;
+  mode: string;
+  message: string;
+  sampleCount: number;
+  clusterLabel: string;
+  clusterValues: string[];
+  proxyForbidden: boolean;
+}
+
+export interface MetricsAvailability {
+  available: boolean;
+  mode: string;
+  message: string;
+  proxyForbidden: boolean;
+}
+
+export interface ResourceListMetric {
+  namespace: string;
+  name: string;
+  cpu: number;
+  memory: number;
+}
+
+export interface MetricPoint {
+  timestamp: string;
+  value: number;
+}
+
+export interface MetricSeries {
+  name: string;
+  unit: string;
+  points: MetricPoint[];
+}
+
+export interface ResourceMetricsSeries {
+  available: boolean;
+  series: MetricSeries[];
+}
+
+export interface ClusterOverviewMetrics {
+  available: boolean;
+  cpuUsage: number;
+  cpuCapacity: number;
+  memoryUsage: number;
+  memoryCapacity: number;
+  nodeReady: number;
+  nodeNotReady: number;
+  podsRunning: number;
+  podsPending: number;
+  podsFailed: number;
+  message: string;
+}
+
 export function resourceKey(r: APIResource): string {
   return `${r.group}/${r.version}/${r.name}`;
 }

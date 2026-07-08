@@ -17,6 +17,7 @@ import {
   Tooltip,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
+import { useTranslation } from 'react-i18next';
 import {
   IconCheck,
   IconChevronDown,
@@ -37,6 +38,10 @@ import {
 import { main } from '../../wailsjs/go/models';
 import { APIResource } from '../types';
 import { getOverviewRenderer, KubeObject } from './detail';
+import { ResourceMetricsTab } from './metrics/ResourceMetricsTab';
+import { LogsTab } from './logs';
+import TerminalTab from './terminal/TerminalTab';
+import { YamlEditor } from './editor';
 
 interface Props {
   opened: boolean;
@@ -45,13 +50,16 @@ interface Props {
   name: string;
   namespace: string;
   onDelete: () => Promise<void>;
+  metricsAvailable: boolean;
+  contextName: string | null;
 }
 
 function errText(e: unknown): string {
   return typeof e === 'string' ? e : e instanceof Error ? e.message : String(e);
 }
 
-export default function YamlDrawer({ opened, onClose, resource, name, namespace, onDelete }: Props) {
+export default function YamlDrawer({ opened, onClose, resource, name, namespace, onDelete, metricsAvailable, contextName }: Props) {
+  const { t } = useTranslation();
   const [tab, setTab] = useState<string>('overview');
 
   const [obj, setObj] = useState<KubeObject | null>(null);
@@ -109,7 +117,7 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
         const y = await GetResourceYAML(resource.group, resource.version, resource.name, namespace, name);
         if (reqRef.current === req) setYaml(y);
       } catch (e) {
-        if (reqRef.current === req) setYaml(`Fehler: ${errText(e)}`);
+        if (reqRef.current === req) setYaml(t('detail.yaml.error', { message: errText(e) }));
       } finally {
         if (reqRef.current === req) setYamlLoading(false);
       }
@@ -149,6 +157,9 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
   };
 
   const isFlux = !!resource?.group.endsWith('.fluxcd.io');
+  const isPod = resource?.kind === 'Pod' && resource?.group === '';
+  const metricsSupported = !!resource && (resource.kind === 'Pod' || resource.kind === 'Node');
+  const showMetricsTab = metricsAvailable && metricsSupported;
   const suspended = obj?.spec?.suspend === true;
 
   const runFlux = useCallback(
@@ -175,6 +186,10 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
     [resource, namespace, name, loadObj]
   );
 
+  useEffect(() => {
+    if (tab === 'metrics' && !showMetricsTab) setTab('overview');
+  }, [tab, showMetricsTab]);
+
   const Renderer = resource ? getOverviewRenderer(resource.kind) : null;
 
   return (
@@ -192,7 +207,7 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
           </Text>
           {isFlux && suspended && (
             <Badge size="sm" color="orange" variant="light">
-              pausiert
+              {t('detail.suspended')}
             </Badge>
           )}
         </Group>
@@ -208,9 +223,9 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
                   variant="light"
                   leftSection={<IconRefresh size={14} />}
                   loading={fluxBusy}
-                  onClick={() => runFlux('reconcile', 'Reconcile angefordert')}
+                  onClick={() => runFlux('reconcile', t('detail.notify.reconcileRequested'))}
                 >
-                  Reconcile
+                  {t('detail.action.reconcile')}
                 </Button>
                 <Menu position="bottom-start" withinPortal>
                   <Menu.Target>
@@ -221,9 +236,11 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
                   <Menu.Dropdown>
                     <Menu.Item
                       leftSection={<IconRefresh size={14} />}
-                      onClick={() => runFlux('reconcileSource', 'Reconcile mit Source angefordert')}
+                      onClick={() =>
+                        runFlux('reconcileSource', t('detail.notify.reconcileWithSourceRequested'))
+                      }
                     >
-                      Reconcile with source
+                      {t('detail.action.reconcileWithSource')}
                     </Menu.Item>
                   </Menu.Dropdown>
                 </Menu>
@@ -235,9 +252,9 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
                   color="teal"
                   leftSection={<IconPlayerPlay size={14} />}
                   loading={fluxBusy}
-                  onClick={() => runFlux('resume', 'Fortgesetzt')}
+                  onClick={() => runFlux('resume', t('detail.notify.resumed'))}
                 >
-                  Resume
+                  {t('detail.action.resume')}
                 </Button>
               ) : (
                 <Button
@@ -246,9 +263,9 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
                   color="orange"
                   leftSection={<IconPlayerPause size={14} />}
                   loading={fluxBusy}
-                  onClick={() => runFlux('suspend', 'Pausiert')}
+                  onClick={() => runFlux('suspend', t('detail.notify.suspended'))}
                 >
-                  Suspend
+                  {t('detail.action.suspend')}
                 </Button>
               )}
             </>
@@ -258,7 +275,7 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
           {tab === 'yaml' && (
             <CopyButton value={yaml}>
               {({ copied, copy }) => (
-                <Tooltip label={copied ? 'Kopiert' : 'YAML kopieren'}>
+                <Tooltip label={copied ? t('detail.yaml.copied') : t('detail.yaml.copy')}>
                   <ActionIcon variant="subtle" color={copied ? 'teal' : 'gray'} onClick={copy}>
                     {copied ? <IconCheck size={16} /> : <IconCopy size={16} />}
                   </ActionIcon>
@@ -266,7 +283,7 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
               )}
             </CopyButton>
           )}
-          <Tooltip label="Ressource löschen">
+          <Tooltip label={t('detail.delete.tooltip')}>
             <ActionIcon variant="subtle" color="red" onClick={() => setConfirmOpen(true)}>
               <IconTrash size={16} />
             </ActionIcon>
@@ -276,14 +293,16 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
 
       <Tabs value={tab} onChange={(v) => setTab(v ?? 'overview')} keepMounted={false}>
         <Tabs.List mb="sm">
-          <Tabs.Tab value="overview">Übersicht</Tabs.Tab>
-          <Tabs.Tab value="yaml">YAML</Tabs.Tab>
-          <Tabs.Tab value="events">Events</Tabs.Tab>
-          <Tabs.Tab value="metrics">Metriken</Tabs.Tab>
+          <Tabs.Tab value="overview">{t('detail.tab.overview')}</Tabs.Tab>
+          <Tabs.Tab value="yaml">{t('detail.tab.yaml')}</Tabs.Tab>
+          {isPod && <Tabs.Tab value="logs">{t('detail.tab.logs')}</Tabs.Tab>}
+          {isPod && <Tabs.Tab value="terminal">{t('detail.tab.terminal')}</Tabs.Tab>}
+          <Tabs.Tab value="events">{t('detail.tab.events')}</Tabs.Tab>
+          {showMetricsTab && <Tabs.Tab value="metrics">{t('detail.tab.metrics')}</Tabs.Tab>}
         </Tabs.List>
 
-        <ScrollArea h="calc(100vh - 165px)" type="scroll">
-          <Tabs.Panel value="overview">
+        <Tabs.Panel value="overview">
+          <ScrollArea h="calc(100vh - 165px)" type="scroll">
             {objError ? (
               <Text c="red" p="md">
                 {objError}
@@ -295,63 +314,76 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
             ) : (
               <Renderer obj={obj} />
             )}
-          </Tabs.Panel>
+          </ScrollArea>
+        </Tabs.Panel>
 
-          <Tabs.Panel value="yaml">
-            {yamlLoading ? (
-              <Center h={200}>
-                <Loader />
-              </Center>
-            ) : (
-              <pre
-                style={{
-                  margin: 0,
-                  padding: 12,
-                  fontSize: 12,
-                  lineHeight: 1.5,
-                  fontFamily: 'var(--mantine-font-family-monospace)',
-                  background: 'var(--mantine-color-dark-8)',
-                  borderRadius: 8,
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-word',
-                }}
-              >
-                {yaml}
-              </pre>
-            )}
-          </Tabs.Panel>
-
-          <Tabs.Panel value="events">
-            <EventsView events={events} loading={eventsLoading} error={eventsError} />
-          </Tabs.Panel>
-
-          <Tabs.Panel value="metrics">
+        <Tabs.Panel value="yaml">
+          {yamlLoading ? (
             <Center h={200}>
-              <Text c="dimmed" ta="center" maw={360}>
-                Metriken werden mit der Prometheus-Anbindung ergänzt (Milestone B).
-              </Text>
+              <Loader />
             </Center>
+          ) : (
+            <YamlEditor
+              initialYaml={yaml}
+              editable
+              height="calc(100vh - 210px)"
+              onApplied={() => {
+                setYaml('');
+                loadObj();
+              }}
+            />
+          )}
+        </Tabs.Panel>
+
+        {isPod && (
+          <Tabs.Panel value="logs">
+            <LogsTab namespace={namespace} pod={name} />
           </Tabs.Panel>
-        </ScrollArea>
+        )}
+
+        {isPod && (
+          <Tabs.Panel value="terminal">
+            <TerminalTab namespace={namespace} pod={name} />
+          </Tabs.Panel>
+        )}
+
+        <Tabs.Panel value="events">
+          <ScrollArea h="calc(100vh - 165px)" type="scroll">
+            <EventsView events={events} loading={eventsLoading} error={eventsError} />
+          </ScrollArea>
+        </Tabs.Panel>
+
+        {showMetricsTab && resource && (
+          <Tabs.Panel value="metrics">
+            <ScrollArea h="calc(100vh - 165px)" type="scroll">
+              <ResourceMetricsTab contextName={contextName} resource={resource} namespace={namespace} name={name} />
+            </ScrollArea>
+          </Tabs.Panel>
+        )}
       </Tabs>
 
       <Modal
         opened={confirmOpen}
         onClose={() => setConfirmOpen(false)}
-        title="Ressource löschen?"
+        title={t('detail.delete.title')}
         centered
         zIndex={400}
       >
         <Text size="sm" mb="md">
-          {resource?.kind} <b>{name}</b>
-          {namespace ? ` im Namespace ${namespace}` : ''} wird endgültig gelöscht.
+          {namespace
+            ? t('detail.delete.confirmInNamespace', {
+                kind: resource?.kind,
+                name,
+                namespace,
+              })
+            : t('detail.delete.confirm', { kind: resource?.kind, name })}
         </Text>
         <Group justify="flex-end">
           <Button variant="default" onClick={() => setConfirmOpen(false)}>
-            Abbrechen
+            {t('detail.cancel')}
           </Button>
           <Button color="red" loading={deleting} onClick={handleDelete}>
-            Löschen
+            {t('detail.action.delete')}
           </Button>
         </Group>
       </Modal>
@@ -368,6 +400,7 @@ function EventsView({
   loading: boolean;
   error: string;
 }) {
+  const { t } = useTranslation();
   if (loading) {
     return (
       <Center h={200}>
@@ -385,7 +418,7 @@ function EventsView({
   if (!events || events.length === 0) {
     return (
       <Center h={160}>
-        <Text c="dimmed">Keine Events</Text>
+        <Text c="dimmed">{t('detail.events.none')}</Text>
       </Center>
     );
   }
@@ -393,11 +426,11 @@ function EventsView({
     <Table verticalSpacing={6} highlightOnHover withRowBorders={false}>
       <Table.Thead>
         <Table.Tr>
-          <Table.Th>Typ</Table.Th>
-          <Table.Th>Grund</Table.Th>
-          <Table.Th>Nachricht</Table.Th>
-          <Table.Th>Anzahl</Table.Th>
-          <Table.Th>Zuletzt</Table.Th>
+          <Table.Th>{t('detail.events.type')}</Table.Th>
+          <Table.Th>{t('detail.events.reason')}</Table.Th>
+          <Table.Th>{t('detail.events.message')}</Table.Th>
+          <Table.Th>{t('detail.events.count')}</Table.Th>
+          <Table.Th>{t('detail.events.last')}</Table.Th>
         </Table.Tr>
       </Table.Thead>
       <Table.Tbody>

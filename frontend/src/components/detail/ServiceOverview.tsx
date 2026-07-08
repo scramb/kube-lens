@@ -1,4 +1,5 @@
 import { Badge, Card, Group, Stack, Table, Text, Title } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
 import { OverviewProps, getPath } from './types';
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
@@ -16,6 +17,7 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
 }
 
 export function ServiceOverview({ obj }: OverviewProps) {
+  const { t } = useTranslation();
   const type: string | undefined = getPath(obj, ['spec', 'type']);
 
   const clusterIP: string | undefined = getPath(obj, ['spec', 'clusterIP']);
@@ -41,22 +43,22 @@ export function ServiceOverview({ obj }: OverviewProps) {
     <Stack gap="md">
       <Card withBorder radius="md" padding="md">
         <Title order={5} mb="sm">
-          Service
+          {t('detail.service')}
         </Title>
         <Stack gap={6}>
-          <InfoRow label="Typ" value={type} />
-          <InfoRow label="ClusterIP" value={clusterIPText} />
+          <InfoRow label={t('detail.service.type')} value={type} />
+          <InfoRow label={t('detail.service.clusterIp')} value={clusterIPText} />
           <InfoRow
-            label="External IPs"
+            label={t('detail.service.externalIps')}
             value={externalIPs.length > 0 ? externalIPs.join(', ') : undefined}
           />
-          <InfoRow label="LoadBalancer" value={lbText || undefined} />
+          <InfoRow label={t('detail.service.loadBalancer')} value={lbText || undefined} />
         </Stack>
 
         {selectorEntries.length > 0 && (
           <>
             <Text size="sm" c="dimmed" mt="md" mb={4}>
-              Selector
+              {t('detail.service.selector')}
             </Text>
             <Group gap={6}>
               {selectorEntries.map(([k, v]) => (
@@ -72,17 +74,17 @@ export function ServiceOverview({ obj }: OverviewProps) {
       {ports.length > 0 && (
         <Card withBorder radius="md" padding="md">
           <Title order={5} mb="sm">
-            Ports
+            {t('detail.service.ports')}
           </Title>
           <Table.ScrollContainer minWidth={560}>
             <Table verticalSpacing="xs" horizontalSpacing="sm" fz="sm">
               <Table.Thead>
                 <Table.Tr>
-                  <Table.Th>Name</Table.Th>
-                  <Table.Th>Port</Table.Th>
-                  <Table.Th>TargetPort</Table.Th>
-                  <Table.Th>Protokoll</Table.Th>
-                  <Table.Th>NodePort</Table.Th>
+                  <Table.Th>{t('detail.service.col.name')}</Table.Th>
+                  <Table.Th>{t('detail.service.col.port')}</Table.Th>
+                  <Table.Th>{t('detail.service.col.targetPort')}</Table.Th>
+                  <Table.Th>{t('detail.service.col.protocol')}</Table.Th>
+                  <Table.Th>{t('detail.service.col.nodePort')}</Table.Th>
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>

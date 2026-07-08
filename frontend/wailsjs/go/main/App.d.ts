@@ -6,9 +6,17 @@ export function AddKubeConfigDialog():Promise<string>;
 
 export function AnnotateResource(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string,arg6:string,arg7:string):Promise<void>;
 
+export function ApplyResourceYAML(arg1:string,arg2:boolean,arg3:boolean):Promise<main.ApplyResult>;
+
 export function DeleteResource(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string):Promise<void>;
 
+export function DiscoverPrometheusTargets(arg1:string):Promise<Array<main.PrometheusTargetCandidate>>;
+
 export function DiscoverResources():Promise<Array<main.APIResource>>;
+
+export function ExecResize(arg1:string,arg2:number,arg3:number):Promise<void>;
+
+export function ExecWrite(arg1:string,arg2:string):Promise<void>;
 
 export function FluxReconcile(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string):Promise<void>;
 
@@ -16,9 +24,25 @@ export function FluxReconcileWithSource(arg1:string,arg2:string,arg3:string,arg4
 
 export function FluxStatus():Promise<Array<main.FluxKindStatus>>;
 
+export function GetClusterOverviewMetrics(arg1:string):Promise<main.ClusterOverviewMetrics>;
+
 export function GetEventsFor(arg1:string,arg2:string,arg3:string):Promise<Array<main.EventInfo>>;
 
+export function GetMetricsAvailability(arg1:string):Promise<main.MetricsAvailability>;
+
+export function GetNodeListMetrics(arg1:string,arg2:Array<string>):Promise<Array<main.ResourceListMetric>>;
+
+export function GetPodListMetrics(arg1:string,arg2:string,arg3:Array<string>):Promise<Array<main.ResourceListMetric>>;
+
+export function GetPrometheusLabelValues(arg1:string,arg2:main.PrometheusContextSettings,arg3:string):Promise<Array<string>>;
+
+export function GetPrometheusSettings(arg1:string):Promise<main.PrometheusContextSettings>;
+
 export function GetResourceJSON(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string):Promise<string>;
+
+export function GetResourceMetricsSeries(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string):Promise<main.ResourceMetricsSeries>;
+
+export function GetResourceUISettings(arg1:string):Promise<main.ResourceUISettings>;
 
 export function GetResourceYAML(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string):Promise<string>;
 
@@ -30,12 +54,46 @@ export function ListKubeConfigs():Promise<Array<main.KubeConfigInfo>>;
 
 export function ListNamespaces():Promise<Array<string>>;
 
+export function ListPodContainers(arg1:string,arg2:string):Promise<Array<string>>;
+
 export function ListResourceTable(arg1:string,arg2:string,arg3:string,arg4:string):Promise<main.TableResult>;
+
+export function LocalTerminalResize(arg1:string,arg2:number,arg3:number):Promise<void>;
+
+export function LocalTerminalWrite(arg1:string,arg2:string):Promise<void>;
 
 export function PatchResource(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string,arg6:string,arg7:string):Promise<void>;
 
 export function RemoveKubeConfig(arg1:string):Promise<void>;
 
+export function ResourceHasItems(arg1:string,arg2:string,arg3:string,arg4:string):Promise<boolean>;
+
+export function SetHideEmptyCRDs(arg1:boolean):Promise<main.ResourceUISettings>;
+
+export function SetPrometheusSettings(arg1:string,arg2:main.PrometheusContextSettings):Promise<main.PrometheusContextSettings>;
+
+export function SetResourceFavorite(arg1:string,arg2:string,arg3:boolean):Promise<main.ResourceUISettings>;
+
+export function SetSectionCollapsed(arg1:string,arg2:string,arg3:boolean):Promise<main.ResourceUISettings>;
+
 export function SetSuspend(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string,arg6:boolean):Promise<void>;
+
+export function StartExec(arg1:string,arg2:string,arg3:string,arg4:string):Promise<string>;
+
+export function StartLocalTerminal(arg1:string):Promise<main.LocalTerminalInfo>;
+
+export function StartPodLogs(arg1:string,arg2:string,arg3:main.LogStreamOptions):Promise<string>;
+
+export function StartResourceWatch(arg1:string,arg2:string,arg3:string,arg4:string):Promise<string>;
+
+export function StopExec(arg1:string):Promise<void>;
+
+export function StopLocalTerminal(arg1:string):Promise<void>;
+
+export function StopPodLogs(arg1:string):Promise<void>;
+
+export function StopResourceWatch(arg1:string):Promise<void>;
+
+export function TestPrometheusConnection(arg1:string,arg2:main.PrometheusContextSettings):Promise<main.PrometheusConnectionTestResult>;
 
 export function UseContext(arg1:string):Promise<void>;

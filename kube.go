@@ -70,8 +70,18 @@ type TableResult struct {
 // ---------- Settings persistence ----------
 
 type Settings struct {
-	KubeConfigs []string `json:"kubeconfigs"`
-	LastContext string   `json:"lastContext"`
+	KubeConfigs       []string                             `json:"kubeconfigs"`
+	LastContext       string                               `json:"lastContext"`
+	Favorites         map[string][]string                  `json:"favorites,omitempty"`
+	CollapsedSections map[string]map[string]bool           `json:"collapsedSections,omitempty"`
+	HideEmptyCRDs     bool                                 `json:"hideEmptyCRDs,omitempty"`
+	Prometheus        map[string]PrometheusContextSettings `json:"prometheus,omitempty"`
+}
+
+type ResourceUISettings struct {
+	Favorites         []string        `json:"favorites"`
+	CollapsedSections map[string]bool `json:"collapsedSections"`
+	HideEmptyCRDs     bool            `json:"hideEmptyCRDs"`
 }
 
 func settingsPath() string {
@@ -98,6 +108,23 @@ func (s Settings) save() {
 	_ = os.WriteFile(path, data, 0o600)
 }
 
+func cloneStringSlice(in []string) []string {
+	if len(in) == 0 {
+		return []string{}
+	}
+	out := make([]string, len(in))
+	copy(out, in)
+	return out
+}
+
+func cloneBoolMap(in map[string]bool) map[string]bool {
+	out := map[string]bool{}
+	for k, v := range in {
+		out[k] = v
+	}
+	return out
+}
+
 // ---------- Manager ----------
 
 type KubeManager struct {
@@ -107,10 +134,11 @@ type KubeManager struct {
 	restConfig     *rest.Config
 	discovery      discovery.DiscoveryInterface
 	dynamic        dynamic.Interface
+	promCache      map[string]prometheusCacheEntry
 }
 
 func NewKubeManager() *KubeManager {
-	return &KubeManager{settings: loadSettings()}
+	return &KubeManager{settings: loadSettings(), promCache: map[string]prometheusCacheEntry{}}
 }
 
 func defaultKubeConfigPath() string {
@@ -149,7 +177,7 @@ func (m *KubeManager) ListKubeConfigs() []KubeConfigInfo {
 		if _, err := os.Stat(p); err != nil {
 			info.Exists = false
 			if !info.IsDefault {
-				info.Error = "Datei nicht gefunden"
+				info.Error = "file not found"
 			}
 		} else {
 			info.Exists = true
@@ -166,7 +194,7 @@ func (m *KubeManager) AddKubeConfig(path string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if _, err := clientcmd.LoadFromFile(path); err != nil {
-		return fmt.Errorf("ungültige kubeconfig: %w", err)
+		return fmt.Errorf("invalid kubeconfig: %w", err)
 	}
 	for _, p := range m.settings.KubeConfigs {
 		if p == path {
@@ -236,7 +264,7 @@ func (m *KubeManager) UseContext(name string) error {
 	)
 	restCfg, err := cc.ClientConfig()
 	if err != nil {
-		return fmt.Errorf("Kontext %q konnte nicht geladen werden: %w", name, err)
+		return fmt.Errorf("could not load context %q: %w", name, err)
 	}
 	restCfg.QPS = 50
 	restCfg.Burst = 100
@@ -266,6 +294,72 @@ func (m *KubeManager) CurrentContext() string {
 	return m.currentContext
 }
 
+func (m *KubeManager) ResourceUISettings(contextName string) ResourceUISettings {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return ResourceUISettings{
+		Favorites:         cloneStringSlice(m.settings.Favorites[contextName]),
+		CollapsedSections: cloneBoolMap(m.settings.CollapsedSections[contextName]),
+		HideEmptyCRDs:     m.settings.HideEmptyCRDs,
+	}
+}
+
+func (m *KubeManager) SetResourceFavorite(contextName, resourceKey string, favorite bool) ResourceUISettings {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.settings.Favorites == nil {
+		m.settings.Favorites = map[string][]string{}
+	}
+	current := m.settings.Favorites[contextName]
+	filtered := current[:0]
+	for _, key := range current {
+		if key != resourceKey {
+			filtered = append(filtered, key)
+		}
+	}
+	if favorite {
+		filtered = append(filtered, resourceKey)
+	}
+	m.settings.Favorites[contextName] = cloneStringSlice(filtered)
+	m.settings.save()
+	return ResourceUISettings{
+		Favorites:         cloneStringSlice(m.settings.Favorites[contextName]),
+		CollapsedSections: cloneBoolMap(m.settings.CollapsedSections[contextName]),
+		HideEmptyCRDs:     m.settings.HideEmptyCRDs,
+	}
+}
+
+func (m *KubeManager) SetSectionCollapsed(contextName, sectionKey string, collapsed bool) ResourceUISettings {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.settings.CollapsedSections == nil {
+		m.settings.CollapsedSections = map[string]map[string]bool{}
+	}
+	if m.settings.CollapsedSections[contextName] == nil {
+		m.settings.CollapsedSections[contextName] = map[string]bool{}
+	}
+	m.settings.CollapsedSections[contextName][sectionKey] = collapsed
+	m.settings.save()
+	return ResourceUISettings{
+		Favorites:         cloneStringSlice(m.settings.Favorites[contextName]),
+		CollapsedSections: cloneBoolMap(m.settings.CollapsedSections[contextName]),
+		HideEmptyCRDs:     m.settings.HideEmptyCRDs,
+	}
+}
+
+func (m *KubeManager) SetHideEmptyCRDs(hide bool) ResourceUISettings {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.settings.HideEmptyCRDs = hide
+	contextName := m.currentContext
+	m.settings.save()
+	return ResourceUISettings{
+		Favorites:         cloneStringSlice(m.settings.Favorites[contextName]),
+		CollapsedSections: cloneBoolMap(m.settings.CollapsedSections[contextName]),
+		HideEmptyCRDs:     m.settings.HideEmptyCRDs,
+	}
+}
+
 // InitialContext returns the context to auto-connect on startup:
 // the last used one if it still exists, otherwise the kubeconfig's current-context.
 func (m *KubeManager) InitialContext() string {
@@ -291,7 +385,7 @@ func (m *KubeManager) clients() (discovery.DiscoveryInterface, dynamic.Interface
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if m.restConfig == nil {
-		return nil, nil, nil, fmt.Errorf("kein Cluster verbunden")
+		return nil, nil, nil, fmt.Errorf("no cluster connected")
 	}
 	return m.discovery, m.dynamic, m.restConfig, nil
 }
@@ -365,6 +459,27 @@ func (m *KubeManager) ListNamespaces() ([]string, error) {
 	return names, nil
 }
 
+func (m *KubeManager) ResourceHasItems(group, version, resource, namespace string) (bool, error) {
+	_, dyn, _, err := m.clients()
+	if err != nil {
+		return false, err
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	gvr := schema.GroupVersionResource{Group: group, Version: version, Resource: resource}
+	opts := metav1.ListOptions{Limit: 1}
+	var list *unstructured.UnstructuredList
+	if namespace != "" {
+		list, err = dyn.Resource(gvr).Namespace(namespace).List(ctx, opts)
+	} else {
+		list, err = dyn.Resource(gvr).List(ctx, opts)
+	}
+	if err != nil {
+		return false, err
+	}
+	return len(list.Items) > 0, nil
+}
+
 // ListResourceTable fetches resources in the server-side Table format —
 // the same rendering kubectl uses, so columns match `kubectl get` for
 // every resource including CRDs with additionalPrinterColumns.
@@ -409,7 +524,7 @@ func (m *KubeManager) ListResourceTable(group, version, resource, namespace stri
 	// Fallback for API servers that don't support Table rendering.
 	var list unstructured.UnstructuredList
 	if err := json.Unmarshal(raw, &list); err != nil {
-		return nil, fmt.Errorf("Antwort konnte nicht gelesen werden: %w", err)
+		return nil, fmt.Errorf("could not read response: %w", err)
 	}
 	result := &TableResult{
 		Columns: []TableColumn{{Name: "Name", Type: "string"}, {Name: "Age", Type: "string"}},

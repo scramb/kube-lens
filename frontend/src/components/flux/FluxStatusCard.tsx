@@ -1,4 +1,5 @@
 import { Badge, Card, Group, Stack, Text } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
 import type { FluxKindStatus } from './types';
 
 interface FluxStatusCardProps {
@@ -16,6 +17,7 @@ function accentColor(s: FluxKindStatus): string {
 }
 
 export function FluxStatusCard({ status, onClick }: FluxStatusCardProps) {
+  const { t } = useTranslation();
   const total = status.total ?? 0;
   const ready = status.ready ?? 0;
   const notReady = status.notReady ?? 0;
@@ -51,21 +53,21 @@ export function FluxStatusCard({ status, onClick }: FluxStatusCardProps) {
       <Group gap="xs" mt="sm">
         {empty ? (
           <Text size="sm" c="dimmed">
-            keine
+            {t('dash.flux.none')}
           </Text>
         ) : (
           <>
             <Badge color="green" variant="light" size="sm">
-              Bereit {ready}
+              {t('dash.status.ready')} {ready}
             </Badge>
             {notReady > 0 && (
               <Badge color="red" variant="light" size="sm">
-                Nicht bereit {notReady}
+                {t('dash.status.notReady')} {notReady}
               </Badge>
             )}
             {suspended > 0 && (
               <Badge color="yellow" variant="light" size="sm">
-                Pausiert {suspended}
+                {t('dash.status.suspended')} {suspended}
               </Badge>
             )}
           </>

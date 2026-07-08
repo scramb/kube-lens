@@ -10,12 +10,28 @@ export function AnnotateResource(arg1, arg2, arg3, arg4, arg5, arg6, arg7) {
   return window['go']['main']['App']['AnnotateResource'](arg1, arg2, arg3, arg4, arg5, arg6, arg7);
 }
 
+export function ApplyResourceYAML(arg1, arg2, arg3) {
+  return window['go']['main']['App']['ApplyResourceYAML'](arg1, arg2, arg3);
+}
+
 export function DeleteResource(arg1, arg2, arg3, arg4, arg5) {
   return window['go']['main']['App']['DeleteResource'](arg1, arg2, arg3, arg4, arg5);
 }
 
+export function DiscoverPrometheusTargets(arg1) {
+  return window['go']['main']['App']['DiscoverPrometheusTargets'](arg1);
+}
+
 export function DiscoverResources() {
   return window['go']['main']['App']['DiscoverResources']();
+}
+
+export function ExecResize(arg1, arg2, arg3) {
+  return window['go']['main']['App']['ExecResize'](arg1, arg2, arg3);
+}
+
+export function ExecWrite(arg1, arg2) {
+  return window['go']['main']['App']['ExecWrite'](arg1, arg2);
 }
 
 export function FluxReconcile(arg1, arg2, arg3, arg4, arg5) {
@@ -30,12 +46,44 @@ export function FluxStatus() {
   return window['go']['main']['App']['FluxStatus']();
 }
 
+export function GetClusterOverviewMetrics(arg1) {
+  return window['go']['main']['App']['GetClusterOverviewMetrics'](arg1);
+}
+
 export function GetEventsFor(arg1, arg2, arg3) {
   return window['go']['main']['App']['GetEventsFor'](arg1, arg2, arg3);
 }
 
+export function GetMetricsAvailability(arg1) {
+  return window['go']['main']['App']['GetMetricsAvailability'](arg1);
+}
+
+export function GetNodeListMetrics(arg1, arg2) {
+  return window['go']['main']['App']['GetNodeListMetrics'](arg1, arg2);
+}
+
+export function GetPodListMetrics(arg1, arg2, arg3) {
+  return window['go']['main']['App']['GetPodListMetrics'](arg1, arg2, arg3);
+}
+
+export function GetPrometheusLabelValues(arg1, arg2, arg3) {
+  return window['go']['main']['App']['GetPrometheusLabelValues'](arg1, arg2, arg3);
+}
+
+export function GetPrometheusSettings(arg1) {
+  return window['go']['main']['App']['GetPrometheusSettings'](arg1);
+}
+
 export function GetResourceJSON(arg1, arg2, arg3, arg4, arg5) {
   return window['go']['main']['App']['GetResourceJSON'](arg1, arg2, arg3, arg4, arg5);
+}
+
+export function GetResourceMetricsSeries(arg1, arg2, arg3, arg4, arg5) {
+  return window['go']['main']['App']['GetResourceMetricsSeries'](arg1, arg2, arg3, arg4, arg5);
+}
+
+export function GetResourceUISettings(arg1) {
+  return window['go']['main']['App']['GetResourceUISettings'](arg1);
 }
 
 export function GetResourceYAML(arg1, arg2, arg3, arg4, arg5) {
@@ -58,8 +106,20 @@ export function ListNamespaces() {
   return window['go']['main']['App']['ListNamespaces']();
 }
 
+export function ListPodContainers(arg1, arg2) {
+  return window['go']['main']['App']['ListPodContainers'](arg1, arg2);
+}
+
 export function ListResourceTable(arg1, arg2, arg3, arg4) {
   return window['go']['main']['App']['ListResourceTable'](arg1, arg2, arg3, arg4);
+}
+
+export function LocalTerminalResize(arg1, arg2, arg3) {
+  return window['go']['main']['App']['LocalTerminalResize'](arg1, arg2, arg3);
+}
+
+export function LocalTerminalWrite(arg1, arg2) {
+  return window['go']['main']['App']['LocalTerminalWrite'](arg1, arg2);
 }
 
 export function PatchResource(arg1, arg2, arg3, arg4, arg5, arg6, arg7) {
@@ -70,8 +130,64 @@ export function RemoveKubeConfig(arg1) {
   return window['go']['main']['App']['RemoveKubeConfig'](arg1);
 }
 
+export function ResourceHasItems(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['ResourceHasItems'](arg1, arg2, arg3, arg4);
+}
+
+export function SetHideEmptyCRDs(arg1) {
+  return window['go']['main']['App']['SetHideEmptyCRDs'](arg1);
+}
+
+export function SetPrometheusSettings(arg1, arg2) {
+  return window['go']['main']['App']['SetPrometheusSettings'](arg1, arg2);
+}
+
+export function SetResourceFavorite(arg1, arg2, arg3) {
+  return window['go']['main']['App']['SetResourceFavorite'](arg1, arg2, arg3);
+}
+
+export function SetSectionCollapsed(arg1, arg2, arg3) {
+  return window['go']['main']['App']['SetSectionCollapsed'](arg1, arg2, arg3);
+}
+
 export function SetSuspend(arg1, arg2, arg3, arg4, arg5, arg6) {
   return window['go']['main']['App']['SetSuspend'](arg1, arg2, arg3, arg4, arg5, arg6);
+}
+
+export function StartExec(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['StartExec'](arg1, arg2, arg3, arg4);
+}
+
+export function StartLocalTerminal(arg1) {
+  return window['go']['main']['App']['StartLocalTerminal'](arg1);
+}
+
+export function StartPodLogs(arg1, arg2, arg3) {
+  return window['go']['main']['App']['StartPodLogs'](arg1, arg2, arg3);
+}
+
+export function StartResourceWatch(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['StartResourceWatch'](arg1, arg2, arg3, arg4);
+}
+
+export function StopExec(arg1) {
+  return window['go']['main']['App']['StopExec'](arg1);
+}
+
+export function StopLocalTerminal(arg1) {
+  return window['go']['main']['App']['StopLocalTerminal'](arg1);
+}
+
+export function StopPodLogs(arg1) {
+  return window['go']['main']['App']['StopPodLogs'](arg1);
+}
+
+export function StopResourceWatch(arg1) {
+  return window['go']['main']['App']['StopResourceWatch'](arg1);
+}
+
+export function TestPrometheusConnection(arg1, arg2) {
+  return window['go']['main']['App']['TestPrometheusConnection'](arg1, arg2);
 }
 
 export function UseContext(arg1) {
