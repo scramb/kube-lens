@@ -232,7 +232,7 @@ export default function PrometheusConfigModal({ opened, onClose, contextName }: 
 
           <Select
             label="Modus"
-            description="Auto wird in B2 an Cluster-Discovery und API-Server-Proxy angebunden."
+            description="Auto entdeckt In-Cluster-Prometheus und greift über den API-Server-Proxy zu. Manuell nutzt eine frei konfigurierbare URL."
             data={[
               { value: 'off', label: 'Aus' },
               { value: 'manual', label: 'Manuell' },
@@ -279,60 +279,61 @@ export default function PrometheusConfigModal({ opened, onClose, contextName }: 
           )}
 
           {settings.mode === 'manual' && (
-            <>
-              <TextInput
-                label="Prometheus-kompatible URL"
-                placeholder="https://mimir.example.com/prometheus"
-                value={settings.url}
-                onChange={(event) => updateSettings({ url: event.currentTarget.value })}
-                disabled={loading}
-              />
+            <TextInput
+              label="Prometheus-kompatible URL"
+              placeholder="https://mimir.example.com/prometheus"
+              value={settings.url}
+              onChange={(event) => updateSettings({ url: event.currentTarget.value })}
+              disabled={loading}
+            />
+          )}
 
-              <Stack gap="xs">
-                <Group justify="space-between">
-                  <div>
-                    <Text size="sm" fw={500}>
-                      HTTP-Header
-                    </Text>
-                    <Text size="xs" c="dimmed">
-                      Freie Key-Value-Liste für Tenant, Authorization oder Proxies.
-                    </Text>
-                  </div>
-                  <Button size="xs" variant="light" leftSection={<IconPlus size={14} />} onClick={addHeader}>
-                    Header hinzufügen
-                  </Button>
-                </Group>
-                {headers.length === 0 ? (
-                  <Text size="xs" c="dimmed">
-                    Keine Header konfiguriert.
+          {settings.mode !== 'off' && (
+            <Stack gap="xs">
+              <Group justify="space-between">
+                <div>
+                  <Text size="sm" fw={500}>
+                    HTTP-Header
                   </Text>
-                ) : (
-                  headers.map((row) => (
-                    <Group key={row.id} gap="xs" wrap="nowrap" align="flex-end">
-                      <TextInput
-                        label="Name"
-                        placeholder="X-Scope-OrgID"
-                        value={row.key}
-                        onChange={(event) => updateHeader(row.id, { key: event.currentTarget.value })}
-                        style={{ flex: 1 }}
-                      />
-                      <PasswordInput
-                        label="Wert"
-                        placeholder="Header-Wert"
-                        value={row.value}
-                        onChange={(event) => updateHeader(row.id, { value: event.currentTarget.value })}
-                        style={{ flex: 1 }}
-                      />
-                      <Tooltip label="Header entfernen">
-                        <ActionIcon color="red" variant="subtle" onClick={() => removeHeader(row.id)}>
-                          <IconTrash size={16} />
-                        </ActionIcon>
-                      </Tooltip>
-                    </Group>
-                  ))
-                )}
-              </Stack>
-            </>
+                  <Text size="xs" c="dimmed">
+                    Freie Key-Value-Liste für Tenant (X-Scope-OrgID), Authorization oder Proxies —
+                    werden auch über den API-Server-Proxy weitergereicht.
+                  </Text>
+                </div>
+                <Button size="xs" variant="light" leftSection={<IconPlus size={14} />} onClick={addHeader}>
+                  Header hinzufügen
+                </Button>
+              </Group>
+              {headers.length === 0 ? (
+                <Text size="xs" c="dimmed">
+                  Keine Header konfiguriert.
+                </Text>
+              ) : (
+                headers.map((row) => (
+                  <Group key={row.id} gap="xs" wrap="nowrap" align="flex-end">
+                    <TextInput
+                      label="Name"
+                      placeholder="X-Scope-OrgID"
+                      value={row.key}
+                      onChange={(event) => updateHeader(row.id, { key: event.currentTarget.value })}
+                      style={{ flex: 1 }}
+                    />
+                    <PasswordInput
+                      label="Wert"
+                      placeholder="Header-Wert"
+                      value={row.value}
+                      onChange={(event) => updateHeader(row.id, { value: event.currentTarget.value })}
+                      style={{ flex: 1 }}
+                    />
+                    <Tooltip label="Header entfernen">
+                      <ActionIcon color="red" variant="subtle" onClick={() => removeHeader(row.id)}>
+                        <IconTrash size={16} />
+                      </ActionIcon>
+                    </Tooltip>
+                  </Group>
+                ))
+              )}
+            </Stack>
           )}
 
           <Divider />

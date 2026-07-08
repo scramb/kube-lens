@@ -657,6 +657,12 @@ func (m *KubeManager) prometheusRawProxy(cfg PrometheusContextSettings, endpoint
 	defer cancel()
 	path := strings.TrimRight(cfg.Target.PathPrefix, "/") + endpoint
 	req := client.Get().Namespace(cfg.Target.Namespace).Resource("services").Name(cfg.Target.Service + ":" + portRef).SubResource("proxy").Suffix(strings.TrimLeft(path, "/"))
+	// Forward configured headers (e.g. Mimir X-Scope-OrgID) through the proxy too.
+	for key, value := range cfg.Headers {
+		if strings.TrimSpace(key) != "" {
+			req = req.SetHeader(key, value)
+		}
+	}
 	for key, values := range query {
 		for _, value := range values {
 			req = req.Param(key, value)

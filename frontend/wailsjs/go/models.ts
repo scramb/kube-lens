@@ -1,16 +1,16 @@
 export namespace main {
-
+	
 	export class APIResource {
 	    group: string;
 	    version: string;
 	    kind: string;
 	    name: string;
 	    namespaced: boolean;
-
+	
 	    static createFrom(source: any = {}) {
 	        return new APIResource(source);
 	    }
-
+	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.group = source["group"];
@@ -32,11 +32,11 @@ export namespace main {
 	    podsPending: number;
 	    podsFailed: number;
 	    message: string;
-
+	
 	    static createFrom(source: any = {}) {
 	        return new ClusterOverviewMetrics(source);
 	    }
-
+	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.available = source["available"];
@@ -59,11 +59,11 @@ export namespace main {
 	    namespace: string;
 	    source: string;
 	    active: boolean;
-
+	
 	    static createFrom(source: any = {}) {
 	        return new ContextInfo(source);
 	    }
-
+	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.name = source["name"];
@@ -82,11 +82,11 @@ export namespace main {
 	    source: string;
 	    firstTimestamp: string;
 	    lastTimestamp: string;
-
+	
 	    static createFrom(source: any = {}) {
 	        return new EventInfo(source);
 	    }
-
+	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.type = source["type"];
@@ -107,11 +107,11 @@ export namespace main {
 	    ready: number;
 	    notReady: number;
 	    suspended: number;
-
+	
 	    static createFrom(source: any = {}) {
 	        return new FluxKindStatus(source);
 	    }
-
+	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.kind = source["kind"];
@@ -129,11 +129,11 @@ export namespace main {
 	    isDefault: boolean;
 	    exists: boolean;
 	    error: string;
-
+	
 	    static createFrom(source: any = {}) {
 	        return new KubeConfigInfo(source);
 	    }
-
+	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.path = source["path"];
@@ -145,11 +145,11 @@ export namespace main {
 	export class MetricPoint {
 	    timestamp: string;
 	    value: number;
-
+	
 	    static createFrom(source: any = {}) {
 	        return new MetricPoint(source);
 	    }
-
+	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.timestamp = source["timestamp"];
@@ -160,18 +160,18 @@ export namespace main {
 	    name: string;
 	    unit: string;
 	    points: MetricPoint[];
-
+	
 	    static createFrom(source: any = {}) {
 	        return new MetricSeries(source);
 	    }
-
+	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.name = source["name"];
 	        this.unit = source["unit"];
 	        this.points = this.convertValues(source["points"], MetricPoint);
 	    }
-
+	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -195,11 +195,11 @@ export namespace main {
 	    mode: string;
 	    message: string;
 	    proxyForbidden: boolean;
-
+	
 	    static createFrom(source: any = {}) {
 	        return new MetricsAvailability(source);
 	    }
-
+	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.available = source["available"];
@@ -211,11 +211,11 @@ export namespace main {
 	export class PrometheusClusterSelector {
 	    label: string;
 	    value: string;
-
+	
 	    static createFrom(source: any = {}) {
 	        return new PrometheusClusterSelector(source);
 	    }
-
+	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.label = source["label"];
@@ -230,11 +230,11 @@ export namespace main {
 	    clusterLabel: string;
 	    clusterValues: string[];
 	    proxyForbidden: boolean;
-
+	
 	    static createFrom(source: any = {}) {
 	        return new PrometheusConnectionTestResult(source);
 	    }
-
+	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.ok = source["ok"];
@@ -253,11 +253,11 @@ export namespace main {
 	    portName: string;
 	    port: number;
 	    pathPrefix: string;
-
+	
 	    static createFrom(source: any = {}) {
 	        return new PrometheusTarget(source);
 	    }
-
+	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.accessMode = source["accessMode"];
@@ -274,11 +274,11 @@ export namespace main {
 	    headers: Record<string, string>;
 	    clusterSelector: PrometheusClusterSelector;
 	    target: PrometheusTarget;
-
+	
 	    static createFrom(source: any = {}) {
 	        return new PrometheusContextSettings(source);
 	    }
-
+	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.mode = source["mode"];
@@ -287,7 +287,7 @@ export namespace main {
 	        this.clusterSelector = this.convertValues(source["clusterSelector"], PrometheusClusterSelector);
 	        this.target = this.convertValues(source["target"], PrometheusTarget);
 	    }
-
+	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -306,7 +306,7 @@ export namespace main {
 		    return a;
 		}
 	}
-
+	
 	export class PrometheusTargetCandidate {
 	    namespace: string;
 	    service: string;
@@ -314,11 +314,11 @@ export namespace main {
 	    port: number;
 	    score: number;
 	    reasons: string[];
-
+	
 	    static createFrom(source: any = {}) {
 	        return new PrometheusTargetCandidate(source);
 	    }
-
+	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.namespace = source["namespace"];
@@ -334,11 +334,11 @@ export namespace main {
 	    name: string;
 	    cpu: number;
 	    memory: number;
-
+	
 	    static createFrom(source: any = {}) {
 	        return new ResourceListMetric(source);
 	    }
-
+	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.namespace = source["namespace"];
@@ -350,17 +350,17 @@ export namespace main {
 	export class ResourceMetricsSeries {
 	    available: boolean;
 	    series: MetricSeries[];
-
+	
 	    static createFrom(source: any = {}) {
 	        return new ResourceMetricsSeries(source);
 	    }
-
+	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.available = source["available"];
 	        this.series = this.convertValues(source["series"], MetricSeries);
 	    }
-
+	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -383,11 +383,11 @@ export namespace main {
 	    favorites: string[];
 	    collapsedSections: Record<string, boolean>;
 	    hideEmptyCRDs: boolean;
-
+	
 	    static createFrom(source: any = {}) {
 	        return new ResourceUISettings(source);
 	    }
-
+	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.favorites = source["favorites"];
@@ -399,11 +399,11 @@ export namespace main {
 	    name: string;
 	    type: string;
 	    priority: number;
-
+	
 	    static createFrom(source: any = {}) {
 	        return new TableColumn(source);
 	    }
-
+	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.name = source["name"];
@@ -415,11 +415,11 @@ export namespace main {
 	    cells: any[];
 	    name: string;
 	    namespace: string;
-
+	
 	    static createFrom(source: any = {}) {
 	        return new TableRow(source);
 	    }
-
+	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.cells = source["cells"];
@@ -430,17 +430,17 @@ export namespace main {
 	export class TableResult {
 	    columns: TableColumn[];
 	    rows: TableRow[];
-
+	
 	    static createFrom(source: any = {}) {
 	        return new TableResult(source);
 	    }
-
+	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.columns = this.convertValues(source["columns"], TableColumn);
 	        this.rows = this.convertValues(source["rows"], TableRow);
 	    }
-
+	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;

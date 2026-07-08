@@ -166,7 +166,8 @@ umgebungsspezifische ist konfigurierbar (Open-Source-Anforderung, siehe Entschei
       Kandidatenliste zurückgeben; UI lässt den User bestätigen (kein stilles Raten).
 - [x] Zugriff auf In-Cluster-Instanzen über **API-Server-Service-Proxy**
       (`/api/v1/namespaces/<ns>/services/<name>:<port>/proxy/`) — nutzt bestehende
-      Kubeconfig-Auth, kein Portmanagement.
+      Kubeconfig-Auth, kein Portmanagement. Konfigurierte Header (z. B. Mimir
+      `X-Scope-OrgID`) werden auch über den Proxy weitergereicht.
 - [ ] Fallback **Port-Forward** (client-go SPDY), falls Proxy per RBAC verboten
       (403 wird erkannt und im Konfigurations-Modal gemeldet; automatischer
       Port-Forward bleibt offen, um keine instabile Teilimplementierung zu committen).
@@ -192,6 +193,13 @@ Abhängig von: A4 (Metriken-Tab), B3.
       (CPU/Mem), Node-Status, Pod-Zähler. Bewusst schlank — kein Grafana-Ersatz.
 - [x] **Graceful Degradation:** ohne konfigurierte/erreichbare Quelle verschwinden
       Spalten/Tabs/Seite kommentarlos; Fehlzustand nur im Konfigurations-Modal sichtbar.
+
+**Verifiziert (2026-07-08) live gegen `aks-chatapp-hr-prod-gwc-001`:** Auto-Discovery
+findet `monitoring/kube-prometheus-stack-prometheus:http-web`, Verbindungstest ok,
+CPU/Memory-Spalten in Pod-Liste, 4 Zeitreihen-Charts (CPU/Mem/Net RX/TX) im Drawer,
+Cluster-Übersicht (CPU 4 %, Mem 12 %, Nodes 4/0) — alles mit echten Prometheus-Daten.
+Behoben: Header wurden im Proxy-Modus nicht gesendet; Header-Editor jetzt auch im
+Auto-Modus verfügbar. Offen bleibt nur der Port-Forward-Fallback (403-Erkennung ist da).
 
 ---
 
