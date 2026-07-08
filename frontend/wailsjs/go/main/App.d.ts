@@ -58,6 +58,10 @@ export function ListPodContainers(arg1:string,arg2:string):Promise<Array<string>
 
 export function ListResourceTable(arg1:string,arg2:string,arg3:string,arg4:string):Promise<main.TableResult>;
 
+export function LocalTerminalResize(arg1:string,arg2:number,arg3:number):Promise<void>;
+
+export function LocalTerminalWrite(arg1:string,arg2:string):Promise<void>;
+
 export function PatchResource(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string,arg6:string,arg7:string):Promise<void>;
 
 export function RemoveKubeConfig(arg1:string):Promise<void>;
@@ -76,11 +80,15 @@ export function SetSuspend(arg1:string,arg2:string,arg3:string,arg4:string,arg5:
 
 export function StartExec(arg1:string,arg2:string,arg3:string,arg4:string):Promise<string>;
 
+export function StartLocalTerminal(arg1:string):Promise<main.LocalTerminalInfo>;
+
 export function StartPodLogs(arg1:string,arg2:string,arg3:main.LogStreamOptions):Promise<string>;
 
 export function StartResourceWatch(arg1:string,arg2:string,arg3:string,arg4:string):Promise<string>;
 
 export function StopExec(arg1:string):Promise<void>;
+
+export function StopLocalTerminal(arg1:string):Promise<void>;
 
 export function StopPodLogs(arg1:string):Promise<void>;
 

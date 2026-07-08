@@ -3,6 +3,7 @@ module kube-lens
 go 1.26.0
 
 require (
+	github.com/aymanbagabas/go-pty v0.2.3
 	github.com/wailsapp/wails/v2 v2.13.0
 	k8s.io/api v0.36.2
 	k8s.io/apimachinery v0.36.2
@@ -13,6 +14,7 @@ require (
 require (
 	git.sr.ht/~jackmordaunt/go-toast/v2 v2.0.3 // indirect
 	github.com/bep/debounce v1.2.1 // indirect
+	github.com/creack/pty v1.1.24 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/emicklei/go-restful/v3 v3.13.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.9.0 // indirect
@@ -47,6 +49,7 @@ require (
 	github.com/samber/lo v1.49.1 // indirect
 	github.com/spf13/pflag v1.0.9 // indirect
 	github.com/tkrajina/go-reflector v0.5.8 // indirect
+	github.com/u-root/u-root v0.16.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	github.com/wailsapp/go-webview2 v1.0.22 // indirect

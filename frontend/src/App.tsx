@@ -3,6 +3,7 @@ import {
   ActionIcon,
   Alert,
   AppShell,
+  Box,
   Button,
   Center,
   Group,
@@ -26,6 +27,7 @@ import {
   IconSearch,
   IconSettings,
   IconSettingsCog,
+  IconTerminal2,
 } from '@tabler/icons-react';
 import {
   AddKubeConfigDialog,
@@ -63,6 +65,7 @@ import { ClusterOverview } from './components/cluster/ClusterOverview';
 import { formatBytes, formatCPU } from './components/metrics/format';
 import { FluxOverview } from './components/flux';
 import { NewResourceModal } from './components/editor';
+import TerminalPanel from './components/terminal/TerminalPanel';
 
 // Watch pushes live updates; this slow poll is only a safety net for when the
 // watch is unavailable (e.g. forbidden by RBAC).
@@ -107,6 +110,7 @@ export default function App() {
   const [configModalOpen, setConfigModalOpen] = useState(false);
   const [prometheusModalOpen, setPrometheusModalOpen] = useState(false);
   const [newResourceOpen, setNewResourceOpen] = useState(false);
+  const [terminalPanelOpen, setTerminalPanelOpen] = useState(false);
   const [drawer, setDrawer] = useState<{
     open: boolean;
     resource: APIResource | null;
@@ -468,6 +472,15 @@ export default function App() {
               <IconPlus size={18} />
             </ActionIcon>
           </Tooltip>
+          <Tooltip label={t('shell.terminal.toggle')}>
+            <ActionIcon
+              variant={terminalPanelOpen ? 'light' : 'subtle'}
+              aria-label={t('shell.terminal.toggle')}
+              onClick={() => setTerminalPanelOpen((v) => !v)}
+            >
+              <IconTerminal2 size={18} />
+            </ActionIcon>
+          </Tooltip>
           <Tooltip label={t('shell.tooltip.refresh')}>
             <ActionIcon
               variant="subtle"
@@ -538,7 +551,8 @@ export default function App() {
         />
       </AppShell.Navbar>
 
-      <AppShell.Main h="100dvh">
+      <AppShell.Main h="100dvh" style={{ display: 'flex', flexDirection: 'column' }}>
+        <Box flex={1} mih={0} style={{ overflow: 'hidden' }}>
         {noContexts ? (
           <Center h="100%">
             <div style={{ textAlign: 'center' }}>
@@ -603,6 +617,8 @@ export default function App() {
             <Text c="dimmed">{t('shell.selectResource')}</Text>
           </Center>
         )}
+        </Box>
+        <TerminalPanel opened={terminalPanelOpen} currentContext={currentContext} disabled={!!connectError || connecting} />
       </AppShell.Main>
 
       <YamlDrawer

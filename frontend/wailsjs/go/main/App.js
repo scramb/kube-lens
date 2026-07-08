@@ -114,6 +114,14 @@ export function ListResourceTable(arg1, arg2, arg3, arg4) {
   return window['go']['main']['App']['ListResourceTable'](arg1, arg2, arg3, arg4);
 }
 
+export function LocalTerminalResize(arg1, arg2, arg3) {
+  return window['go']['main']['App']['LocalTerminalResize'](arg1, arg2, arg3);
+}
+
+export function LocalTerminalWrite(arg1, arg2) {
+  return window['go']['main']['App']['LocalTerminalWrite'](arg1, arg2);
+}
+
 export function PatchResource(arg1, arg2, arg3, arg4, arg5, arg6, arg7) {
   return window['go']['main']['App']['PatchResource'](arg1, arg2, arg3, arg4, arg5, arg6, arg7);
 }
@@ -150,6 +158,10 @@ export function StartExec(arg1, arg2, arg3, arg4) {
   return window['go']['main']['App']['StartExec'](arg1, arg2, arg3, arg4);
 }
 
+export function StartLocalTerminal(arg1) {
+  return window['go']['main']['App']['StartLocalTerminal'](arg1);
+}
+
 export function StartPodLogs(arg1, arg2, arg3) {
   return window['go']['main']['App']['StartPodLogs'](arg1, arg2, arg3);
 }
@@ -160,6 +172,10 @@ export function StartResourceWatch(arg1, arg2, arg3, arg4) {
 
 export function StopExec(arg1) {
   return window['go']['main']['App']['StopExec'](arg1);
+}
+
+export function StopLocalTerminal(arg1) {
+  return window['go']['main']['App']['StopLocalTerminal'](arg1);
 }
 
 export function StopPodLogs(arg1) {

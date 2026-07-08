@@ -170,6 +170,22 @@ export namespace main {
 	        this.error = source["error"];
 	    }
 	}
+	export class LocalTerminalInfo {
+	    id: string;
+	    shell: string;
+	    contextName: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new LocalTerminalInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.shell = source["shell"];
+	        this.contextName = source["contextName"];
+	    }
+	}
 	export class LogStreamOptions {
 	    container: string;
 	    tailLines: number;
