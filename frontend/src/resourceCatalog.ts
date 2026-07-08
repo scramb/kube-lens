@@ -1,4 +1,4 @@
-import { APIResource } from './types';
+import { APIResource, CRDGroupRule, CRDGroupingSettings } from './types';
 
 export interface NavItem {
   label: string;
@@ -6,7 +6,9 @@ export interface NavItem {
 }
 
 export interface NavSection {
+  id?: string;
   label: string;
+  icon?: string;
   items: NavItem[];
 }
 
@@ -89,7 +91,7 @@ export function buildStandardNav(resources: APIResource[]): NavSection[] {
     if (!r) continue;
     let section = byLabel.get(w.section);
     if (!section) {
-      section = { label: w.section, items: [] };
+      section = { id: `standard:${w.section}`, label: w.section, items: [] };
       byLabel.set(w.section, section);
       sections.push(section);
     }
@@ -98,44 +100,120 @@ export function buildStandardNav(resources: APIResource[]): NavSection[] {
   return sections;
 }
 
-// Maps a custom-resource API group to a product section name. Rules are
-// checked in order; the first match wins, falling back to the raw group.
-interface ProductRule {
-  test: (g: string) => boolean;
-  product: string;
-}
-
-const PRODUCT_RULES: ProductRule[] = [
-  { test: (g) => g.endsWith('.fluxcd.io'), product: 'Flux' },
-  { test: (g) => g === 'monitoring.coreos.com', product: 'Prometheus Operator' },
-  { test: (g) => g.endsWith('.istio.io'), product: 'Istio' },
-  { test: (g) => g === 'cert-manager.io' || g.endsWith('.cert-manager.io'), product: 'Cert-Manager' },
-  { test: (g) => g === 'kyverno.io' || g.endsWith('.kyverno.io') || g === 'wgpolicyk8s.io', product: 'Kyverno' },
-  { test: (g) => g === 'external-secrets.io' || g === 'generators.external-secrets.io', product: 'External Secrets' },
-  { test: (g) => g === 'gateway.networking.k8s.io', product: 'Gateway API' },
+export const DEFAULT_CRD_GROUP_RULES: CRDGroupRule[] = [
+  { id: 'flux', label: 'Flux', patterns: ['*.fluxcd.io'], icon: 'tabler:bolt', enabled: true },
+  { id: 'prometheus-operator', label: 'Prometheus Operator', patterns: ['monitoring.coreos.com'], icon: 'tabler:activity-heartbeat', enabled: true },
+  { id: 'istio', label: 'Istio', patterns: ['*.istio.io'], icon: 'tabler:mesh', enabled: true },
+  { id: 'cert-manager', label: 'Cert-Manager', patterns: ['cert-manager.io', '*.cert-manager.io'], icon: 'tabler:certificate', enabled: true },
+  { id: 'kyverno', label: 'Kyverno', patterns: ['kyverno.io', '*.kyverno.io', 'wgpolicyk8s.io'], icon: 'tabler:shield-check', enabled: true },
+  { id: 'external-secrets', label: 'External Secrets', patterns: ['external-secrets.io', 'generators.external-secrets.io'], icon: 'tabler:key', enabled: true },
+  { id: 'gateway-api', label: 'Gateway API', patterns: ['gateway.networking.k8s.io'], icon: 'tabler:route', enabled: true },
 ];
 
-export function productForGroup(group: string): string {
-  for (const rule of PRODUCT_RULES) {
-    if (rule.test(group)) return rule.product;
-  }
-  return group;
+export function normalizeCRDGroupRule(input: Partial<CRDGroupRule>, index = 0): CRDGroupRule {
+  const label = (input.label ?? '').trim();
+  return {
+    id: sanitizeRuleId(input.id || label || `custom-${index + 1}`),
+    label: label || 'Custom Group',
+    patterns: (input.patterns ?? []).map((p) => p.trim()).filter(Boolean),
+    icon: (input.icon ?? '').trim(),
+    enabled: input.enabled !== false,
+  };
 }
 
-// buildCrdNav groups every non-standard resource by its product section.
-export function buildCrdNav(resources: APIResource[]): NavSection[] {
-  const byProduct = new Map<string, APIResource[]>();
+export function sanitizeRuleId(value: string): string {
+  const id = value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return id || 'custom-group';
+}
+
+export function normalizeCRDGroupingSettings(input?: Partial<CRDGroupingSettings>): CRDGroupingSettings {
+  return { rules: (input?.rules ?? []).map((r, index) => normalizeCRDGroupRule(r, index)) };
+}
+
+function matchesPattern(group: string, pattern: string): boolean {
+  const normalized = pattern.trim().toLowerCase();
+  const g = group.toLowerCase();
+  if (!normalized) return false;
+  if (normalized === '*') return true;
+  if (normalized.startsWith('*.')) {
+    const suffix = normalized.slice(1);
+    return g.endsWith(suffix) && g.length > suffix.length;
+  }
+  if (normalized.includes('*')) {
+    const escaped = normalized.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*');
+    return new RegExp(`^${escaped}$`).test(g);
+  }
+  return g === normalized;
+}
+
+export function validateCRDGroupRule(rule: CRDGroupRule): string[] {
+  const errors: string[] = [];
+  if (!rule.label.trim()) errors.push('Label is required.');
+  if (!rule.patterns.length) errors.push('At least one pattern is required.');
+  for (const pattern of rule.patterns) {
+    if (!pattern.trim()) errors.push('Patterns must not be empty.');
+    if (/\s/.test(pattern)) errors.push(`Pattern "${pattern}" must not contain whitespace.`);
+  }
+  if (rule.icon.length > 8192) errors.push('Icon is too large.');
+  return errors;
+}
+
+export function sanitizeCustomSvg(svg: string): string | null {
+  const trimmed = svg.trim();
+  if (!trimmed) return null;
+  if (trimmed.length > 8192) return null;
+  if (!/^<svg[\s>]/i.test(trimmed)) return null;
+  if (/<script[\s>]/i.test(trimmed)) return null;
+  if (/\son[a-z]+\s*=/i.test(trimmed)) return null;
+  if (/\s(?:href|xlink:href)\s*=\s*["']\s*(?:https?:|javascript:|data:)/i.test(trimmed)) return null;
+  if (/<(?:iframe|object|embed|foreignObject)\b/i.test(trimmed)) return null;
+  return trimmed;
+}
+
+interface MatchedGroup {
+  id: string;
+  label: string;
+  icon: string;
+}
+
+function enabledRules(rules: CRDGroupRule[]): CRDGroupRule[] {
+  return rules.map((r, index) => normalizeCRDGroupRule(r, index)).filter((r) => r.enabled && r.patterns.length > 0);
+}
+
+function matchGroup(group: string, settings?: CRDGroupingSettings): MatchedGroup {
+  const userRules = enabledRules(settings?.rules ?? []);
+  const defaultRules = enabledRules(DEFAULT_CRD_GROUP_RULES);
+  for (const rule of [...userRules, ...defaultRules]) {
+    if (rule.patterns.some((pattern) => matchesPattern(group, pattern))) {
+      return { id: rule.id, label: rule.label, icon: rule.icon };
+    }
+  }
+  return { id: `raw:${group}`, label: group, icon: '' };
+}
+
+// Maps a custom-resource API group to a product section name. Kept for existing callers/tests.
+export function productForGroup(group: string, settings?: CRDGroupingSettings): string {
+  return matchGroup(group, settings).label;
+}
+
+// buildCrdNav groups every non-standard resource by configurable product section.
+export function buildCrdNav(resources: APIResource[], settings?: CRDGroupingSettings): NavSection[] {
+  const byGroup = new Map<string, { meta: MatchedGroup; resources: APIResource[] }>();
   for (const r of resources) {
     if (STANDARD_GROUPS.has(r.group)) continue;
-    const product = productForGroup(r.group);
-    const list = byProduct.get(product) ?? [];
-    list.push(r);
-    byProduct.set(product, list);
+    const meta = matchGroup(r.group, settings);
+    const existing = byGroup.get(meta.id) ?? { meta, resources: [] };
+    existing.resources.push(r);
+    byGroup.set(meta.id, existing);
   }
 
-  return [...byProduct.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([product, list]) => {
+  return [...byGroup.values()]
+    .sort((a, b) => a.meta.label.localeCompare(b.meta.label))
+    .map(({ meta, resources: list }) => {
       // Count kind occurrences so we only disambiguate on real collisions.
       const kindCounts = new Map<string, number>();
       for (const r of list) kindCounts.set(r.kind, (kindCounts.get(r.kind) ?? 0) + 1);
@@ -146,7 +224,9 @@ export function buildCrdNav(resources: APIResource[]): NavSection[] {
       }));
 
       return {
-        label: product,
+        id: meta.id,
+        label: meta.label,
+        icon: meta.icon,
         items: items.sort((a, b) => a.label.localeCompare(b.label)),
       };
     });

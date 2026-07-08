@@ -39,10 +39,23 @@ export interface TableResult {
   rows: TableRow[];
 }
 
+export interface CRDGroupRule {
+  id: string;
+  label: string;
+  patterns: string[];
+  icon: string;
+  enabled: boolean;
+}
+
+export interface CRDGroupingSettings {
+  rules: CRDGroupRule[];
+}
+
 export interface ResourceUISettings {
   favorites: string[];
   collapsedSections: Record<string, boolean>;
   hideEmptyCRDs: boolean;
+  crdGrouping: CRDGroupingSettings;
 }
 
 export interface PrometheusClusterSelector {

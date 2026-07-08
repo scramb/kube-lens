@@ -142,6 +142,10 @@ export function SetPrometheusSettings(arg1, arg2) {
   return window['go']['main']['App']['SetPrometheusSettings'](arg1, arg2);
 }
 
+export function SetCRDGroupingSettings(arg1) {
+  return window['go']['main']['App']['SetCRDGroupingSettings'](arg1);
+}
+
 export function SetResourceFavorite(arg1, arg2, arg3) {
   return window['go']['main']['App']['SetResourceFavorite'](arg1, arg2, arg3);
 }

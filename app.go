@@ -79,6 +79,10 @@ func (a *App) SetHideEmptyCRDs(hide bool) ResourceUISettings {
 	return a.kube.SetHideEmptyCRDs(hide)
 }
 
+func (a *App) SetCRDGroupingSettings(settings CRDGroupingSettings) ResourceUISettings {
+	return a.kube.SetCRDGroupingSettings(settings)
+}
+
 func (a *App) DiscoverResources() ([]APIResource, error) {
 	return a.kube.DiscoverResources()
 }

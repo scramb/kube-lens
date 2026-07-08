@@ -1,8 +1,21 @@
 import { MouseEvent, useMemo, useState } from 'react';
 import { ActionIcon, Divider, Group, NavLink, ScrollArea, Stack, Switch, Text, TextInput, Tooltip } from '@mantine/core';
-import { IconActivityHeartbeat, IconBolt, IconEyeOff, IconPuzzle, IconSearch, IconStar, IconStarFilled } from '@tabler/icons-react';
+import {
+  IconActivityHeartbeat,
+  IconBolt,
+  IconCertificate,
+  IconEyeOff,
+  IconKey,
+  IconMesh,
+  IconPuzzle,
+  IconRoute,
+  IconSearch,
+  IconShieldCheck,
+  IconStar,
+  IconStarFilled,
+} from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
-import { NavItem, NavSection } from '../resourceCatalog';
+import { NavItem, NavSection, sanitizeCustomSvg } from '../resourceCatalog';
 import { APIResource, resourceKey } from '../types';
 
 interface Props {
@@ -26,8 +39,37 @@ interface Props {
   onOpenCluster: () => void;
 }
 
-function sectionKey(kind: 'standard' | 'crd', label: string): string {
-  return `${kind}:${label}`;
+function sectionKey(kind: 'standard' | 'crd', section: NavSection): string {
+  return `${kind}:${section.id ?? section.label}`;
+}
+
+function SectionIcon({ icon }: { icon?: string }) {
+  if (!icon) return <IconPuzzle size={14} />;
+  if (icon.startsWith('emoji:')) return <span style={{ width: 14, textAlign: 'center', lineHeight: 1 }}>{icon.slice(6)}</span>;
+  if (icon.startsWith('svg:')) {
+    const svg = sanitizeCustomSvg(icon.slice(4));
+    if (!svg) return <IconPuzzle size={14} />;
+    return <span style={{ width: 14, height: 14, display: 'inline-flex' }} dangerouslySetInnerHTML={{ __html: svg }} />;
+  }
+  const props = { size: 14 };
+  switch (icon) {
+    case 'tabler:activity-heartbeat':
+      return <IconActivityHeartbeat {...props} />;
+    case 'tabler:bolt':
+      return <IconBolt {...props} />;
+    case 'tabler:certificate':
+      return <IconCertificate {...props} />;
+    case 'tabler:key':
+      return <IconKey {...props} />;
+    case 'tabler:mesh':
+      return <IconMesh {...props} />;
+    case 'tabler:route':
+      return <IconRoute {...props} />;
+    case 'tabler:shield-check':
+      return <IconShieldCheck {...props} />;
+    default:
+      return <IconPuzzle {...props} />;
+  }
 }
 
 function FavoriteStar({ resource, active, onToggle }: { resource: APIResource; active: boolean; onToggle: (r: APIResource, favorite: boolean) => void }) {
@@ -180,7 +222,7 @@ export default function Sidebar({
         )}
 
         {visibleStandard.map((section) => {
-          const key = sectionKey('standard', section.label);
+          const key = sectionKey('standard', section);
           return (
             <NavLink
               key={key}
@@ -215,12 +257,12 @@ export default function Sidebar({
               </Tooltip>
             </Group>
             {visibleCrds.map((section) => {
-              const key = sectionKey('crd', section.label);
+              const key = sectionKey('crd', section);
               return (
                 <NavLink
                   key={key}
                   label={section.label}
-                  leftSection={<IconPuzzle size={14} />}
+                  leftSection={<SectionIcon icon={section.icon} />}
                   opened={isOpened(key, false)}
                   onChange={(opened) => {
                     onSectionCollapsedChange(key, !opened);

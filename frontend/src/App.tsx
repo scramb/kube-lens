@@ -45,6 +45,7 @@ import {
   ListResourceTable,
   RemoveKubeConfig,
   ResourceHasItems,
+  SetCRDGroupingSettings,
   SetHideEmptyCRDs,
   SetResourceFavorite,
   SetSectionCollapsed,
@@ -54,13 +55,14 @@ import {
 } from '../wailsjs/go/main/App';
 import { EventsOn } from '../wailsjs/runtime/runtime';
 import { main } from '../wailsjs/go/models';
-import { APIResource, ContextInfo, KubeConfigInfo, ResourceListMetric, ResourceUISettings, TableResult, TableRow, resourceKey } from './types';
-import { buildCrdNav, buildStandardNav, NavSection } from './resourceCatalog';
+import { APIResource, ContextInfo, CRDGroupingSettings, KubeConfigInfo, ResourceListMetric, ResourceUISettings, TableResult, TableRow, resourceKey } from './types';
+import { buildCrdNav, buildStandardNav, NavSection, normalizeCRDGroupingSettings } from './resourceCatalog';
 import Sidebar from './components/Sidebar';
 import ResourceTable, { ExtraTableColumn } from './components/ResourceTable';
 import YamlDrawer from './components/YamlDrawer';
 import KubeConfigModal from './components/KubeConfigModal';
 import PrometheusConfigModal from './components/PrometheusConfigModal';
+import CRDGroupingModal from './components/CRDGroupingModal';
 import { ClusterOverview } from './components/cluster/ClusterOverview';
 import { formatBytes, formatCPU } from './components/metrics/format';
 import { FluxOverview } from './components/flux';
@@ -75,6 +77,7 @@ const EMPTY_UI_SETTINGS: ResourceUISettings = {
   favorites: [],
   collapsedSections: {},
   hideEmptyCRDs: false,
+  crdGrouping: { rules: [] },
 };
 
 function errText(e: unknown): string {
@@ -109,6 +112,7 @@ export default function App() {
 
   const [configModalOpen, setConfigModalOpen] = useState(false);
   const [prometheusModalOpen, setPrometheusModalOpen] = useState(false);
+  const [crdGroupingModalOpen, setCrdGroupingModalOpen] = useState(false);
   const [newResourceOpen, setNewResourceOpen] = useState(false);
   const [terminalPanelOpen, setTerminalPanelOpen] = useState(false);
   const [drawer, setDrawer] = useState<{
@@ -122,7 +126,7 @@ export default function App() {
   const [crdItemPresence, setCrdItemPresence] = useState<Record<string, boolean | undefined>>({});
 
   const standardNav = useMemo<NavSection[]>(() => buildStandardNav(resources), [resources]);
-  const crdNav = useMemo<NavSection[]>(() => buildCrdNav(resources), [resources]);
+  const crdNav = useMemo<NavSection[]>(() => buildCrdNav(resources, resourceUI.crdGrouping), [resources, resourceUI.crdGrouping]);
   const fluxAvailable = useMemo(() => crdNav.some((s) => s.label === 'Flux'), [crdNav]);
 
   const applyResourceUI = useCallback((settings: ResourceUISettings) => {
@@ -130,6 +134,7 @@ export default function App() {
       favorites: settings.favorites ?? [],
       collapsedSections: settings.collapsedSections ?? {},
       hideEmptyCRDs: settings.hideEmptyCRDs ?? false,
+      crdGrouping: normalizeCRDGroupingSettings(settings.crdGrouping),
     });
   }, []);
 
@@ -397,6 +402,19 @@ export default function App() {
     [applyResourceUI]
   );
 
+  const updateCRDGrouping = useCallback(
+    async (settings: CRDGroupingSettings) => {
+      setResourceUI((prev) => ({ ...prev, crdGrouping: settings }));
+      try {
+        applyResourceUI(await SetCRDGroupingSettings(new main.CRDGroupingSettings(settings)));
+        setCrdItemPresence({});
+      } catch (e) {
+        notifications.show({ message: errText(e), color: 'red' });
+      }
+    },
+    [applyResourceUI]
+  );
+
   const ensureCrdSectionPresence = useCallback(
     (section: NavSection) => {
       if (!resourceUI.hideEmptyCRDs) return;
@@ -506,6 +524,9 @@ export default function App() {
                 disabled={!currentContext || !!connectError}
               >
                 {t('shell.menu.prometheus')}
+              </Menu.Item>
+              <Menu.Item leftSection={<IconFileSettings size={16} />} onClick={() => setCrdGroupingModalOpen(true)}>
+                {t('shell.menu.crdGroups')}
               </Menu.Item>
               <Menu.Divider />
               <Menu.Label>{t('shell.menu.language')}</Menu.Label>
@@ -644,6 +665,14 @@ export default function App() {
         opened={prometheusModalOpen}
         onClose={() => setPrometheusModalOpen(false)}
         contextName={currentContext}
+      />
+
+      <CRDGroupingModal
+        opened={crdGroupingModalOpen}
+        onClose={() => setCrdGroupingModalOpen(false)}
+        settings={resourceUI.crdGrouping}
+        resources={resources}
+        onSave={updateCRDGrouping}
       />
 
       <NewResourceModal

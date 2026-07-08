@@ -72,6 +72,8 @@ export function SetHideEmptyCRDs(arg1:boolean):Promise<main.ResourceUISettings>;
 
 export function SetPrometheusSettings(arg1:string,arg2:main.PrometheusContextSettings):Promise<main.PrometheusContextSettings>;
 
+export function SetCRDGroupingSettings(arg1:main.CRDGroupingSettings):Promise<main.ResourceUISettings>;
+
 export function SetResourceFavorite(arg1:string,arg2:string,arg3:boolean):Promise<main.ResourceUISettings>;
 
 export function SetSectionCollapsed(arg1:string,arg2:string,arg3:boolean):Promise<main.ResourceUISettings>;

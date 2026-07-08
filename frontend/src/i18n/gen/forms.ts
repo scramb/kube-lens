@@ -44,6 +44,26 @@ export const forms = {
     'forms.prometheus.testConnection': 'Test connection',
     'forms.prometheus.saved': 'Prometheus configuration saved',
 
+    // crd groups
+    'forms.crdGroups.title': 'Configure CRD groups',
+    'forms.crdGroups.description': 'User rules are matched before the built-in defaults. Use exact API groups or wildcards such as *.example.com.',
+    'forms.crdGroups.validationTitle': 'Please fix the rule configuration',
+    'forms.crdGroups.addRule': 'Add rule',
+    'forms.crdGroups.resetDefaults': 'Reset to defaults',
+    'forms.crdGroups.defaultFallback': '{{count}} built-in fallback rules',
+    'forms.crdGroups.enabled': 'Enabled',
+    'forms.crdGroups.label': 'Label',
+    'forms.crdGroups.patterns': 'Patterns',
+    'forms.crdGroups.icon': 'Icon',
+    'forms.crdGroups.preview': 'Preview',
+    'forms.crdGroups.actions': 'Actions',
+    'forms.crdGroups.onlyDefaults': 'No custom rules configured. Built-in defaults are active.',
+    'forms.crdGroups.customSvgPlaceholder': 'Optional safe inline SVG',
+    'forms.crdGroups.noMatches': 'No matches in current cluster',
+    'forms.crdGroups.moveUp': 'Move up',
+    'forms.crdGroups.moveDown': 'Move down',
+    'forms.crdGroups.saved': 'CRD group configuration saved',
+
     // kubeconfig
     'forms.kubeconfig.title': 'Kubeconfig files',
     'forms.kubeconfig.default': 'Default',
@@ -146,6 +166,26 @@ export const forms = {
     'forms.prometheus.clusterValues': ' · {{label}}: {{count}} Werte',
     'forms.prometheus.testConnection': 'Verbindung testen',
     'forms.prometheus.saved': 'Prometheus-Konfiguration gespeichert',
+
+    // crd groups
+    'forms.crdGroups.title': 'CRD-Gruppen konfigurieren',
+    'forms.crdGroups.description': 'User-Regeln werden vor den eingebauten Defaults geprüft. Nutze exakte API-Gruppen oder Wildcards wie *.example.com.',
+    'forms.crdGroups.validationTitle': 'Bitte die Regelkonfiguration korrigieren',
+    'forms.crdGroups.addRule': 'Regel hinzufügen',
+    'forms.crdGroups.resetDefaults': 'Auf Defaults zurücksetzen',
+    'forms.crdGroups.defaultFallback': '{{count}} eingebaute Fallback-Regeln',
+    'forms.crdGroups.enabled': 'Aktiv',
+    'forms.crdGroups.label': 'Label',
+    'forms.crdGroups.patterns': 'Pattern',
+    'forms.crdGroups.icon': 'Icon',
+    'forms.crdGroups.preview': 'Vorschau',
+    'forms.crdGroups.actions': 'Aktionen',
+    'forms.crdGroups.onlyDefaults': 'Keine Custom-Regeln konfiguriert. Eingebaute Defaults sind aktiv.',
+    'forms.crdGroups.customSvgPlaceholder': 'Optionales sicheres Inline-SVG',
+    'forms.crdGroups.noMatches': 'Keine Treffer im aktuellen Cluster',
+    'forms.crdGroups.moveUp': 'Nach oben',
+    'forms.crdGroups.moveDown': 'Nach unten',
+    'forms.crdGroups.saved': 'CRD-Gruppen-Konfiguration gespeichert',
 
     // kubeconfig
     'forms.kubeconfig.title': 'Kubeconfig-Dateien',

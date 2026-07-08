@@ -36,9 +36,14 @@ voneinander und können je nach Bedarf oder parallel gezogen werden. Einzige har
 Kopplungen: D und E setzen den Tab-Drawer aus A4 voraus, E nutzt C1, F ersetzt
 u. a. das Fast-Polling aus C4.
 
-**A–H sind abgeschlossen (Stand 2026-07-08).** Neu geplant: **I (Terminal-Panel)**
-und **J (Chart-Achsen)**. I und J sind vollständig unabhängig voneinander; J ist
-klein und kann parallel zu I (oder als Aufwärmpaket davor) umgesetzt werden.
+**A–J sind abgeschlossen (Stand 2026-07-08).** Neu geplant: **K (konfigurierbare
+CRD-Gruppen & Icons)**, **L (Table-Spalten & Request/Limit-Sichtbarkeit)**,
+**M (Flux Failed/NotReady Übersicht)** und **N (Pod Environment Variables Tab)**.
+K baut auf A1/A2 auf (`resourceCatalog.ts`, Sidebar-Settings). L baut auf der
+Server-Side-Table-API aus B4 und dem Metrics-Drawer aus J auf. M baut auf C2/C3
+und dem Flux-Dashboard auf. N baut auf dem Pod-Detail-Drawer aus A4 und den Pod-
+Tabs aus D2/D3 auf. K, L, M und N sind unabhängig voneinander und unabhängig von
+den offenen Optional-Punkten C3/C4/C5/B2/F2/J3.
 
 ---
 
@@ -426,6 +431,334 @@ kein Chart-Bundle) — `SimpleTimeSeriesChart.tsx` wird erweitert, nicht ersetzt
 
 ---
 
+## Milestone K — Konfigurierbare CRD-Gruppen & Custom Icons
+
+**Ziel:** Die Sidebar-Gruppierung für CRDs ist nicht mehr nur statisch in
+`resourceCatalog.ts` verdrahtet, sondern pro User/Installation konfigurierbar. Für
+jede Gruppe kann zusätzlich ein eigenes Icon gesetzt werden, damit produkt- oder
+team-spezifische CRDs visuell erkennbar sind. Die bestehenden Default-Mappings aus
+A1 bleiben als Fallback erhalten, damit die App ohne Konfiguration unverändert
+funktioniert.
+
+### K1 — Settings-Modell: CRD-Gruppen-Regeln
+- [x] Settings um eine neue, globale UI-Konfiguration erweitern (nicht pro Kontext,
+      weil API-Gruppen produkt-/tool-bezogen sind und mehrere Cluster betreffen):
+      ```json
+      "crdGrouping": {
+        "rules": [
+          {
+            "id": "flux",
+            "label": "Flux",
+            "patterns": ["*.toolkit.fluxcd.io"],
+            "icon": "custom:flux"
+          }
+        ]
+      }
+      ```
+      `id` stabil für Persistenz/Collapse/Favoriten-Anzeige; `label` sichtbar;
+      `patterns` unterstützen exakte API-Gruppen und einfache Wildcards/Suffixe wie
+      `*.example.com`; `icon` referenziert eine Icon-Quelle aus K2.
+- [x] Merge-Regeln definieren: User-Regeln haben Vorrang vor Defaults; wenn eine
+      API-Gruppe auf mehrere Regeln passt, gewinnt die erste User-Regel, danach die
+      erste Default-Regel. Nicht passende CRDs fallen weiterhin auf den rohen
+      API-Gruppennamen zurück.
+- [x] Migration/Backward-Compatibility: bestehende Settings ohne `crdGrouping`
+      bleiben gültig; vorhandene Collapse-/Favorite-Daten werden nicht verworfen.
+
+### K2 — Icon-Modell & sichere Persistenz
+Abhängig von: K1.
+- [x] Unterstützte Icon-Typen festlegen und validieren:
+      - Built-in Icon-Key (z. B. `tabler:box`, `tabler:git-branch`) für einfache Auswahl.
+      - Custom SVG als String oder Data-URL für produktnahe Icons.
+      - Optional: Emoji/Text-Fallback für sehr einfache Setups.
+- [x] Sicherheitsregeln für Custom SVGs: keine Skripte/Event-Handler/externen
+      Referenzen; Rendering über eine sanitizte Komponente oder als geprüftes
+      inline SVG. Fehlerhafte Icons fallen auf ein neutrales Default-Icon zurück.
+- [x] Größe/Format begrenzen (z. B. max. wenige KB pro Icon), damit `settings.json`
+      nicht unkontrolliert wächst.
+
+### K3 — Frontend: Resource-Catalog auf konfigurierbare Regeln umbauen
+Abhängig von: K1, K2.
+- [x] `resourceCatalog.ts` so refactoren, dass Default-Regeln und Settings-Regeln
+      denselben Matcher-Pfad verwenden (keine doppelte Logik). Bestehende
+      `productForGroup`-Defaults werden in Default-Regeln überführt.
+- [x] Sidebar-Sektionsmodell um `groupId`, `groupLabel`, `groupIcon` erweitern;
+      Anzeige nutzt Icon pro Gruppe, inklusive Favoriten- und CRD-Sektionen.
+- [x] Kollisionslogik aus A1 beibehalten: Kind-Namenskollisionen werden weiterhin nur
+      innerhalb der final gemergten Gruppe mit Gruppenkürzel/Suffix aufgelöst.
+
+### K4 — Config-UI für Gruppen & Icons
+Abhängig von: K1–K3.
+- [x] Einstellungs-Modal um einen Bereich „CRD-Gruppen" erweitern: Liste der Regeln,
+      Reihenfolge per Up/Down oder Drag, Aktivieren/Deaktivieren, Hinzufügen,
+      Bearbeiten, Löschen/Zurücksetzen auf Default.
+- [x] Regel-Editor: Label, Pattern-Liste, Icon-Auswahl/Upload bzw. SVG-Eingabe,
+      Live-Vorschau des Gruppennamens und Icons.
+- [x] Validierung mit verständlichen Fehlern: leeres Label, ungültige Pattern,
+      doppelte IDs/Labels, zu großes/unsicheres SVG, Regel ohne Pattern.
+- [x] „Preview gegen aktuellen Cluster": zeigt API-Gruppen/Kinds, die durch die
+      aktuelle Regel betroffen wären, ohne die Settings sofort zu speichern.
+
+### K5 — i18n, Reset & UX-Kanten
+Abhängig von: K4.
+- [ ] Alle neuen UI-Strings in EN/DE ergänzen (`src/i18n/gen/...`); Default-Regel-Namen
+      bleiben übersetzbar, User-Labels werden unverändert angezeigt.
+- [ ] Reset-Optionen: einzelne Regel zurücksetzen/löschen und komplette
+      CRD-Gruppen-Konfiguration auf App-Defaults zurücksetzen.
+- [ ] Kantenfälle behandeln: Icon fehlt/ungültig, alle Regeln deaktiviert, Pattern
+      matcht keine vorhandene API-Gruppe, mehrere Regeln matchen dieselbe Gruppe,
+      sehr viele CRDs/Regeln ohne merkliche Sidebar-Verlangsamung.
+
+### K6 — Tests & Verifikation
+Abhängig von: K1–K5.
+- [ ] Unit-Tests für Pattern-Matching, Priorität/Merge von User- und Default-Regeln,
+      Fallback auf API-Gruppennamen, Kollisionssuffixe und Icon-Sanitizing.
+- [ ] UI-/Komponententests für Regel-Editor, Validierungsfehler, Reset und
+      Sidebar-Rendering mit Custom Icons.
+- [ ] Manuelle Verifikation gegen einen Cluster mit Flux/Prometheus/Istio- oder
+      Dummy-CRDs: Defaults unverändert, neue Custom-Gruppe greift, Icon wird korrekt
+      angezeigt, Settings persistieren über App-Neustart.
+
+---
+
+## Milestone L — Table-Spalten & Request/Limit-Sichtbarkeit
+
+**Ziel:** Tabellen werden stärker an den Arbeitsstil des Users anpassbar: Spalten in
+der Table View können per Drag & Drop umsortiert und persistiert werden. Zusätzlich
+werden Kubernetes Resource Requests/Limits sichtbar gemacht — sowohl als Kontext in
+den Metriken als auch als zusätzliche Tabellenspalten für Workloads.
+
+### L1 — Settings-Modell: Spaltenreihenfolge pro Ressource
+- [ ] Settings um eine pro Kontext und Ressource gespeicherte Table-Konfiguration
+      erweitern, z. B.:
+      ```json
+      "tables": {
+        "<contextName>": {
+          "apps/v1/deployments": {
+            "columnOrder": ["Name", "Namespace", "Ready", "CPU", "Memory"],
+            "hiddenColumns": []
+          }
+        }
+      }
+      ```
+      Keying über GVR/GVK stabil definieren; Server-Side-Table-Spaltennamen bleiben
+      Grundlage, damit CRD-`additionalPrinterColumns` weiter funktionieren.
+- [ ] Merge-Verhalten definieren: neue Server-Side-Spalten werden automatisch hinten
+      angehängt; entfernte/umbenannte Spalten werden ignoriert, aber nicht fatal;
+      App-eigene Zusatzspalten (Metrics, Requests/Limits) werden in denselben
+      Ordnungsmechanismus integriert.
+- [ ] Reset-Möglichkeit pro Ressource: Spaltenreihenfolge auf Server/API-Default
+      plus App-Zusatzspalten zurücksetzen.
+
+### L2 — Frontend: Drag-&-Drop-Spalten in der Table View
+Abhängig von: L1.
+- [ ] `ResourceTable` um Drag-&-Drop für Header-Zellen erweitern; horizontales Ziehen
+      ändert nur die Reihenfolge, nicht Sortierung/Filter/Row-Click-Verhalten.
+- [ ] Persistenz nach Drop in Settings schreiben; Wechsel zwischen Ressourcen und
+      App-Neustart behalten die Reihenfolge bei.
+- [ ] UX-Kanten: erste Spalte/Name sinnvoll greifbar lassen, Actions-/Inline-Spalten
+      falls vorhanden separat behandeln, Drag-Handle oder Cursor klar anzeigen,
+      Tastatur-/Reset-Fallback anbieten.
+- [ ] i18n für neue Labels/Tooltips/Reset-Aktion ergänzen.
+
+### L3 — Backend/Frontend: Requests & Limits aus Pod-Specs normalisieren
+- [ ] Gemeinsame Datenstruktur für Resource Requests/Limits definieren:
+      CPU Request, CPU Limit, Memory Request, Memory Limit, jeweils Summe über
+      Container; Init-Container-Regeln korrekt berücksichtigen (effektiver Pod-Wert =
+      max(sum(app containers), max(init containers)) pro Resource).
+- [ ] Pod-Listen um App-Zusatzspalten für Requests/Limits erweitern, sofern gepflegt:
+      CPU Request, CPU Limit, Memory Request, Memory Limit. Darstellung mit denselben
+      Formatierungsfunktionen wie Metrics (`m`, `Mi`, `Gi`).
+- [ ] Fehlende Werte klar, aber unaufdringlich darstellen (`—`), ohne Tabellen mit
+      leeren Zusatzspalten zu überladen; ggf. Spalten nur anzeigen, wenn mindestens ein
+      sichtbarer Datensatz Werte enthält oder User sie explizit aktiviert.
+
+### L4 — Workload-Tabellen: Limits/Requests für Deployments, StatefulSets, DaemonSets, ReplicaSets
+Abhängig von: L3.
+- [ ] Für Workloads die PodTemplate-Spec (`spec.template.spec.containers` und
+      `initContainers`) auswerten und Requests/Limits aggregieren.
+- [ ] Tabellen für Deployments, StatefulSets, DaemonSets und ReplicaSets um die
+      gleichen Request/Limit-Spalten erweitern: CPU Request, CPU Limit, Memory
+      Request, Memory Limit.
+- [ ] Semantik dokumentieren/anzeigen: Werte sind pro Pod-Template, nicht auf Replica-
+      Anzahl hochgerechnet. Optional ergänzend prüfen, ob zusätzlich „total requested"
+      sinnvoll ist; falls ja als separater späterer Punkt statt heimlich andere
+      Bedeutung in dieselbe Spalte zu legen.
+
+### L5 — Metrics-Drawer: Requests/Limits als Kontext anzeigen
+Abhängig von: L3.
+- [ ] Im Metriken-Tab für Pods CPU-/Memory-Requests und Limits anzeigen, wenn gesetzt:
+      als horizontale Referenzlinien in den Charts und/oder kompakte Summary oberhalb
+      der Charts.
+- [ ] Einheiten sauber matchen: CPU-Chart gegen CPU request/limit, Memory-Chart gegen
+      Memory request/limit; keine Linien in Netzwerk-Charts.
+- [ ] Bei fehlenden Prometheus-Daten, aber vorhandenen Requests/Limits: Metriken-Tab
+      soll weiterhin sinnvoll degradieren (z. B. Summary sichtbar, Charts verborgen
+      oder leerer Zustand mit Hinweis im Tab).
+- [ ] Optional für Workloads im Drawer prüfen: Requests/Limits aus PodTemplate auch in
+      der Übersicht oder im Metrics-Kontext anzeigen, ohne Pod-Live-Metriken mit
+      Template-Werten zu vermischen.
+
+### L6 — Tests & Verifikation
+Abhängig von: L1–L5.
+- [ ] Unit-Tests für Spalten-Merge/Reihenfolge, Reset, neue Server-Side-Spalten und
+      verschwundene Spalten.
+- [ ] Unit-Tests für Resource-Aggregation inkl. mehrere Container, Init-Container,
+      fehlende Requests/Limits, CPU milli/decimal und Memory binary units.
+- [ ] UI-/Komponententests für Header-Drag-&-Drop, Persistenz, Reset und Rendering der
+      Request/Limit-Spalten.
+- [ ] Manuelle Verifikation gegen Workloads mit gepflegten und nicht gepflegten
+      Requests/Limits: Pod-Tabelle, Deployment/StatefulSet/DaemonSet/ReplicaSet-
+      Tabellen, Metrics-Drawer und App-Neustart-Persistenz.
+
+---
+
+## Milestone M — Flux Failed/NotReady Übersicht
+
+**Ziel:** Im Flux-Dashboard soll ein direkter Einstieg in eine zentrale
+Fehlerübersicht möglich sein. Dort sind alle fehlgeschlagenen bzw. nicht bereiten
+Flux-Ressourcen auf einen Blick sichtbar — getrennt nach Ressourcentyp über
+Row-Header/Abschnittszeilen, statt dass der User jede Flux-Kind-Liste einzeln öffnen
+muss.
+
+### M1 — Datenmodell: Failed/NotReady Flux-Ressourcen aggregieren
+- [ ] Bestehende Flux-Erkennung aus C2/C3 wiederverwenden: alle `*.fluxcd.io`-Kinds
+      einbeziehen, insbesondere Appliers, Sources, Image Automation und Notification.
+- [ ] Backend- oder Frontend-Aggregation definieren, die pro Ressource mindestens
+      Kind, Namespace, Name, Ready-Status, Suspended-Status, Message/Reason, Age,
+      Revision/Artifact sofern vorhanden und GVR enthält.
+- [ ] Filterlogik eindeutig festlegen: aufnehmen, wenn `Ready != True`, ein
+      `NotReady`/`False`-Condition vorhanden ist oder die bestehende Flux-Status-
+      Aggregation die Ressource als failed/not ready zählt. Suspended separat sichtbar
+      machen, aber nicht stillschweigend als Fehler werten.
+
+### M2 — Dashboard-Einstieg: Klick auf Failed/NotReady-Karten
+Abhängig von: M1.
+- [ ] Flux-Dashboard-Karten für Failed/NotReady klickbar machen; Klick öffnet die neue
+      zentrale Fehlerübersicht statt nur eine einzelne Kind-Liste.
+- [ ] Leerer Zustand: Wenn keine failed/not ready Ressourcen vorhanden sind,
+      positive Empty-State-Ansicht im Flux-Bereich anzeigen.
+- [ ] Navigation so bauen, dass Zurück/Sidebar-Zustand konsistent bleibt und ein
+      Refresh nach Flux-Aktionen die Übersicht aktualisiert.
+
+### M3 — UI: Gruppierte Übersicht mit Row-Headern
+Abhängig von: M1, M2.
+- [ ] Neue Flux-Fehlerübersicht als Tabelle/Liste mit Row-Headern pro Flux-Kind bzw.
+      Kategorie (z. B. Kustomizations, HelmReleases, GitRepositories,
+      ImageUpdateAutomations). Jede Gruppe zeigt Count und Status-Zusammenfassung.
+- [ ] Unter jedem Row-Header die betroffenen Ressourcen als klickbare Zeilen anzeigen:
+      Namespace, Name, Status/Reason, Message, Age, Revision und relevante Source-
+      Informationen soweit verfügbar.
+- [ ] Row-Header einklappbar machen und optional initial alle Gruppen mit Fehlern
+      geöffnet anzeigen; Gruppen ohne Fehler ausblenden.
+- [ ] Klick auf eine Ressourcenzeile öffnet den bestehenden Detail-Drawer für genau
+      diese Flux-Ressource; bestehende Aktionen (Reconcile, Reconcile with source,
+      Suspend/Resume) bleiben erreichbar.
+
+### M4 — Status-Details & Priorisierung
+Abhängig von: M3.
+- [ ] Lange Flux-Condition-Messages kompakt darstellen (einzeilig mit Tooltip/
+      Expand), damit die Übersicht scannbar bleibt.
+- [ ] Sortierung innerhalb der Gruppen definieren: NotReady/Failed zuerst, dann ggf.
+      Suspended/Unknown, danach Namespace/Name oder zuletzt geänderte Ressource,
+      abhängig von vorhandenen Daten.
+- [ ] Unterschiedliche Zustände visuell klar trennen: Failed/NotReady, Unknown,
+      Suspended, Reconciling/Progressing.
+- [ ] Optional: Schnellfilter für Namespace, Kind und Freitext in Name/Message.
+
+### M5 — Live-Updates, i18n & Tests
+Abhängig von: M1–M4.
+- [ ] Bestehende Refresh-/Watch-Mechanik nutzen, damit die Fehlerübersicht nach
+      Reconcile/Suspend/Resume und Watch-Events aktualisiert wird; kein separater
+      aggressiver Polling-Pfad.
+- [ ] Alle neuen UI-Strings in EN/DE ergänzen (`src/i18n/gen/dashboards.ts` oder
+      passendes neues Bundle).
+- [ ] Unit-Tests für Failed/NotReady-Filterung, Suspended-Semantik, Gruppierung und
+      Sortierung.
+- [ ] UI-/Komponententests für Dashboard-Klick, Empty-State, Row-Header-Gruppen,
+      Detail-Drawer-Öffnung und Message-Kürzung.
+- [ ] Manuelle Verifikation gegen Flux-Ressourcen mit Ready=True, Ready=False,
+      Reconciling/Unknown und Suspended: Dashboard-Counts stimmen, zentrale Übersicht
+      zeigt nur relevante Ressourcen und Gruppen korrekt getrennt.
+
+---
+
+## Milestone N — Pod Environment Variables Tab
+
+**Ziel:** Beim Öffnen eines Pods über die Sidebar/Table View bekommt der Pod-Detail-
+Drawer einen zusätzlichen Tab **Environment Variables**. Dort sind alle Environment-
+Variablen der Container übersichtlich sichtbar, inklusive Quellen aus `env`,
+`envFrom`, ConfigMaps, Secrets und Downward API. Secret-Werte werden standardmäßig
+maskiert und erst nach explizitem Klick angezeigt. Eine fuzzy Suche filtert schnell
+nach Name, Wert, Container und Quelle.
+
+### N1 — Backend: Environment-Variablen für Pods auflösen
+- [ ] Neues Binding z. B. `GetPodEnvironment(namespace, podName)` oder Erweiterung der
+      Detail-JSON-Schicht definieren, das Pod-Spec und referenzierte ConfigMaps/Secrets
+      im selben Namespace ausliest.
+- [ ] Datenmodell pro Eintrag festlegen: Container/InitContainer/EphemeralContainer,
+      Env-Name, Wert bzw. maskierter Secret-Platzhalter, Quelle (`literal`,
+      `configMapKeyRef`, `secretKeyRef`, `envFrom configMap`, `envFrom secret`,
+      `fieldRef`, `resourceFieldRef`), optional key/name/prefix und Auflösungsstatus.
+- [ ] `envFrom` vollständig expandieren: ConfigMap-/Secret-Keys mit Prefix anwenden;
+      fehlende optionale Quellen nicht als Fehler behandeln, fehlende nicht-optionale
+      Quellen als Warnung pro Eintrag/Quelle zurückgeben.
+- [ ] Secret-Werte nur im Backend laden, wenn sie für Reveal gebraucht werden, oder im
+      Response getrennt als sensitive markiert behandeln; keine Secret-Werte in Logs,
+      Fehlertexten oder dauerhaftem Frontend-State persistieren.
+
+### N2 — Secret-Reveal-Mechanik
+Abhängig von: N1.
+- [ ] Secret-Einträge standardmäßig maskiert anzeigen (`••••••••`) mit klarem
+      Source-Hinweis, Secret-Name und Key.
+- [ ] Reveal nur per explizitem Klick pro Wert oder pro Zeile; kein globales
+      automatisches Entmaskieren beim Tab-Öffnen.
+- [ ] Optionalen „Hide again"-Pfad vorsehen; beim Schließen des Drawers, Pod-Wechsel
+      oder Tab-Wechsel werden revealed Werte aus dem lokalen UI-State verworfen.
+- [ ] Fehlerfälle behandeln: RBAC verbietet Secret-Lesen, Secret/Key fehlt,
+      Binary/nicht-UTF8-Wert — jeweils mit sicherem, nicht-leakendem Hinweis.
+
+### N3 — Frontend: Environment Variables Tab im Pod-Drawer
+Abhängig von: N1, N2.
+- [ ] Pod-Detail-Drawer um Tab **Environment Variables** ergänzen (nur für Pods), neben
+      Overview/YAML/Events/Metrics/Logs/Terminal; lazy laden wie die anderen Tabs.
+- [ ] Darstellung gruppiert nach Container-Typ und Container-Name; innerhalb der Gruppe
+      tabellarisch mit Name, Value, Source, Reference/Key und Status.
+- [ ] Werte lesbar darstellen: lange Werte einkürzen mit Expand/Copy, Multiline-Werte
+      sicher anzeigen, Copy-Button pro Wert/Name; Secret-Copy erst nach Reveal oder mit
+      separater bewusster Aktion.
+- [ ] Warnungen für nicht auflösbare Quellen gesammelt oberhalb oder innerhalb der
+      betroffenen Container-Gruppe anzeigen.
+
+### N4 — Fuzzy Search & Filter UX
+Abhängig von: N3.
+- [ ] Suchfeld im Tab ergänzen; fuzzy search über Env-Name, Wert (nur wenn nicht secret
+      oder bereits revealed), Container-Name, Source-Typ, ConfigMap-/Secret-Name und Key.
+- [ ] Treffer hervorheben und leere Container-Gruppen während der Suche ausblenden;
+      Clear-Button und Trefferzähler anzeigen.
+- [ ] Filter-Chips optional ergänzen: Container, Source-Typ, „Secrets only",
+      „Warnings only".
+- [ ] Fuzzy-Implementierung leichtgewichtig halten: vorhandene Hilfsfunktion oder kleine
+      lokale Scoring-Funktion; keine schwere Such-Library einführen, sofern nicht schon
+      vorhanden.
+
+### N5 — Sicherheit, i18n & Tests
+Abhängig von: N1–N4.
+- [ ] Sicherheitsprüfung: Secret-Werte nie in `settings.json`, localStorage,
+      Fehlermeldungen, Console-Logs oder Test-Snapshots persistieren.
+- [ ] i18n für neue Tab-Labels, Buttons, Tooltips, Empty States, Warnungen und
+      Reveal/Hide-Aktionen in EN/DE ergänzen.
+- [ ] Unit-Tests für Env-Auflösung: direkte `env`, ConfigMapKeyRef, SecretKeyRef,
+      envFrom mit Prefix, optional/missing Quellen, fieldRef/resourceFieldRef,
+      Init-/Ephemeral-Container.
+- [ ] UI-/Komponententests für Maskierung, Reveal/Hide, Suche/Fuzzy-Treffer,
+      Gruppierung, Copy-Verhalten und Warnungsanzeige.
+- [ ] Manuelle Verifikation gegen Pods mit Literals, ConfigMaps, Secrets, envFrom,
+      Downward API und fehlenden/optional referenzierten Quellen; RBAC-Fall ohne
+      Secret-Leserechte prüfen.
+
+---
+
 ## Entscheidungslog
 
 | Datum | Entscheidung |
@@ -444,3 +777,7 @@ kein Chart-Bundle) — `SimpleTimeSeriesChart.tsx` wird erweitert, nicht ersetzt
 | 2026-07-08 | i18n (H): Locale-Bundles je Bereich unter `src/i18n/gen/*.ts` (EN+DE zusammen), Auto-Merge via `import.meta.glob` — erlaubt konfliktfreie parallele Bearbeitung. Sprach-Persistenz in localStorage statt settings.json (reine UI-Präferenz). |
 | 2026-07-08 | Terminal-Panel (I): Kontext-Pinning über temporäre geflattete kubeconfig + `KUBECONFIG`-Env pro Terminal — NIEMALS `kubectl config use-context` gegen die globale ~/.kube/config (würde fremde Shells/Terminals umstellen). Terminals bleiben beim App-Kontextwechsel offen und behalten ihren Kontext (Badge im Tab). |
 | 2026-07-08 | Charts (J): leichtgewichtiger SVG-Ansatz bleibt (kein Chart-Bundle) — Achsen/Ticks werden in `SimpleTimeSeriesChart.tsx` ergänzt statt eine Chart-Lib einzuführen. |
+| 2026-07-08 | CRD-Gruppierung (K): Default-Mappings aus A1 bleiben Fallback, User-Regeln in Settings haben Vorrang. Custom Icons müssen sicher gerendert werden; keine Skripte/Event-Handler/externen Referenzen in SVGs. |
+| 2026-07-08 | Tabellen (L): Spaltenreihenfolge wird pro Kontext/Ressource persistiert und mit Server-Side-Table-Spalten gemergt, damit CRD-`additionalPrinterColumns` erhalten bleiben. Requests/Limits bei Workloads bedeuten PodTemplate-Werte pro Pod, nicht automatisch Replica-hochgerechnete Summen. |
+| 2026-07-08 | Flux-Fehlerübersicht (M): Failed/NotReady bekommt eine zentrale Dashboard-Ansicht mit Row-Headern pro Flux-Kind/Kategorie. Suspended wird sichtbar gemacht, aber nicht automatisch als Fehler gezählt. |
+| 2026-07-08 | Pod Environment Variables (N): Secret-Werte werden im neuen Pod-Tab standardmäßig maskiert und nur nach explizitem Klick revealed. Revealed Secrets dürfen nicht persistiert oder geloggt werden; fuzzy search darf Secret-Werte erst nach Reveal durchsuchen. |
