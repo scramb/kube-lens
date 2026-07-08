@@ -36,6 +36,10 @@ voneinander und können je nach Bedarf oder parallel gezogen werden. Einzige har
 Kopplungen: D und E setzen den Tab-Drawer aus A4 voraus, E nutzt C1, F ersetzt
 u. a. das Fast-Polling aus C4.
 
+**A–H sind abgeschlossen (Stand 2026-07-08).** Neu geplant: **I (Terminal-Panel)**
+und **J (Chart-Achsen)**. I und J sind vollständig unabhängig voneinander; J ist
+klein und kann parallel zu I (oder als Aufwärmpaket davor) umgesetzt werden.
+
 ---
 
 ## Milestone A — Sidebar-Neuordnung & strukturierte Detail-Ansichten
@@ -330,6 +334,98 @@ Abhängig von: H1.
 Sektions-Labels), Detail-Drawer-Tabs (Overview/Metrics ↔ Übersicht/Metriken),
 Kind-Renderer, Dashboards, Modals — keine rohen Keys, kein deutsches Restliteral.
 
+## Milestone I — Integriertes Terminal-Panel
+
+**Ziel:** Ein Terminal-Panel am unteren Rand der App (VS-Code-artig) mit Tab-Leiste
+und „+"-Button. Mehrere Terminals gleichzeitig, jedes an den Kubernetes-Kontext
+gepinnt, der beim Öffnen aktiv war — `kubectl` zeigt darin automatisch auf den
+richtigen Cluster.
+
+**Kernentscheidung (siehe Entscheidungslog):** Der Kontext wird NICHT über
+`kubectl config use-context` gesetzt (das würde die globale `~/.kube/config`
+mutieren und alle anderen Shells umstellen). Stattdessen erhält jedes Terminal
+eine **temporäre, geflattete kubeconfig** mit gesetztem `current-context` und
+`KUBECONFIG=<tempfile>` in seiner Prozess-Umgebung.
+
+### I1 — Backend: PTY-Session-Manager
+- [ ] Lokale Shell als PTY starten: Unix via `creack/pty`; Windows via ConPTY
+      (Abstraktion z. B. `aymanbagabas/go-pty` evaluieren — eine Lib für beide
+      statt zwei Codepfade). Shell = `$SHELL` (Fallback `/bin/zsh` → `/bin/bash`
+      → `/bin/sh`), Windows: PowerShell.
+- [ ] Session-Registry nach dem Muster von `app_exec.go` (`term-<n>`-IDs):
+      `StartLocalTerminal(contextName) (id, error)`, `LocalTerminalWrite(id, data)`,
+      `LocalTerminalResize(id, cols, rows)`, `StopLocalTerminal(id)`.
+- [ ] Output über Wails-Events `term:data:<id>` (string) und `term:end:<id>`;
+      Batch-/Flush-Verhalten wie beim Log-Streaming.
+- [ ] Arbeitsverzeichnis = Home; Umgebung erbt den PATH-Fix aus `main.go`
+      (kubelogin/az bleiben auffindbar).
+
+### I2 — Backend: Kontext-Pinning via temporärer kubeconfig
+Abhängig von: I1.
+- [ ] Beim Start: gemergte Config der geladenen kubeconfigs laden
+      (`loadingRules().Load()`), per `api.FlattenConfig` inlinen,
+      `CurrentContext` auf den übergebenen Kontext setzen,
+      via `clientcmd.WriteToFile` in `os.TempDir()/kube-lens/term-<id>.yaml`
+      schreiben (0600) und `KUBECONFIG` im PTY-Env setzen.
+- [ ] Aufräumen: Temp-Datei bei `StopLocalTerminal` und beim App-Shutdown
+      (`OnShutdown`-Hook in main.go: alle Sessions stoppen) löschen.
+- [ ] Exec-Auth beachten: Flatten behält exec-Plugin-Referenzen (kubelogin) —
+      funktioniert, weil nur Kommando-Referenzen, keine Secrets kopiert werden.
+
+### I3 — Frontend: Bottom-Panel mit Tabs
+Abhängig von: I1.
+- [ ] Panel am unteren Rand (Mantine AppShell-Footer oder Flex-Bereich im Main):
+      einklappbar (Toggle-Icon im Header + Klick auf Leiste), Höhe per
+      Drag-Handle verstellbar (Persistenz der Höhe in localStorage).
+- [ ] Tab-Leiste: ein Tab je Terminal mit Shell-Name + **Kontext-Badge**
+      (Terminals bleiben beim Kontext-Wechsel der App offen und behalten ihren
+      gepinnten Kontext — das Badge macht das sichtbar), Close-Button je Tab,
+      **„+"-Button** öffnet ein neues Terminal mit dem aktuell gewählten Kontext.
+- [ ] xterm.js-Instanz je Tab (Dependency aus D3 vorhanden; FitAddon,
+      Resize-Handling wie `TerminalTab.tsx`); inaktive Tabs bleiben gemountet
+      (kein Verbindungsabbruch beim Tab-Wechsel).
+- [ ] i18n für alle neuen Strings (`shell.terminal.*` in gen/shell.ts oder
+      eigene gen/terminalPanel.ts).
+
+### I4 — Lifecycle & Kanten
+Abhängig von: I1–I3.
+- [ ] Beim App-Beenden alle PTY-Sessions terminieren (kein Zombie-Prozess).
+- [ ] Shell-Exit (User tippt `exit`) → Tab zeigt „beendet"-Zustand und lässt
+      sich schließen/neu starten.
+- [ ] Sinnvolle Obergrenze (z. B. 12 Terminals) mit Hinweis statt hartem Fehler.
+- [ ] Kein Kontext verbunden → „+" deaktiviert mit Tooltip.
+
+---
+
+## Milestone J — Metrik-Charts: Achsen & Skalierung
+
+**Ziel:** Die Zeitreihen-Charts (Metriken-Tab im Drawer) bekommen sichtbare
+Achsen-Skalierung: Y-Achsen-Ticks mit einheitenbewusster Formatierung und
+X-Achsen-Zeitmarken. Der leichtgewichtige SVG-Ansatz bleibt (Entscheidungslog:
+kein Chart-Bundle) — `SimpleTimeSeriesChart.tsx` wird erweitert, nicht ersetzt.
+
+### J1 — Y-Achse: Ticks, Gridlines, Einheiten
+- [ ] „Nice numbers"-Tick-Berechnung (3–5 Ticks zwischen min/max, auf runde
+      Werte gerundet — bei bytes auf 2er-Potenzen-freundliche Stufen achten).
+- [ ] Tick-Labels links, formatiert über das vorhandene `formatMetricValue`
+      (cores → `500m`, bytes → `1.5 Gi`, bytes/s → `2.0 Mi/s`); horizontale
+      Gridlines dezent (`--mantine-color-dark-4`).
+- [ ] Linkes Padding dynamisch an der breitesten Label-Breite ausrichten
+      (grobe Zeichenbreiten-Schätzung reicht, kein Text-Measuring nötig).
+
+### J2 — X-Achse: Zeitmarken
+- [ ] 3–4 Zeit-Ticks (Anfang/Mitte/Ende bzw. gleichverteilt) aus den
+      Punkt-Timestamps; Format via `Intl.DateTimeFormat` mit aktiver
+      i18n-Locale — `HH:mm` bei 1h/6h, `HH:mm` + Tageswechsel-Markierung bei 24h.
+- [ ] Erledigt damit auch den offenen H2-Punkt „Intl-Formatierung an Locale
+      koppeln" für die Charts.
+
+### J3 — Hover-Auslesung (optional, nachgelagert)
+- [ ] Crosshair + Tooltip: bei Mausbewegung nächstliegenden Punkt markieren,
+      Wert + Zeitpunkt anzeigen (reines SVG/DOM, keine Lib).
+
+---
+
 ## Entscheidungslog
 
 | Datum | Entscheidung |
@@ -346,3 +442,5 @@ Kind-Renderer, Dashboards, Modals — keine rohen Keys, kein deutsches Restliter
 | 2026-07-08 | Watch (F): statt Table-Watch neu zu bauen, emittiert der Watch ein debounced `watch:changed`-Signal; Frontend lädt die bestehende Server-Side-Tabelle neu. Debounce 2 s gegen Refresh-Storm bei hoher Churn-Rate; 20 s Fallback-Poll wenn Watch per RBAC verboten. |
 | 2026-07-08 | Logs (D2): Zeilen-Cap 5000 statt Virtualisierungs-Lib — genügt, keine Extra-Abhängigkeit. |
 | 2026-07-08 | i18n (H): Locale-Bundles je Bereich unter `src/i18n/gen/*.ts` (EN+DE zusammen), Auto-Merge via `import.meta.glob` — erlaubt konfliktfreie parallele Bearbeitung. Sprach-Persistenz in localStorage statt settings.json (reine UI-Präferenz). |
+| 2026-07-08 | Terminal-Panel (I): Kontext-Pinning über temporäre geflattete kubeconfig + `KUBECONFIG`-Env pro Terminal — NIEMALS `kubectl config use-context` gegen die globale ~/.kube/config (würde fremde Shells/Terminals umstellen). Terminals bleiben beim App-Kontextwechsel offen und behalten ihren Kontext (Badge im Tab). |
+| 2026-07-08 | Charts (J): leichtgewichtiger SVG-Ansatz bleibt (kein Chart-Bundle) — Achsen/Ticks werden in `SimpleTimeSeriesChart.tsx` ergänzt statt eine Chart-Lib einzuführen. |
