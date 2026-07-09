@@ -45,7 +45,7 @@ const STATUS_COLORS: Record<string, string> = {
   NotReady: 'red',
 };
 
-type DisplayColumn =
+export type DisplayColumn =
   | { key: string; label: string; kind: 'namespace' }
   | { key: string; label: string; kind: 'server'; cellIndex: number; columnName: string }
   | { key: string; label: string; kind: 'extra'; extra: ExtraTableColumn };
@@ -66,7 +66,7 @@ function renderCell(value: unknown, columnName: string) {
   );
 }
 
-function mergeColumnOrder(columns: DisplayColumn[], order: string[] | undefined): DisplayColumn[] {
+export function mergeColumnOrder(columns: DisplayColumn[], order: string[] | undefined): DisplayColumn[] {
   if (!order?.length) return columns;
   const byKey = new Map(columns.map((column) => [column.key, column]));
   const used = new Set<string>();

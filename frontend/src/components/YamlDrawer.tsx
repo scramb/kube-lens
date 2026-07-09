@@ -315,7 +315,7 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
                 <Loader />
               </Center>
             ) : (
-              <Renderer obj={obj} />
+              <Renderer obj={obj} quantitySummary={quantitySummary} />
             )}
           </ScrollArea>
         </Tabs.Panel>
@@ -411,7 +411,7 @@ function EventsView({
   loading: boolean;
   error: string;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   if (loading) {
     return (
       <Center h={200}>
@@ -465,7 +465,7 @@ function EventsView({
             </Table.Td>
             <Table.Td>
               <Text size="sm" c="dimmed" style={{ whiteSpace: 'nowrap' }}>
-                {e.lastTimestamp ? new Date(e.lastTimestamp).toLocaleString() : '—'}
+                {e.lastTimestamp ? new Date(e.lastTimestamp).toLocaleString(i18n.language) : '—'}
               </Text>
             </Table.Td>
           </Table.Tr>

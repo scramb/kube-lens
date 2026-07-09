@@ -18,11 +18,11 @@ export function ExecResize(arg1:string,arg2:number,arg3:number):Promise<void>;
 
 export function ExecWrite(arg1:string,arg2:string):Promise<void>;
 
+export function FluxProblemResources():Promise<Array<main.FluxProblemResource>>;
+
 export function FluxReconcile(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string):Promise<void>;
 
 export function FluxReconcileWithSource(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string):Promise<void>;
-
-export function FluxProblemResources():Promise<Array<main.FluxProblemResource>>;
 
 export function FluxStatus():Promise<Array<main.FluxKindStatus>>;
 
@@ -80,19 +80,19 @@ export function ResourceHasItems(arg1:string,arg2:string,arg3:string,arg4:string
 
 export function RevealPodEnvironmentSecret(arg1:string,arg2:string,arg3:string):Promise<string>;
 
+export function SetCRDGroupingSettings(arg1:main.CRDGroupingSettings):Promise<main.ResourceUISettings>;
+
 export function SetHideEmptyCRDs(arg1:boolean):Promise<main.ResourceUISettings>;
 
 export function SetPrometheusSettings(arg1:string,arg2:main.PrometheusContextSettings):Promise<main.PrometheusContextSettings>;
-
-export function SetCRDGroupingSettings(arg1:main.CRDGroupingSettings):Promise<main.ResourceUISettings>;
 
 export function SetResourceFavorite(arg1:string,arg2:string,arg3:boolean):Promise<main.ResourceUISettings>;
 
 export function SetSectionCollapsed(arg1:string,arg2:string,arg3:boolean):Promise<main.ResourceUISettings>;
 
-export function SetTableViewSettings(arg1:string,arg2:string,arg3:main.TableViewSettings):Promise<main.TableViewSettings>;
-
 export function SetSuspend(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string,arg6:boolean):Promise<void>;
+
+export function SetTableViewSettings(arg1:string,arg2:string,arg3:main.TableViewSettings):Promise<main.TableViewSettings>;
 
 export function StartExec(arg1:string,arg2:string,arg3:string,arg4:string):Promise<string>;
 

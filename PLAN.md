@@ -45,6 +45,41 @@ und dem Flux-Dashboard auf. N baut auf dem Pod-Detail-Drawer aus A4 und den Pod-
 Tabs aus D2/D3 auf. K, L, M und N sind unabhängig voneinander und unabhängig von
 den offenen Optional-Punkten C3/C4/C5/B2/F2/J3.
 
+**Restpunkte-Runde (2026-07-09):** Offene/optionale Punkte aus C/G/H/J/K/L/M/N
+abgearbeitet (C3-Inline-Aktionen, H2-Intl, J3-Chart-Hover, M4-Schnellfilter,
+L5-Workload-Requests, N-Restarbeiten, Unit-Test-Grundstock Go + vitest — Details
+an den Checkboxen). Bewusst offen bleiben: B2-Port-Forward und C5-Graph (eigene
+Arbeitspakete), G3-Signing (kein Apple-Account), UI-/Komponententests (kein
+jsdom-Setup eingeführt) und alle manuellen Live-Cluster-Verifikationen.
+
+**Neu geplant (2026-07-09): O–S, empfohlene Reihenfolge O → P → Q → R → S.**
+- **O (Light/Dark Mode)** zuerst: alle danach gebauten UI-Teile entstehen direkt
+  theme-fähig.
+- **P (Rollout-Restart & Scale)** ist unabhängig, aber harte Voraussetzung für R
+  (das Popup muss Restart/Scale abfangen).
+- **Q (Flux Suspended Übersicht)** ist unabhängig (nutzt nur M-Muster) und liefert
+  die Ansicht, auf die R nach einem Suspend verweist.
+- **R (Flux-Suspend-Popup)** hängt von P (Aktions-Hook), E2 (Apply-Flow) und C1
+  (`SetSuspend`) ab; weiche Abhängigkeit zu Q (Verweis im Erfolgshinweis).
+- **S (Server-Mode `--server`)** ist der größte Brocken und berührt die
+  Transportschicht aller Features — bewusst zuletzt, damit der Feature-Umfang
+  fürs Server-Gating (Terminal, Datei-Dialoge) feststeht. Technisch unabhängig
+  von O–R.
+- **T (Multiselect & Bulk-Aktionen)** braucht P1 (Bulk-Restart nutzt
+  `RolloutRestart`); die Flux-Guard-Integration (T4) hängt weich an R. T ist
+  sonst reines Frontend auf bestehenden Bindings und kann jederzeit nach P
+  gezogen werden — auch parallel zu Q/R/S.
+- **U (Flux Dependency-Graph, aus C5)** ist von O–T unabhängig und baut nur auf
+  den bestehenden Flux-Helfern (C2) und dem Test-Setup aus der Restpunkte-Runde
+  auf. Einzige weiche Kopplung: nach O sollten die Graph-Farben direkt
+  theme-fähig gebaut werden. Kann jederzeit parallel gezogen werden.
+- **V (Helm Dashboard & Outdated-Check)** ist von O–U unabhängig (eigener
+  Backend-Pfad über Helm-Storage-Secrets, eigenes Dashboard nach C2-Muster).
+  Weiche Kopplungen: der lokale `repositories.yaml`-Pfad (V3) ist desktop-only
+  und muss im Server-Mode (S) über die Capabilities gegated werden; nach O
+  direkt theme-fähig bauen. V1+V2 (Dashboard ohne Outdated-Check) sind allein
+  schon lieferbar — V3/V4 danach inkrementell.
+
 ---
 
 ## Milestone A — Sidebar-Neuordnung & strukturierte Detail-Ansichten
@@ -122,7 +157,11 @@ Abhängig von: C2.
       Table-API aus den `additionalPrinterColumns` der Flux-CRDs (kubectl-identisch).
 - [x] Aktionen: im Detail-Drawer für Flux-Kinds (Reconcile, Reconcile with source,
       Suspend/Resume). → `YamlDrawer.tsx`. Suspend-Badge im Drawer-Titel.
-- [ ] Zeilen-Inline-Aktionen (Schnellzugriff ohne Drawer öffnen) — verschoben.
+- [x] Zeilen-Inline-Aktionen (Schnellzugriff ohne Drawer öffnen): Reconcile +
+      Suspend/Resume als ActionIcons je Zeile für `*.fluxcd.io`-GVRs. Der
+      Suspend-Zustand ist aus der Table-Zeile nicht ablesbar, daher Suspend und
+      Resume als getrennte idempotente Aktionen. → `components/flux/FluxRowActions.tsx`,
+      als ExtraTableColumn in App.tsx eingehängt. (2026-07-09)
 
 ### C4 — Aktions-Mechanik & Feedback
 Abhängig von: C1.
@@ -134,11 +173,13 @@ Abhängig von: C1.
 - [x] **Image Automation:** funktioniert generisch — alle `*.fluxcd.io`-Kinds
       (inkl. ImageRepository/ImagePolicy/ImageUpdateAutomation) erhalten dieselben
       Aktionen, da Erkennung über Gruppen-Suffix läuft.
-- [ ] Fast-Polling mit observedGeneration-Fortschritt — aktuell leichtes Refetch
-      (400 ms) nach Suspend/Resume; volle Progress-Anzeige verschoben (→ mit F).
+- [x] Fast-Polling mit observedGeneration-Fortschritt — **entfällt (2026-07-09):**
+      durch die Watch-Streams aus F überholt; das leichte Refetch (400 ms) nach
+      Aktionen bleibt als bewusste Lösung.
 
 ### C5 — Optional / nachgelagert
 - [ ] Dependency-Graph der Kustomizations (`spec.dependsOn`) als Diagramm.
+      **→ Als eigener Milestone U geplant (2026-07-09), siehe unten.**
 
 ---
 
@@ -180,6 +221,9 @@ umgebungsspezifische ist konfigurierbar (Open-Source-Anforderung, siehe Entschei
 - [ ] Fallback **Port-Forward** (client-go SPDY), falls Proxy per RBAC verboten
       (403 wird erkannt und im Konfigurations-Modal gemeldet; automatischer
       Port-Forward bleibt offen, um keine instabile Teilimplementierung zu committen).
+      *(Auch 2026-07-09 bewusst offen gelassen: braucht zur Verifikation einen
+      Live-Cluster mit RBAC-gesperrtem Proxy — der ursprüngliche Vorbehalt gilt
+      weiter; bei Bedarf als eigenes Arbeitspaket mit Cluster-Zugang umsetzen.)*
 - [x] Manueller Modus: direkter HTTP-Client mit konfigurierten Headern.
 
 ### B3 — Backend: Query-Schicht
@@ -299,7 +343,7 @@ Open-Source-Release.
 - [x] `git init` + Commits vorhanden; `.gitignore` deckt build/bin, node_modules,
       frontend/dist ab (wailsjs bleibt committet). LICENSE (Apache-2.0),
       CONTRIBUTING.md, README (englisch, OSS) angelegt. → Milestone-G-Agent
-- [ ] GitHub-Repo anlegen + README-Badge-Owner (`OWNER`) ersetzen — manueller
+- [x] GitHub-Repo anlegen + README-Badge-Owner (`OWNER`) ersetzen — manueller
       Schritt beim Veröffentlichen (kein Remote in dieser Umgebung).
 
 ### G2 — Build-Pipeline
@@ -332,8 +376,9 @@ Abhängig von: G2.
 Abhängig von: H1.
 - [x] Sprachumschalter im Einstellungsmenü (Deutsch/English); Default =
       Systemsprache (LanguageDetector), Persistenz in localStorage (`kube-lens-lang`).
-- [ ] `Intl`-Datums-/Zahlenformatierung an Locale koppeln — offen (aktuell
-      `toLocaleString()` ohne explizite Locale; niedrige Priorität).
+- [x] `Intl`-Datums-/Zahlenformatierung an Locale koppeln: Charts über J2 erledigt;
+      letzte verbliebene Stelle (Events-Timestamp im Drawer, `YamlDrawer.tsx`)
+      nutzt jetzt `toLocaleString(i18n.language)`. (2026-07-09)
 
 **Verifiziert (2026-07-08) live:** EN/DE-Umschaltung über Shell, Sidebar (inkl.
 Sektions-Labels), Detail-Drawer-Tabs (Overview/Metrics ↔ Übersicht/Metriken),
@@ -426,8 +471,11 @@ kein Chart-Bundle) — `SimpleTimeSeriesChart.tsx` wird erweitert, nicht ersetzt
       koppeln" für die Charts.
 
 ### J3 — Hover-Auslesung (optional, nachgelagert)
-- [ ] Crosshair + Tooltip: bei Mausbewegung nächstliegenden Punkt markieren,
-      Wert + Zeitpunkt anzeigen (reines SVG/DOM, keine Lib).
+- [x] Crosshair + Tooltip: bei Mausbewegung nächstliegenden Punkt markieren,
+      Wert + Zeitpunkt anzeigen (reines SVG/DOM, keine Lib). Umgesetzt in
+      `SimpleTimeSeriesChart.tsx`: Maus→viewBox-Mapping (inkl. Letterboxing),
+      gestrichelte Crosshair-Linie, Punktmarker, Tooltip mit `formatMetricValue`
+      + locale-formatierter Zeit; Tooltip flippt am rechten Rand. (2026-07-09)
 
 ---
 
@@ -501,23 +549,31 @@ Abhängig von: K1–K3.
 
 ### K5 — i18n, Reset & UX-Kanten
 Abhängig von: K4.
-- [ ] Alle neuen UI-Strings in EN/DE ergänzen (`src/i18n/gen/...`); Default-Regel-Namen
-      bleiben übersetzbar, User-Labels werden unverändert angezeigt.
-- [ ] Reset-Optionen: einzelne Regel zurücksetzen/löschen und komplette
-      CRD-Gruppen-Konfiguration auf App-Defaults zurücksetzen.
-- [ ] Kantenfälle behandeln: Icon fehlt/ungültig, alle Regeln deaktiviert, Pattern
-      matcht keine vorhandene API-Gruppe, mehrere Regeln matchen dieselbe Gruppe,
-      sehr viele CRDs/Regeln ohne merkliche Sidebar-Verlangsamung.
+- [x] Alle neuen UI-Strings in EN/DE ergänzen (`src/i18n/gen/forms.ts`,
+      18 `forms.crdGroups.*`-Keys symmetrisch in beiden Sprachen verifiziert
+      2026-07-09); Default-Regel-Namen bleiben übersetzbar, User-Labels werden
+      unverändert angezeigt.
+- [x] Reset-Optionen: einzelne Regel löschen (`removeRule` im Modal) und komplette
+      CRD-Gruppen-Konfiguration auf App-Defaults zurücksetzen (`resetDefaults`).
+- [x] Kantenfälle behandelt: Icon fehlt/ungültig → neutraler Fallback (K2),
+      alle Regeln deaktiviert → Default-Regeln greifen, Pattern matcht nichts →
+      roher API-Gruppenname, mehrere Regeln matchen → erste gewinnt (per Unit-Test
+      abgesichert, K6). *(Nur Performance-Messung bei sehr vielen CRDs steht aus.)*
 
 ### K6 — Tests & Verifikation
 Abhängig von: K1–K5.
-- [ ] Unit-Tests für Pattern-Matching, Priorität/Merge von User- und Default-Regeln,
-      Fallback auf API-Gruppennamen, Kollisionssuffixe und Icon-Sanitizing.
+- [x] Unit-Tests für Pattern-Matching (Suffix-/Infix-Wildcards, kein Match der
+      nackten Domain durch `*.`-Pattern), Priorität User- vor Default-Regeln,
+      Fallback auf API-Gruppennamen, Kollisionssuffixe und Icon-Sanitizing
+      (Script/Event-Handler/externe Refs/foreignObject/Größe).
+      → `frontend/src/resourceCatalog.test.ts` (vitest, `npm test`). (2026-07-09)
 - [ ] UI-/Komponententests für Regel-Editor, Validierungsfehler, Reset und
-      Sidebar-Rendering mit Custom Icons.
+      Sidebar-Rendering mit Custom Icons. *(Braucht jsdom/testing-library-Setup —
+      bewusst nicht in der Restpunkte-Runde eingeführt.)*
 - [ ] Manuelle Verifikation gegen einen Cluster mit Flux/Prometheus/Istio- oder
       Dummy-CRDs: Defaults unverändert, neue Custom-Gruppe greift, Icon wird korrekt
-      angezeigt, Settings persistieren über App-Neustart.
+      angezeigt, Settings persistieren über App-Neustart. *(Nur vom User mit
+      Live-Cluster durchführbar.)*
 
 ---
 
@@ -595,21 +651,26 @@ Abhängig von: L3.
 - [x] Bei fehlenden Prometheus-Daten, aber vorhandenen Requests/Limits: Metriken-Tab
       soll weiterhin sinnvoll degradieren (z. B. Summary sichtbar, Charts verborgen
       oder leerer Zustand mit Hinweis im Tab).
-- [ ] Optional für Workloads im Drawer prüfen: Requests/Limits aus PodTemplate auch in
-      der Übersicht oder im Metrics-Kontext anzeigen, ohne Pod-Live-Metriken mit
-      Template-Werten zu vermischen.
+- [x] Optional für Workloads im Drawer: Requests/Limits aus dem PodTemplate werden
+      in der **Übersicht** als eigene Karte „Ressourcen" mit Badge „pro Pod-Template"
+      angezeigt (`WorkloadOverview.tsx`, `quantitySummary` wird via `OverviewProps`
+      durchgereicht) — bewusst nicht im Metrics-Tab, um Template-Werte nicht mit
+      Pod-Live-Metriken zu vermischen. (2026-07-09)
 
 ### L6 — Tests & Verifikation
 Abhängig von: L1–L5.
-- [ ] Unit-Tests für Spalten-Merge/Reihenfolge, Reset, neue Server-Side-Spalten und
-      verschwundene Spalten.
-- [ ] Unit-Tests für Resource-Aggregation inkl. mehrere Container, Init-Container,
-      fehlende Requests/Limits, CPU milli/decimal und Memory binary units.
+- [x] Unit-Tests für Spalten-Merge/Reihenfolge, unbekannte (verschwundene) Keys und
+      Anhängen neuer Server-Side-Spalten. → `mergeColumnOrder` aus `ResourceTable.tsx`
+      exportiert, Tests in `frontend/src/components/tableColumns.test.ts`. (2026-07-09)
+- [x] Unit-Tests für Resource-Aggregation inkl. mehrere Container, Init-Container
+      (max-Regel in beide Richtungen), fehlende/ungültige Requests/Limits, CPU
+      milli/decimal und Memory binary/decimal units. → `quantities_test.go`. (2026-07-09)
 - [ ] UI-/Komponententests für Header-Drag-&-Drop, Persistenz, Reset und Rendering der
-      Request/Limit-Spalten.
+      Request/Limit-Spalten. *(Braucht jsdom/testing-library-Setup.)*
 - [ ] Manuelle Verifikation gegen Workloads mit gepflegten und nicht gepflegten
       Requests/Limits: Pod-Tabelle, Deployment/StatefulSet/DaemonSet/ReplicaSet-
-      Tabellen, Metrics-Drawer und App-Neustart-Persistenz.
+      Tabellen, Metrics-Drawer und App-Neustart-Persistenz. *(Nur vom User mit
+      Live-Cluster durchführbar.)*
 
 ---
 
@@ -664,7 +725,9 @@ Abhängig von: M3.
       abhängig von vorhandenen Daten.
 - [x] Unterschiedliche Zustände visuell klar trennen: Failed/NotReady, Unknown,
       Suspended, Reconciling/Progressing.
-- [ ] Optional: Schnellfilter für Namespace, Kind und Freitext in Name/Message.
+- [x] Optional: Schnellfilter für Namespace und Kind (clearable/searchable Selects,
+      Werte aus den geladenen Problemen abgeleitet) zusätzlich zum bestehenden
+      Freitext-Filter; alle drei kombinierbar. → `FluxProblemsOverview.tsx`. (2026-07-09)
 
 ### M5 — Live-Updates, i18n & Tests
 Abhängig von: M1–M4.
@@ -673,13 +736,17 @@ Abhängig von: M1–M4.
       aggressiver Polling-Pfad.
 - [x] Alle neuen UI-Strings in EN/DE ergänzen (`src/i18n/gen/dashboards.ts` oder
       passendes neues Bundle).
-- [ ] Unit-Tests für Failed/NotReady-Filterung, Suspended-Semantik, Gruppierung und
-      Sortierung.
+- [~] Unit-Tests für Failed/NotReady-Filterung, Suspended-Semantik, Gruppierung und
+      Sortierung. *(Teilweise erledigt 2026-07-09: die Filter-Bausteine
+      `readyCondition`/`isReady`/`isSuspended`/`fluxRevision` sind in `flux_test.go`
+      getestet; Gruppierung/Sortierung der View stehen aus — brauchen
+      Komponententest-Setup.)*
 - [ ] UI-/Komponententests für Dashboard-Klick, Empty-State, Row-Header-Gruppen,
-      Detail-Drawer-Öffnung und Message-Kürzung.
+      Detail-Drawer-Öffnung und Message-Kürzung. *(Braucht jsdom/testing-library-Setup.)*
 - [ ] Manuelle Verifikation gegen Flux-Ressourcen mit Ready=True, Ready=False,
       Reconciling/Unknown und Suspended: Dashboard-Counts stimmen, zentrale Übersicht
-      zeigt nur relevante Ressourcen und Gruppen korrekt getrennt.
+      zeigt nur relevante Ressourcen und Gruppen korrekt getrennt. *(Nur vom User
+      mit Live-Cluster durchführbar.)*
 
 ---
 
@@ -711,51 +778,800 @@ nach Name, Wert, Container und Quelle.
 Abhängig von: N1.
 - [x] Secret-Einträge standardmäßig maskiert anzeigen (`••••••••`) mit klarem
       Source-Hinweis, Secret-Name und Key.
-- [ ] Reveal nur per explizitem Klick pro Wert oder pro Zeile; kein globales
-      automatisches Entmaskieren beim Tab-Öffnen.
-- [ ] Optionalen „Hide again"-Pfad vorsehen; beim Schließen des Drawers, Pod-Wechsel
-      oder Tab-Wechsel werden revealed Werte aus dem lokalen UI-State verworfen.
-- [ ] Fehlerfälle behandeln: RBAC verbietet Secret-Lesen, Secret/Key fehlt,
-      Binary/nicht-UTF8-Wert — jeweils mit sicherem, nicht-leakendem Hinweis.
+- [x] Reveal nur per explizitem Klick pro Wert (Eye-Icon je Zeile); kein globales
+      automatisches Entmaskieren beim Tab-Öffnen. → `EnvironmentTab.tsx`.
+- [x] „Hide again"-Pfad: Eye-Toggle pro Wert + „Alle verbergen"-Button; revealed
+      Werte werden bei Pod-Wechsel zurückgesetzt (State-Reset im Effect) und beim
+      Drawer-/Tab-Wechsel verworfen (`keepMounted={false}` am Tabs-Container).
+- [x] Fehlerfälle behandelt: RBAC-/Fehlerpfad beim Reveal erscheint als dismissbare
+      Inline-Alert (ersetzt nicht mehr die ganze View, 2026-07-09); fehlendes
+      Secret/fehlender Key liefern klare Backend-Fehler ohne Wert-Leak;
+      Binary/nicht-UTF8-Werte werden als base64 zurückgegeben (`isMostlyText`,
+      per Unit-Test abgesichert).
 
 ### N3 — Frontend: Environment Variables Tab im Pod-Drawer
 Abhängig von: N1, N2.
-- [ ] Pod-Detail-Drawer um Tab **Environment Variables** ergänzen (nur für Pods), neben
-      Overview/YAML/Events/Metrics/Logs/Terminal; lazy laden wie die anderen Tabs.
-- [ ] Darstellung gruppiert nach Container-Typ und Container-Name; innerhalb der Gruppe
-      tabellarisch mit Name, Value, Source, Reference/Key und Status.
-- [ ] Werte lesbar darstellen: lange Werte einkürzen mit Expand/Copy, Multiline-Werte
-      sicher anzeigen, Copy-Button pro Wert/Name; Secret-Copy erst nach Reveal oder mit
-      separater bewusster Aktion.
-- [ ] Warnungen für nicht auflösbare Quellen gesammelt oberhalb oder innerhalb der
-      betroffenen Container-Gruppe anzeigen.
+- [x] Pod-Detail-Drawer um Tab **Environment Variables** ergänzt (nur für Pods),
+      lazy geladen wie die anderen Tabs. → `YamlDrawer.tsx` (Tab `env`),
+      `components/env/EnvironmentTab.tsx`.
+- [x] Darstellung gruppiert nach Container-Typ und Container-Name; innerhalb der
+      Gruppe tabellarisch mit Name, Value, Source, Reference/Key und Status.
+- [x] Werte lesbar: `lineClamp` mit Titel-Tooltip, Copy-Button pro Wert;
+      Secret-Copy erst nach Reveal sichtbar.
+- [x] Warnungen für nicht auflösbare Quellen gesammelt als Alert oberhalb der
+      Gruppen.
 
 ### N4 — Fuzzy Search & Filter UX
 Abhängig von: N3.
-- [ ] Suchfeld im Tab ergänzen; fuzzy search über Env-Name, Wert (nur wenn nicht secret
-      oder bereits revealed), Container-Name, Source-Typ, ConfigMap-/Secret-Name und Key.
-- [ ] Treffer hervorheben und leere Container-Gruppen während der Suche ausblenden;
-      Clear-Button und Trefferzähler anzeigen.
+- [x] Suchfeld im Tab; fuzzy search über Env-Name, Wert (Secrets nur wenn
+      revealed), Container-Name, Source-Typ, Referenz-Name und Key
+      (`scoreEntry`, lokale Scoring-Funktion).
+- [x] Treffer-Highlighting (Mantine `Highlight` auf Name + nicht-sensitiven
+      Werten), leere Container-Gruppen während der Suche ausgeblendet,
+      Clear-Button und Trefferzähler am Suchfeld. (2026-07-09)
 - [ ] Filter-Chips optional ergänzen: Container, Source-Typ, „Secrets only",
-      „Warnings only".
-- [ ] Fuzzy-Implementierung leichtgewichtig halten: vorhandene Hilfsfunktion oder kleine
-      lokale Scoring-Funktion; keine schwere Such-Library einführen, sofern nicht schon
-      vorhanden.
+      „Warnings only". *(Optional offen gelassen — Suche + Zähler decken den
+      Hauptbedarf; bei Bedarf kleines Folgepaket.)*
+- [x] Fuzzy-Implementierung leichtgewichtig: lokale Scoring-Funktion, keine
+      Such-Library.
 
 ### N5 — Sicherheit, i18n & Tests
 Abhängig von: N1–N4.
-- [ ] Sicherheitsprüfung: Secret-Werte nie in `settings.json`, localStorage,
-      Fehlermeldungen, Console-Logs oder Test-Snapshots persistieren.
-- [ ] i18n für neue Tab-Labels, Buttons, Tooltips, Empty States, Warnungen und
-      Reveal/Hide-Aktionen in EN/DE ergänzen.
-- [ ] Unit-Tests für Env-Auflösung: direkte `env`, ConfigMapKeyRef, SecretKeyRef,
-      envFrom mit Prefix, optional/missing Quellen, fieldRef/resourceFieldRef,
-      Init-/Ephemeral-Container.
+- [x] Sicherheitsprüfung (Code-Review 2026-07-09): revealed Secret-Werte leben nur
+      im lokalen Komponenten-State (Reset bei Pod-Wechsel, Unmount bei Tab-/
+      Drawer-Wechsel); keine Persistenz in settings.json/localStorage, keine
+      Console-Logs, Fehlertexte enthalten keine Werte.
+- [x] i18n für Tab-Label, Buttons, Tooltips, Empty States, Warnungen und
+      Reveal/Hide in EN/DE (`detail.env.*` inkl. neuer Keys für Trefferzähler,
+      Clear und Reveal-Fehler).
+- [x] Unit-Tests für Env-Auflösung: direkte `env`, ConfigMapKeyRef, SecretKeyRef
+      (masked/sensitive/revealable), envFrom mit Prefix, optional/missing Quellen
+      (Warnungs-Semantik), fieldRef/resourceFieldRef, Binary-Erkennung.
+      → `env_test.go` mit fake dynamic client. (2026-07-09)
 - [ ] UI-/Komponententests für Maskierung, Reveal/Hide, Suche/Fuzzy-Treffer,
-      Gruppierung, Copy-Verhalten und Warnungsanzeige.
+      Gruppierung, Copy-Verhalten und Warnungsanzeige. *(Braucht
+      jsdom/testing-library-Setup.)*
 - [ ] Manuelle Verifikation gegen Pods mit Literals, ConfigMaps, Secrets, envFrom,
       Downward API und fehlenden/optional referenzierten Quellen; RBAC-Fall ohne
-      Secret-Leserechte prüfen.
+      Secret-Leserechte prüfen. *(Nur vom User mit Live-Cluster durchführbar.)*
+
+---
+
+## Milestone O — Light Mode / Dark Mode Setting
+
+**Ziel:** Die App unterstützt Hell, Dunkel und „System" als Farbschema, umschaltbar
+im Header-Einstellungsmenü. Heute ist Dark hart gesetzt
+(`frontend/src/main.tsx`: `<MantineProvider defaultColorScheme="dark">`), mehrere
+Komponenten verwenden hartkodierte Dark-Farben. Default bleibt **Dark** — ohne
+User-Aktion ändert sich nichts am heutigen Erscheinungsbild.
+
+### O1 — Color-Scheme-Setting & Umschalter
+- [ ] `frontend/src/main.tsx`: `localStorageColorSchemeManager({ key: 'kube-lens-color-scheme' })`
+      an den `MantineProvider` geben; `defaultColorScheme="dark"` beibehalten.
+      Persistenz in localStorage wie beim Sprachumschalter (Entscheidungslog H:
+      reine UI-Präferenz, nicht `settings.json`).
+- [ ] Umschalter im Header-Einstellungsmenü in `App.tsx` (dasselbe Mantine-`Menu`,
+      in dem der Sprachumschalter sitzt): drei Optionen **Hell / Dunkel / System**
+      über `useMantineColorScheme().setColorScheme('light'|'dark'|'auto')`,
+      aktive Option markieren (Radio/Check-Icon).
+
+### O2 — Hartkodierte Dark-Farben theme-fähig machen
+Abhängig von: O1.
+- [ ] Audit-Ergebnis (grep nach `dark.`, `--mantine-color-dark`, `#1b2636`):
+      `src/style.css`, `components/metrics/SimpleTimeSeriesChart.tsx` (Gridlines
+      `--mantine-color-dark-4`), `components/flux/FluxProblemsOverview.tsx`
+      (`bg="dark.7"` auf Row-Headern), `components/terminal/TerminalPanel.tsx`,
+      `components/detail/YamlCode.tsx`, `components/logs/LogsTab.tsx`.
+- [ ] Ersetzen durch schema-neutrale Mantine-Tokens: CSS-`light-dark()` bzw.
+      semantische Variablen (`--mantine-color-body`, `--mantine-color-default`,
+      `--mantine-color-default-border`, `--mantine-color-dimmed`) oder
+      Mantine-Props ohne festes `dark.*`. Nach dem Umbau darf kein sichtbarer
+      Unterschied im Dark Mode entstehen (Vorher/Nachher vergleichen).
+
+### O3 — Editor-, Chart-, Log- und Terminal-Themes
+Abhängig von: O1.
+- [ ] CodeMirror (`components/editor/YamlEditor.tsx`, aktuell dark): Light-Theme
+      ergänzen und über `useComputedColorScheme()` umschalten (Editor-Extension
+      per `Compartment` rekonfigurieren, kein Remount nötig).
+- [ ] `YamlCode.tsx` (Read-Only-Highlighting) analog auf beide Schemata bringen.
+- [ ] SVG-Charts (`SimpleTimeSeriesChart.tsx`): Achsen-/Gridline-/Linienfarben aus
+      theme-abhängigen Variablen beziehen (siehe dataviz-Grundsatz: in beiden
+      Schemata lesbar).
+- [ ] **Erlaubte Vereinfachung:** xterm.js-Terminals (`TerminalTab.tsx`,
+      `TerminalPanel.tsx`) und der Log-Viewer (`LogsTab.tsx`) dürfen dauerhaft
+      dunkel bleiben (übliche Terminal-Konvention). Wenn ja: bewusst so lassen
+      und im Entscheidungslog vermerken; wenn nein: xterm-`theme`-Objekte je
+      Schema definieren und bei Wechsel via `terminal.options.theme` live setzen.
+
+### O4 — Fenster-Hintergrund, i18n & Verifikation
+Abhängig von: O1–O3.
+- [ ] `main.go`: `BackgroundColour` (RGBA 27,38,54) ist nur die Farbe vor dem
+      ersten Render (Startup-Flash). Bewerten: neutraler Wert oder belassen —
+      kurz im Code kommentieren, kein dynamisches Nachziehen nötig.
+- [ ] Neue Menü-Strings in EN/DE ergänzen (`src/i18n/gen/shell.ts`).
+- [ ] Manuelle Verifikation **aller** Views in beiden Schemata: Sidebar, Tabellen
+      (inkl. Metrik-Spalten), Detail-Drawer alle Tabs, Flux-Dashboard + Problems,
+      Cluster-Übersicht, alle Modals (KubeConfig, Prometheus, CRD-Gruppen,
+      NewResource), Terminal-Panel-Rahmen. Kontrast-Stichprobe im Light Mode
+      (dimmed-Texte, Badges).
+
+---
+
+## Milestone P — Rollout-Restart & Scale für Workloads
+
+**Ziel:** Restart- und Scale-Aktionen direkt aus der App: Rollout-Restart für
+Deployments/StatefulSets/DaemonSets (kubectl-identisch über Annotation),
+„Restart" für Pods (= Delete, Controller erstellt neu) und Scale für
+Deployments/StatefulSets. Die Aktions-Ausführung wird so gekapselt, dass
+Milestone R dort einen Pre-Hook einhängen kann.
+
+### P1 — Backend: RolloutRestart
+- [ ] Neues Binding `RolloutRestart(group, version, resource, namespace, name string) error`
+      (neue Datei `rollout.go` + Delegation in `app.go`, Muster wie `patch.go`):
+      Merge-Patch über bestehendes `KubeManager.PatchResource` (patch.go:15) mit
+      Payload
+      `{"spec":{"template":{"metadata":{"annotations":{"kubectl.kubernetes.io/restartedAt":"<time.Now().Format(time.RFC3339)>"}}}}}`
+      — exakt das Verhalten von `kubectl rollout restart`.
+- [ ] Payload via `json.Marshal` bauen (kein Sprintf, Konvention aus C1).
+      Gültige Ziele: `apps/v1` deployments, statefulsets, daemonsets —
+      ReplicaSets und andere Kinds lehnt das Backend mit klarem englischem
+      Fehler ab (H1-Konvention).
+
+### P2 — Backend: Scale
+- [ ] `ScaleResource(group, version, resource, namespace, name string, replicas int) error`:
+      Merge-Patch `{"spec":{"replicas":<n>}}` über `PatchResource`. Bewusst kein
+      separater Scale-Subresource-Client (Entscheidungslog): Patch-RBAC ist für
+      die übrigen Aktionen ohnehin nötig, und der Weg funktioniert identisch.
+- [ ] Validierung `replicas >= 0`; obere Sanity-Grenze nicht erzwingen.
+- [ ] Bindings generieren (`wailsjs`), Fehlertexte englisch.
+
+### P3 — Frontend: Aktionen im Detail-Drawer
+Abhängig von: P1, P2. Einbau in `components/YamlDrawer.tsx`, Muster der
+Flux-Aktionsleiste (dort ab ca. Zeile 220: Buttons mit `busy`-State + Notifications).
+- [ ] **Restart-Button** für Kind ∈ {Deployment, StatefulSet, DaemonSet}
+      (Erkennung wie die bestehende Kind-Erkennung im Drawer): Confirm-Popover
+      („Rollout-Neustart auslösen?"), dann `RolloutRestart`.
+- [ ] **Scale-Button** für Kind ∈ {Deployment, StatefulSet} (DaemonSets sind
+      nicht skalierbar): öffnet kleines Popover/Modal mit `NumberInput`;
+      Startwert = `spec.replicas` aus `GetResourceJSON` (beim Öffnen des Dialogs
+      frisch lesen, nicht cachen). 0 ist erlaubt („scale to zero"), Hinweis-Zeile
+      falls `spec.replicas` fehlt (HPA-verwaltet o. ä.).
+- [ ] **Pod-Restart**: Button am Pod-Drawer, ruft bestehendes
+      `DeleteResource` (app.go:130) nach Confirm. Wenn der Pod **keine**
+      `ownerReferences` hat (aus dem Objekt-JSON prüfen): rote Warnung im
+      Confirm („Pod wird nicht neu erstellt").
+- [ ] Zeilen-Inline-Aktionen ohne Drawer bleiben verschoben (gleiche Entscheidung
+      wie C3) — hier nicht bauen.
+
+### P4 — Aktions-Pipeline, Feedback & i18n
+Abhängig von: P3.
+- [ ] Gemeinsame Ausführungsfunktion im Drawer kapseln (z. B.
+      `runWorkloadAction(kind: 'restart'|'scale'|'podDelete', fn)` analog
+      `runFlux` in YamlDrawer.tsx): Busy-State, Success-/Error-Notification,
+      leichtes Refetch nach Aktion (400 ms, wie bei Flux-Aktionen; Watch aus F1
+      übernimmt den Rest). **Wichtig für R:** genau eine Stelle, an der ein
+      Pre-Hook (Flux-Ownership-Check) vor die eigentliche Aktion geschaltet
+      werden kann.
+- [ ] Alle neuen Strings EN/DE (`src/i18n/gen/detail.ts`).
+
+### P5 — Tests & Verifikation
+Abhängig von: P1–P4.
+- [ ] Unit-Tests (Go) für Patch-Payload-Bau (Restart-Annotation, Scale-Replicas)
+      und Kind-Validierung.
+- [ ] Manuelle Verifikation gegen einen Cluster: Deployment-Restart rollt Pods,
+      StatefulSet/DaemonSet-Restart, Scale hoch/runter/auf 0, Pod-Restart
+      (Pod mit Owner verschwindet und kommt neu; Warnpfad bei nacktem Pod).
+
+---
+
+## Milestone Q — Flux Dashboard: Suspended-Resources-View
+
+**Ziel:** Die Suspended-Kachel im Flux-Dashboard wird klickbar und öffnet eine
+zentrale Übersicht aller suspendierten Flux-Ressourcen — gleiche Struktur wie die
+Failed/NotReady-Übersicht aus M (Row-Header pro Kind, klickbare Zeilen, Filter).
+
+### Q1 — Backend: Suspended-Aggregation
+- [ ] `flux.go`: den Collector aus `FluxProblemResources()` (flux.go:106) in eine
+      gemeinsame Funktion mit Filter-Prädikat verallgemeinern (ein Listen-Durchlauf,
+      zwei dünne Wrapper) und `FluxSuspendedResources() ([]FluxProblemResource, error)`
+      ergänzen; Filter = `isSuspended(obj)` (flux.go:60). Rückgabetyp
+      `FluxProblemResource` wiederverwenden (enthält bereits kind/group/version/
+      resource/namespace/name/status/reason/message/revision/age).
+- [ ] Binding in `app_flux.go` + wailsjs-Bindings generieren.
+- [ ] Semantik dokumentieren (Kommentar + ggf. UI-Hinweis): eine Ressource kann
+      gleichzeitig suspended **und** NotReady sein und erscheint dann in beiden
+      Übersichten — das ist gewollt (Entscheidung aus M: Suspended ist kein Fehler).
+
+### Q2 — Frontend: Kachel klickbar + gemeinsame Listen-Komponente
+Abhängig von: Q1.
+- [ ] `components/flux/FluxProblemsOverview.tsx` zu einer generischen, gruppierten
+      Listen-Komponente verallgemeinern (Props: Titel/Untertitel-Keys, Badge-Farbe,
+      Empty-State-Keys, Status-Zellen-Renderer). Daraus `FluxProblemsOverview`
+      (rot, wie heute) und neu `FluxSuspendedOverview` (gelb, Status-Spalte zeigt
+      „Suspended" + ggf. Ready-Zustand) ableiten — **kein** Copy-Paste der View.
+- [ ] `components/flux/FluxOverview.tsx`: Suspended-`SummaryTile` (aktuell ohne
+      `onClick`, ca. Zeile 199) bekommt `onClick={totals.suspended > 0 ? onOpenSuspended : undefined}`
+      und einen neuen Prop `onOpenSuspended`; optional `prominent` in Gelb bei > 0.
+- [ ] `App.tsx`: Routing analog `showFluxProblems` (Zeilen ~110–195):
+      `showFluxSuspended`-State, Laden über `FluxSuspendedResources`,
+      Refresh-Button-Bedingung (~Zeile 587) und `fluxActive` für die Sidebar
+      (~Zeile 649) erweitern; Kontext-/Kind-Wechsel schließt die View wie bei M2.
+
+### Q3 — Interaktion
+Abhängig von: Q2.
+- [ ] Zeilenklick öffnet den bestehenden Detail-Drawer (Mechanik aus M3); dort ist
+      der Resume-Button bereits vorhanden (Flux-Aktionen in YamlDrawer.tsx).
+- [ ] Nach Resume/Suspend aus dem Drawer die Übersicht refetchen, damit die Zeile
+      verschwindet bzw. erscheint (gleicher Refresh-Pfad wie M5).
+
+### Q4 — i18n & Tests
+Abhängig von: Q2, Q3.
+- [ ] Strings EN/DE in `src/i18n/gen/dashboards.ts` (`dash.flux.suspended.*`:
+      Titel, Untertitel, Empty-State „Nichts suspendiert", Spalten).
+- [ ] Unit-Test für die Suspended-Filterung (inkl. Ressource ohne `spec.suspend`).
+- [ ] Manuelle Verifikation: Kustomization + HelmRelease suspenden → Kachel-Count
+      stimmt, View gruppiert korrekt, Resume aus dem Drawer entfernt die Zeile,
+      Empty-State erscheint.
+
+---
+
+## Milestone R — Suspend-Popup bei manuellen Änderungen an Flux-verwalteten Ressourcen
+
+**Ziel:** Wer eine Flux-verwaltete Ressource manuell ändert (YAML-Apply, Rollout-
+Restart, Scale), bekommt ein Popup mit dem Hinweis, dass Flux die Änderung beim
+nächsten Reconcile überschreiben kann — mit der Option, den verwaltenden Owner
+(Kustomization/HelmRelease) direkt zu suspenden.
+
+### R1 — Backend: Flux-Ownership auflösen
+Abhängig von: C1 (`SetSuspend`), C2 (`resolveFluxGVR`).
+- [ ] Neues Binding `GetFluxOwnership(group, version, resource, namespace, name string) (FluxOwnership, error)`
+      in `flux.go` (+ `app_flux.go`): liest das Objekt über den dynamischen Client
+      und prüft die Standard-Labels der Flux-Controller:
+      - `kustomize.toolkit.fluxcd.io/name` + `kustomize.toolkit.fluxcd.io/namespace`
+        → Owner ist eine **Kustomization**
+      - `helm.toolkit.fluxcd.io/name` + `helm.toolkit.fluxcd.io/namespace`
+        → Owner ist ein **HelmRelease**
+      Sind beide Label-Paare vorhanden, gewinnt HelmRelease (direkterer Owner).
+- [ ] Rückgabetyp:
+      ```go
+      type FluxOwnership struct {
+          Managed        bool   // eines der Label-Paare vorhanden
+          OwnerKind      string // "Kustomization" | "HelmRelease"
+          OwnerName      string
+          OwnerNamespace string
+          OwnerFound     bool   // Owner-Objekt lesbar
+          OwnerSuspended bool   // spec.suspend am Owner (isSuspended, flux.go:60)
+          // GVR des Owners für den anschließenden SetSuspend-Call:
+          OwnerGroup, OwnerVersion, OwnerResource string
+      }
+      ```
+      Owner-GVR über `resolveFluxGVR` (flux.go:209) auflösen. Fehler beim
+      Owner-Lesen (RBAC, gelöscht) → `Managed=true, OwnerFound=false`, **kein**
+      Error-Return; Fehler nur bei nicht lesbarem Zielobjekt selbst.
+
+### R2 — Frontend: Guard vor mutierenden Aktionen
+Abhängig von: R1, P4 (Aktions-Pipeline), E2 (Apply-Flow).
+- [ ] Gemeinsame Guard-Funktion (z. B. `components/flux/useFluxSuspendGuard.ts`):
+      `confirmFluxSuspendIfManaged(ref, proceed)` — ruft `GetFluxOwnership`
+      (Ergebnis pro Drawer-Objekt cachen, bei Objektwechsel invalidieren) und
+      entscheidet:
+      - nicht managed → `proceed()` direkt;
+      - managed + Owner bereits suspended → `proceed()` direkt (kein Popup);
+      - managed + Owner aktiv → Modal öffnen.
+- [ ] Einhängen an genau drei Stellen:
+      1. `components/editor/YamlEditor.tsx`: vor dem **echten** Apply
+         (`ApplyResourceYAML(text, false, …)`) — Dry-Run bleibt ungeguarded;
+      2. Rollout-Restart und 3. Scale über den P4-Pre-Hook in `YamlDrawer.tsx`.
+      Pod-Delete bewusst **nicht** guarden (Pods tragen die Labels i. d. R.
+      nicht und ein Pod-Delete konkurriert nicht mit dem Reconcile).
+- [ ] Modal-Inhalt: „`<Kind>/<Name>` wird von Flux verwaltet
+      (`<OwnerKind> <ownerNs>/<ownerName>`). Flux kann die manuelle Änderung beim
+      nächsten Reconcile überschreiben." Drei Buttons:
+      **„Suspenden & fortfahren"** (SetSuspend auf den Owner mit den GVR-Feldern
+      aus R1, danach Aktion), **„Ohne Suspend fortfahren"**, **„Abbrechen"**.
+      Bei `OwnerFound=false`: Hinweis-Variante ohne Suspend-Button
+      („Owner nicht lesbar — Änderung kann überschrieben werden").
+
+### R3 — Nacharbeit & Sichtbarkeit
+Abhängig von: R2; weich abhängig von Q.
+- [ ] Nach „Suspenden & fortfahren": Success-Notification mit dem klaren Hinweis,
+      dass `<OwnerKind> <name>` suspendiert **bleibt**, inkl. Verweis auf die
+      Suspended-Übersicht (Q) für den späteren Resume. Kein automatisches
+      Re-Resume — der User entscheidet, wann Reconcile wieder aktiv wird
+      (Entscheidungslog).
+- [ ] Suspend-Fehler (RBAC) → Aktion abbrechen und Fehler zeigen, nicht „halb"
+      fortfahren.
+
+### R4 — Kanten, i18n & Tests
+Abhängig von: R1–R3.
+- [ ] Kanten: Owner in anderem Namespace (Label-`namespace` maßgeblich);
+      verschachtelte Ownership (HelmRelease selbst von Kustomization verwaltet):
+      nur den **direkten** Owner suspenden; Flux-Ressourcen selbst durchlaufen
+      denselben Guard (z. B. manuell editierter HelmRelease mit Kustomize-Labels).
+- [ ] i18n EN/DE für Modal, Buttons, Notifications (`src/i18n/gen/detail.ts`
+      oder `forms.ts`).
+- [ ] Go-Unit-Tests für Label-Parsing/Owner-Präferenz/OwnerFound-Fälle;
+      UI-Tests für die drei Modal-Pfade und den Cache-Reset bei Objektwechsel.
+- [ ] Manuelle Verifikation: kustomize-verwaltetes Deployment scalen → Popup,
+      „Suspenden & fortfahren" setzt `spec.suspend: true` an der Kustomization
+      und führt den Scale aus; helm-verwaltetes Objekt analog; nicht verwaltetes
+      Objekt → kein Popup.
+
+---
+
+## Milestone S — Server-Mode: `--server` für Backend + Frontend im Container
+
+**Ziel:** Die App kann statt als natives Wails-Fenster auch als Webserver laufen
+(`kube-lens --server`): Go-Backend + gebautes Frontend in einem Container, Zugriff
+per Browser. Der Desktop-Modus bleibt der Default und unverändert. Kernproblem:
+Die generierten wailsjs-Bindings rufen `window.go.main.App.<Method>` und
+`window.runtime.EventsOn/...` — im Browser existiert beides nicht. Lösung ist eine
+HTTP/WebSocket-Bridge im Backend plus ein Frontend-Shim, der genau diese globalen
+Objekte nachbildet; die generierten Bindings bleiben unangetastet.
+
+### S1 — CLI-Flags & Betriebsmodi
+- [ ] `main.go`: Flag-Parsing (stdlib `flag`): `--server` (bool), `--addr`
+      (Default `127.0.0.1:8399`), `--auth-token` (alternativ env
+      `KUBE_LENS_AUTH_TOKEN`), `--enable-local-terminal` (bool, Default false).
+      Ohne `--server` läuft exakt der heutige `wails.Run`-Pfad.
+- [ ] Code-Aufteilung für den Container-Build ohne GTK/WebKit-Linkabhängigkeit:
+      `main_desktop.go` (`//go:build !server`, enthält `wails.Run`) und
+      `main_server.go`; das normale Binary beherrscht beide Modi, ein Build mit
+      `-tags server` erzeugt ein reines Server-Binary ohne Wails-Desktop-Teil
+      (für den Linux-Container). Das `embed.FS` mit `frontend/dist` (main.go:14)
+      wird von beiden Pfaden genutzt.
+
+### S2 — Event-Emitter-Abstraktion im Backend
+- [ ] Alle Aufrufe von `runtime.EventsEmit(a.ctx, event, data)` (in
+      `app_logs.go`, `app_exec.go`, `app_terminal.go`, `watch.go`) auf eine
+      App-Methode `a.emit(event string, data ...interface{})` umstellen.
+      Desktop-Implementierung delegiert an die Wails-Runtime; Server-
+      Implementierung broadcastet an alle verbundenen WebSocket-Clients.
+      Das ist der einzige invasive Refactor — vorab als eigener Commit, Desktop-
+      Verhalten muss dabei identisch bleiben.
+
+### S3 — HTTP/WS-Bridge
+Abhängig von: S1, S2.
+- [ ] Neue Datei `server.go`: HTTP-Server mit
+      - statischem Serving des embedded `frontend/dist` (SPA-Fallback auf
+        `index.html`),
+      - `POST /api/call` mit Body `{"method": "<Name>", "args": [...]}` →
+        Dispatch per Reflection über dieselbe App-Instanz, die auch Wails bindet
+        (Methodenliste = exportierte Methoden von `*App`); Args/Returns als JSON
+        kompatibel zu den generierten `wailsjs/go/models.ts`-Typen; Fehler als
+        `{"error": "<msg>"}` mit HTTP 500,
+      - `GET /api/events` als WebSocket: Server→Client-Frames `{event, data}`
+        (gespeist aus S2-Broadcast),
+      - `GET /healthz` für Container-Probes.
+- [ ] WebSocket-Lib festlegen (z. B. `coder/websocket` — klein, kein cgo);
+      Client-Registry mit sauberem Cleanup bei Disconnect.
+
+### S4 — Frontend: Runtime-Shim
+Abhängig von: S3.
+- [ ] Neues Modul `frontend/src/serverBridge.ts`, importiert in `main.tsx` **vor**
+      `./App`: Wenn kein Wails-Webview erkannt wird (`window.go` undefined),
+      definieren:
+      - `window.go.main.App` als `Proxy`, der jeden Methodenaufruf in
+        `fetch('/api/call', {method: 'POST', body: JSON.stringify({method, args})})`
+        übersetzt (Promise-Rückgabe wie die echten Bindings),
+      - `window.runtime` mit `EventsOn/EventsOnce/EventsOff` auf Basis einer
+        WebSocket-Verbindung zu `/api/events`, inkl. Reconnect mit Backoff und
+        Re-Subscription.
+      Die generierten Dateien unter `frontend/wailsjs/` werden **nicht** verändert.
+- [ ] Auth-Token (falls gesetzt): einmalige Eingabe im Browser (einfacher
+      Login-Prompt), Ablage in `sessionStorage`, als `Authorization: Bearer`-Header
+      bzw. WS-Query-Param mitsenden.
+
+### S5 — Feature-Gating & Sicherheit im Server-Mode
+Abhängig von: S3, S4.
+- [ ] Neues Binding `GetCapabilities() Capabilities` mit
+      `{ mode: "desktop"|"server", fileDialogs: bool, localTerminal: bool }`;
+      Frontend fragt es beim Start ab und blendet ab:
+      - `AddKubeConfigDialog` (nativer Dateidialog, app.go:31) → im Server-Mode
+        ausgeblendet; Kubeconfigs kommen aus gemounteter Datei bzw.
+        `KUBECONFIG`-Env,
+      - Terminal-Panel (Milestone I) → öffnet eine Shell **im Container**, daher
+        im Server-Mode standardmäßig deaktiviert, nur mit
+        `--enable-local-terminal` sichtbar. Pod-Exec (D3) bleibt erlaubt.
+- [ ] Auth-Middleware auf `/api/*`: ohne konfigurierten Token nur Bind auf
+      Loopback erlauben und beim Start deutlich warnen, wenn `--addr` nicht
+      loopback ist; mit Token Bearer-Check (constant-time compare). TLS bewusst
+      extern (Reverse-Proxy) — in README dokumentieren, inkl. klarer Warnung:
+      der Server exponiert die vollen Cluster-Rechte der gemounteten Kubeconfig.
+- [ ] Settings-Verzeichnis (`os.UserConfigDir()/kube-lens/`) im Container über
+      env `KUBE_LENS_CONFIG_DIR` überschreibbar machen; Volume in der Doku.
+
+### S6 — Container-Build & CI
+Abhängig von: S1–S5.
+- [ ] `Dockerfile` (multi-stage): Node 20 → `npm ci && npm run build` in
+      `frontend/`; Go 1.26 → `go build -tags server`; Runtime-Stage schlank
+      (distroless/base oder alpine), non-root User, `EXPOSE 8399`,
+      `ENTRYPOINT ["kube-lens", "--server", "--addr", "0.0.0.0:8399"]`.
+- [ ] README-Abschnitt „Server mode": docker-run-Beispiel mit
+      `-v ~/.kube/config:/home/nonroot/.kube/config:ro`, Token-Env, Hinweis auf
+      exec-Auth-Plugins (kubelogin etc. sind im Container **nicht** vorhanden —
+      Kubeconfigs mit exec-Auth funktionieren nur, wenn das Plugin ins Image
+      gelegt wird; als bekannte Einschränkung dokumentieren).
+- [ ] Optional: Image-Build-Job in `.github/workflows/build.yml` (nur Build,
+      kein Registry-Push ohne Secrets).
+- [ ] Nachgelagert (eigener Punkt, nicht in S umsetzen): In-Cluster-Config
+      (`rest.InClusterConfig`) als zusätzliche Kontext-Quelle, damit kube-lens
+      als In-Cluster-Deployment ohne Kubeconfig laufen kann.
+
+### S7 — Verifikation
+Abhängig von: S1–S6.
+- [ ] Desktop-Regression: `wails build` + App-Start unverändert (Events, Logs,
+      Terminal, Dialoge).
+- [ ] Server lokal: `go run -tags server . --server` mit lokaler Kubeconfig;
+      Browser-Test der Kernflüsse: Kontexte/Namespaces, Tabellen inkl. Watch-
+      Refresh, Detail-Drawer alle Tabs, Log-Streaming (WS), Pod-Exec-Terminal,
+      Flux-Dashboard inkl. Aktionen, YAML-Apply.
+- [ ] Container: `docker build` + `docker run` mit gemounteter Kubeconfig gegen
+      einen Cluster ohne exec-Auth; Gating sichtbar (kein Datei-Dialog, kein
+      lokales Terminal), `/healthz` ok, Auth-Token erzwungen bei non-loopback.
+
+---
+
+## Milestone T — Multiselect & Bulk-Aktionen in der Table View
+
+**Ziel:** In der Ressourcen-Tabelle lassen sich mehrere Ressourcen desselben Typs
+per Checkbox auswählen und gemeinsam bearbeiten — zunächst **Delete** (alle Kinds)
+und **Rollout-Restart** (Deployments/StatefulSets/DaemonSets). Es gibt keine
+neuen Backend-Bindings: das Frontend iteriert über die bestehenden
+Einzel-Bindings (`DeleteResource`, app.go:130; `RolloutRestart` aus P1) und
+sammelt Ergebnisse pro Ressource ein.
+
+### T1 — Selection-State & Checkbox-Spalte
+Grundlage: `components/ResourceTable.tsx` (Rows = `TableRow { name, namespace, cells }`
+aus `types.ts:31`, Klick-Handler `onRowClick` öffnet den Drawer).
+- [ ] Checkbox-Spalte als **erste** Spalte ergänzen: Header-Checkbox
+      (Alle sichtbaren/gefilterten Zeilen an/abwählen, indeterminate-Zustand bei
+      Teilauswahl), Zeilen-Checkbox mit `event.stopPropagation()` — Zeilenklick
+      außerhalb der Checkbox öffnet weiterhin den Drawer.
+- [ ] Selection-Key = `${namespace}/${name}` (innerhalb einer Table View ist die
+      GVR fix, das ist eindeutig; bei cluster-scoped Ressourcen ist `namespace`
+      leer — Key funktioniert trotzdem). Shift-Klick wählt den Bereich seit dem
+      letzten angeklickten Eintrag.
+- [ ] Selection-State lebt in `App.tsx` neben dem Tabellen-State und wird
+      **zurückgesetzt** bei: Ressourcen-/Kontext-/Namespace-Wechsel und
+      Filteränderung nur optional (Auswahl gefilterter, unsichtbarer Zeilen
+      bleibt bestehen, Zähler zeigt Gesamtauswahl).
+- [ ] Refresh-Verträglichkeit: nach jedem Tabellen-Reload (Watch/Poll aus F)
+      Selection gegen die neuen Rows prunen — verschwundene Ressourcen fliegen
+      aus der Auswahl.
+- [ ] Wechselwirkung mit L2 (Spalten-Drag-&-Drop): Checkbox-Spalte ist wie die
+      Actions-Spalte von Reihenfolge/Drag ausgenommen und taucht nicht in
+      `columnOrder`/`hiddenColumns` auf.
+
+### T2 — Bulk-Action-Bar
+Abhängig von: T1.
+- [ ] Sticky Aktionsleiste ober- oder unterhalb der Tabelle, sichtbar sobald
+      Auswahl > 0: Zähler („7 ausgewählt"), Button **Auswahl aufheben**, dann die
+      Aktionen:
+      - **Löschen** — immer verfügbar.
+      - **Restart** — nur wenn die aktuelle GVR ∈ {apps/v1 deployments,
+        statefulsets, daemonsets} (dieselbe Kind-Erkennung wie P3);
+        nutzt `RolloutRestart` aus P1.
+      - Optional (nur wenn trivial, sonst eigener späterer Punkt): für
+        `*.fluxcd.io`-Kinds zusätzlich **Reconcile** und **Suspend/Resume**
+        über die bestehenden Flux-Bindings.
+- [ ] Confirm-Modal vor jeder Bulk-Aktion: Aktionsname + Liste der betroffenen
+      Ressourcen (`namespace/name`, scrollbar bei vielen), Bestätigungs-Button
+      mit Count im Label („7 Ressourcen löschen"). Kein Confirm-Skip — Bulk-Delete
+      ist destruktiv.
+
+### T3 — Ausführung, Fortschritt & Ergebnis
+Abhängig von: T2. Bewusst **kein** neues Batch-Binding im Backend
+(Entscheidungslog): Fehlergranularität pro Ressource, kein neuer API-Pfad.
+- [ ] Ausführungsschleife im Frontend: begrenzte Parallelität (z. B. 4 gleichzeitig),
+      pro Eintrag Einzel-Binding aufrufen, Ergebnis (`ok` | Fehlertext) sammeln.
+      Während des Laufs: Aktionsleiste zeigt Fortschritt („3/7 …"), Aktionen und
+      Checkboxen disabled, kein Abbruch-Button nötig (Läufe sind kurz), aber
+      bereits abgesetzte Calls laufen bei Drawer-/View-Wechsel zu Ende.
+- [ ] Ergebnis-Notification: „5 gelöscht, 2 fehlgeschlagen" mit aufklappbarer
+      Fehlerliste (Ressource + englische Backend-Fehlermeldung). Erfolgreiche
+      Einträge werden aus der Selection entfernt, fehlgeschlagene bleiben
+      ausgewählt (erleichtert Retry).
+- [ ] Nach Abschluss leichtes Refetch (400 ms, Muster aus C4/P4); Watch aus F1
+      übernimmt Folgeänderungen.
+
+### T4 — Flux-Guard für Bulk-Aktionen
+Abhängig von: R (weich — ohne R entfällt dieser Punkt ersatzlos, T bleibt lauffähig).
+- [ ] Vor Bulk-Delete/-Restart `GetFluxOwnership` (R1) für die ausgewählten
+      Ressourcen abfragen (sequenziell mit kleinem Limit oder parallel ≤ 4;
+      bei > ~30 Auswahl-Einträgen Abfrage überspringen und stattdessen
+      generischen Hinweis zeigen — kein Request-Sturm).
+- [ ] Statt N Einzel-Popups **ein** Sammel-Modal: distinct Owner auflisten
+      („verwaltet von Kustomization a/b, HelmRelease c/d …"), Optionen
+      **„Alle Owner suspenden & fortfahren" / „Ohne Suspend fortfahren" /
+      „Abbrechen"** — Wiederaufnahme wie bei R über die Suspended-Übersicht (Q).
+- [ ] Bereits suspendierte Owner nicht erneut suspenden; nicht lesbare Owner im
+      Modal als Hinweis aufführen (analog R2 `OwnerFound=false`).
+
+### T5 — Kanten, i18n & Tests
+Abhängig von: T1–T3.
+- [ ] Kanten: Auswahl über „alle Namespaces"-Ansicht (Namespace steht je Zeile
+      im Key), cluster-scoped Ressourcen, leere Tabelle nach Bulk-Delete
+      (Empty-State statt hängender Aktionsleiste), Header-Checkbox bei aktivem
+      Textfilter wählt nur die gefilterten Zeilen.
+- [ ] i18n EN/DE für Aktionsleiste, Confirm-Modals, Fortschritt, Ergebnis-
+      Notifications (`src/i18n/gen/forms.ts` oder neues Bundle).
+- [ ] Komponententests: Selection-Logik (Select-All/indeterminate/Shift-Range/
+      Prune nach Reload), Confirm-Liste, Ergebnis-Aggregation mit Teilfehlern.
+- [ ] Manuelle Verifikation: 5+ Pods auswählen und löschen (Teilfehler per RBAC
+      provozieren, wenn möglich), Deployments bulk-restarten, Auswahl über
+      Namespace-Filter, App-Verhalten während laufender Bulk-Aktion.
+
+---
+
+## Milestone U — Flux Dependency-Graph (`spec.dependsOn`)
+
+**Ziel:** Eine Graph-Ansicht im Flux-Bereich, die die `spec.dependsOn`-Beziehungen
+zwischen Flux-Ressourcen als gerichteten Graphen (DAG) visualisiert — Reihenfolge
+und Blockaden der Reconciliation werden auf einen Blick sichtbar. Scope:
+**Kustomizations und HelmReleases** (beide unterstützen `spec.dependsOn` mit
+identischer Semantik: Liste von `{name, namespace?}`-Referenzen auf Ressourcen
+**derselben Kind**; fehlender `namespace` = eigener Namespace der Ressource).
+Status (Ready/NotReady/Suspended) wird auf den Knoten angezeigt, Klick öffnet den
+bestehenden Detail-Drawer. Rendering als leichtgewichtiges SVG mit eigenem
+Layered-Layout — **keine Graph-Library** (dependsOn-Graphen sind klein, typisch
+< 50 Knoten; Entscheidungslog).
+
+### U1 — Backend: Graph-Daten aggregieren
+Grundlage: bestehende Helfer in `flux.go` (`fluxResources`, `readyCondition`,
+`isSuspended`, `fluxRevision`).
+- [ ] Neues Binding `FluxDependencyGraph() (FluxDependencyGraph, error)` in
+      `flux.go` + Delegation in `app_flux.go`; wailsjs-Bindings generieren.
+      Listet clusterweit alle Kustomizations (`kustomize.toolkit.fluxcd.io`) und
+      HelmReleases (`helm.toolkit.fluxcd.io`) und baut:
+      ```go
+      type FluxDependencyNode struct {
+          Kind, Namespace, Name          string // Identität
+          Group, Version, Resource       string // GVR für Drawer/Aktionen
+          Ready, Suspended               bool
+          Status, Reason                 string // aus readyCondition
+          Revision                       string
+      }
+      type FluxDependencyEdge struct {
+          FromKind, FromNamespace, FromName string // die abhängige Ressource
+          ToKind, ToNamespace, ToName       string // das dependsOn-Ziel
+          Unresolved                        bool   // Ziel existiert nicht
+      }
+      type FluxDependencyGraph struct {
+          Nodes []FluxDependencyNode
+          Edges []FluxDependencyEdge
+      }
+      ```
+- [ ] `spec.dependsOn` je Objekt lesen (`unstructured.NestedSlice`); Einträge sind
+      `{name string, namespace string?}` — fehlender Namespace wird mit dem
+      Namespace der abhängigen Ressource aufgefüllt. Ziel-Kind = eigene Kind
+      (Kustomization→Kustomization, HelmRelease→HelmRelease; Cross-Kind gibt es
+      in Flux nicht).
+- [ ] Kanten auf nicht existierende Ziele **nicht** verwerfen: `Unresolved=true`
+      setzen und einen synthetischen Knoten (nur Kind/Namespace/Name, Status leer)
+      aufnehmen — die UI zeigt ihn als „fehlt"-Knoten. Das ist ein realer
+      Fehlerzustand (Reconcile hängt an nicht existierender Dependency).
+- [ ] Knoten ohne ein- und ausgehende Kanten standardmäßig **mitliefern**
+      (Filterung ist UI-Sache, U4); englische Fehlertexte (H1-Konvention).
+
+### U2 — Frontend: Layered-DAG-Layout als pure Funktion
+Unabhängig von U1 entwickelbar (arbeitet auf dem U1-Datenmodell).
+- [ ] Neues Modul `frontend/src/components/flux/dependencyLayout.ts` — **pure
+      Funktion** `layoutDependencyGraph(nodes, edges, opts) → {positionedNodes,
+      routedEdges, width, height}`, damit sie ohne DOM unit-testbar ist (vitest,
+      Muster aus der Restpunkte-Runde).
+- [ ] Algorithmus bewusst simpel (Sugiyama light):
+      1. **Ebenen** per Longest-Path-Topologie: Knoten ohne Dependencies auf
+         Ebene 0, jeder weitere auf `max(Ebene seiner Dependencies) + 1`.
+      2. **Zyklen** dürfen den Layout nicht crashen: Kanten, die einen Zyklus
+         schließen, werden für die Ebenenberechnung ignoriert, aber gezeichnet
+         und als „cycle" markiert (Flux selbst lehnt Zyklen zur Laufzeit ab —
+         die UI muss sie trotzdem anzeigen können, weil sie im Cluster stehen
+         können).
+      3. **Innerhalb einer Ebene** einfache Kreuzungsminimierung per
+         Barycenter-Sortierung (ein Durchlauf reicht bei dieser Graphgröße).
+      4. Kanten als kubische Bézier-Pfade zwischen den Ebenen.
+- [ ] Getrennte Teilgraphen (Kustomizations vs. HelmReleases bzw. unverbundene
+      Inseln) untereinander mit Abstand layouten; deterministische Sortierung
+      (Namespace/Name), damit das Layout zwischen Refreshes stabil bleibt.
+
+### U3 — Frontend: Graph-View im Flux-Bereich
+Abhängig von: U1, U2.
+- [ ] Einstieg im Flux-Dashboard: Button/Kachel „Dependencies" neben dem
+      Problems-Einstieg (`FluxOverview.tsx`); Routing in `App.tsx` analog
+      `showFluxProblems` (`showFluxDeps`-State, Refresh-Button-Bedingung und
+      Sidebar-`fluxActive` erweitern, Kontext-Wechsel schließt die View).
+- [ ] Neue Komponente `components/flux/FluxDependencyGraphView.tsx`: SVG-Canvas
+      in `ScrollArea` (beide Richtungen), Knoten als Rechtecke mit Kind-Badge,
+      `namespace/name`, Status-Punkt; Kanten mit Pfeilspitzen (`<marker>`).
+      Farben theme-fähig über Mantine-Variablen (O-Konvention): Ready grün,
+      NotReady rot, Suspended gelb, Unresolved/fehlt grau gestrichelt,
+      Zyklus-Kanten rot gestrichelt.
+- [ ] Zoom pragmatisch halten: Stufen-Zoom (Buttons/Slider, CSS-Transform auf
+      der SVG-Gruppe) statt Pan/Zoom-Library; Fit-to-View beim Öffnen.
+- [ ] Leerer Zustand: keine Kustomizations/HelmReleases mit `dependsOn` →
+      Empty-State mit kurzem Erklärtext (Graph zeigt nur dependsOn-Beziehungen).
+
+### U4 — Interaktion & Filter
+Abhängig von: U3.
+- [ ] Klick auf Knoten öffnet den bestehenden Detail-Drawer (Mechanik wie
+      `onOpenResource` in der Problems-View, M3) — Reconcile/Suspend/Resume sind
+      dort verfügbar; nach Drawer-Aktionen Graph refetchen (400-ms-Muster).
+- [ ] Hover/Selektion: beim Hovern eines Knotens dessen direkte Vorgänger/
+      Nachfolger-Kanten hervorheben, Rest abdunkeln (reines SVG-Klassen-Toggling,
+      kein Re-Layout).
+- [ ] Filter oberhalb des Graphen: Kind (Kustomization/HelmRelease/beide),
+      Namespace (Select, Werte aus den Knoten), Toggle „nur Knoten mit
+      Dependencies" (Default: an, blendet isolierte Knoten aus), Toggle „nur
+      Probleme" (NotReady/Unresolved + deren direkte Nachbarn).
+- [ ] Tooltip je Knoten (Status/Reason/Revision) — Muster aus J3 wiederverwenden
+      (SVG-Tooltip, kein Portal nötig).
+
+### U5 — Live-Updates, i18n & Tests
+Abhängig von: U1–U4.
+- [ ] Refresh über den bestehenden Flux-Refresh-Pfad (Button + nach Aktionen);
+      kein eigener Polling-Pfad. Layout-Stabilität beim Refresh prüfen
+      (deterministische Sortierung aus U2).
+- [ ] Alle neuen Strings EN/DE in `src/i18n/gen/dashboards.ts`
+      (`dash.flux.deps.*`: Titel, Filter, Empty-State, Legende, Tooltips).
+- [ ] Go-Unit-Tests (`flux_test.go` erweitern oder `flux_deps_test.go`):
+      dependsOn-Parsing inkl. Namespace-Defaulting, Unresolved-Ziel erzeugt
+      synthetischen Knoten + markierte Kante, HelmRelease- und
+      Kustomization-Pfad.
+- [ ] Vitest für `dependencyLayout.ts`: Ebenenzuordnung (Kette, Diamant),
+      Zyklus bricht Layout nicht und markiert die Kante, deterministische
+      Ausgabe bei gleicher Eingabe, getrennte Inseln überlappen nicht.
+- [ ] Manuelle Verifikation gegen einen Cluster mit gestaffelten Kustomizations
+      (z. B. infra → apps): Reihenfolge stimmt, NotReady-Knoten blockierender
+      Dependencies sind rot, Klick öffnet Drawer, Filter wirken. *(Nur vom User
+      mit Live-Cluster durchführbar.)*
+
+---
+
+## Milestone V — Helm Dashboard & Outdated-Check
+
+**Ziel:** Ein Helm-Dashboard (Sidebar-„Dashboards"-Sektion, Muster von C2), das
+alle Helm-Releases im Cluster listet — unabhängig davon, ob sie per Helm-CLI oder
+Flux (helm-controller) installiert wurden — und pro Release anzeigt, ob eine
+neuere Chart-Version im Quell-Repo verfügbar ist.
+
+**Machbarkeits-Kern (Entscheidungslog):** Helm 3 speichert Releases als Secrets
+vom Typ `helm.sh/release.v1` — Discovery ist zuverlässig und braucht **kein
+Helm-SDK**. Aber: Helm speichert im Release **nicht**, aus welchem Repo ein Chart
+kam. Die Repo-Zuordnung ist deshalb dreistufig: (1) Flux-Releases → HelmRepository-
+CR, zuverlässig und automatisch; (2) Desktop: lokale `repositories.yaml` als
+Heuristik über den Chart-Namen; (3) manuelle Overrides in den Settings. Für
+Releases ohne zuordenbares Repo zeigt die UI ehrlich „Quelle unbekannt" statt zu
+raten. OCI-Registries (kein `index.yaml`) sind bewusst ausgeklammert → Status
+„unknown", eigener späterer Punkt.
+
+### V1 — Backend: Release-Discovery über Helm-Storage-Secrets
+Kein Helm-SDK als Dependency — der Storage-Layer wird direkt gelesen.
+- [ ] Neue Datei `helm.go` + Delegation in neuem `app_helm.go`; Binding
+      `HelmReleases() ([]HelmReleaseInfo, error)`:
+      Secrets clusterweit listen mit Label-Selector `owner=helm` (Typ
+      `helm.sh/release.v1`, Name `sh.helm.release.v1.<release>.v<revision>`).
+      Pro `(namespace, release)` nur die **höchste Revision** auswerten.
+- [ ] Payload dekodieren: `secret.data.release` ist (nach API-base64) ein
+      base64-String; dekodiert beginnt er mit gzip-Magic `0x1f 0x8b` → gunzip →
+      JSON. Relevante Felder:
+      ```go
+      type HelmReleaseInfo struct {
+          Name, Namespace   string
+          Revision          int
+          Status            string // deployed, failed, pending-*, superseded, uninstalling
+          ChartName         string // chart.metadata.name
+          ChartVersion      string // chart.metadata.version
+          AppVersion        string // chart.metadata.appVersion
+          Description       string // info.description (letzte Aktion)
+          LastDeployed      string // info.last_deployed
+          FluxManaged       bool   // Labels helm.toolkit.fluxcd.io/* am Secret
+          FluxHelmRelease   string // "<ns>/<name>" wenn FluxManaged
+      }
+      ```
+      **Nicht** dekodieren/ausliefern: `config`/`chart.values` (User-Values können
+      Secrets enthalten — fürs Dashboard unnötig, N5-Sicherheitslinie).
+- [ ] Fehlertoleranz: einzelne nicht dekodierbare Secrets überspringen und als
+      Warnung zählen, nicht den ganzen Call fehlschlagen lassen. Timeout wie bei
+      `FluxStatus` (20 s), englische Fehler.
+- [ ] Optional (nur wenn trivial): ConfigMap-Driver (`HELM_DRIVER=configmap`)
+      analog lesen; sonst als bekannte Einschränkung dokumentieren (Secrets sind
+      der Default und der Flux-Weg).
+- [ ] `helmAvailable`-Signal fürs Frontend: Dashboard-Eintrag nur zeigen, wenn
+      mindestens ein Release-Secret existiert (Muster `fluxAvailable`, C2) —
+      als eigenes leichtes Binding oder als leeres-Array-Konvention.
+
+### V2 — Frontend: Helm-Dashboard
+Abhängig von: V1.
+- [ ] Sidebar-„Dashboards"-Sektion um **Helm** erweitern (neben Cluster/Flux);
+      Routing in `App.tsx` analog `showFlux` (`showHelm`-State, Refresh-Button,
+      Kontext-Wechsel schließt die View).
+- [ ] Neue Komponenten `components/helm/HelmOverview.tsx` (+ `types.ts`, `index.ts`):
+      Summary-Kacheln oben (Total / Deployed / Failed+Pending / Outdated — letzte
+      erst mit V4 gefüllt, vorher ausgeblendet), darunter Tabelle:
+      Namespace, Release, Chart, installierte Version, App-Version, Status-Badge,
+      Letztes Deploy (locale-formatiert), Flux-Badge wenn `FluxManaged`,
+      ab V4 zusätzlich „Neueste Version" + Outdated-Badge.
+- [ ] Filter wie in der Flux-Problems-View (M4-Muster): Freitext + Namespace- und
+      Status-Select; Sortierung Namespace/Name, Failed zuerst optional.
+- [ ] Zeilenklick: bei `FluxManaged` den bestehenden Detail-Drawer der zugehörigen
+      HelmRelease-Ressource öffnen (GVR via `resolveFluxGVR`, Aktionen inklusive);
+      sonst kompaktes Info-Panel/Modal mit den V1-Feldern und Revisionshistorie
+      (Anzahl Revisionen aus den Secret-Namen). **Keine** Helm-Aktionen
+      (Rollback/Uninstall) in diesem Milestone — falls gewünscht, eigener
+      späterer Punkt mit eigener Risikobetrachtung.
+- [ ] Empty-State („keine Helm-Releases gefunden") und Warnungs-Anzeige für
+      übersprungene Secrets aus V1.
+
+### V3 — Repo-Zuordnung (dreistufig)
+Abhängig von: V1. Ergebnis pro Release: `repoURL` + `repoSource`
+(`flux | localConfig | manual | none`).
+- [ ] **Stufe 1 — Flux (zuverlässig):** für `FluxManaged`-Releases die
+      HelmRelease-CR lesen: `spec.chart.spec.sourceRef` → HelmRepository-CR →
+      `spec.url` (Chart-Name aus `spec.chart.spec.chart`). `chartRef`
+      (OCIRepository/HelmChart) erkennen; OCI → `repoSource=none` mit Grund
+      „OCI" (siehe V4). Bestehende Muster aus `extractSourceRef` (flux.go)
+      wiederverwenden.
+- [ ] **Stufe 2 — lokale Helm-Config (Heuristik, desktop-only):**
+      `helm env`-Konvention: `~/Library/Preferences/helm/repositories.yaml`
+      (macOS) bzw. `~/.config/helm/repositories.yaml` (Linux) parsen
+      (`{repositories: [{name, url}]}`); Zuordnung über Chart-Namen via
+      `index.yaml`-Treffer in V4 (das Repo, dessen Index den Chart enthält;
+      bei mehreren Treffern: als „mehrdeutig" markieren, nicht raten).
+      Im Server-Mode (S) über Capabilities deaktivieren.
+- [ ] **Stufe 3 — manuelle Overrides:** Settings-Erweiterung (global, nicht pro
+      Kontext — Chart→Repo ist kontextunabhängig):
+      ```json
+      "helm": { "repoOverrides": { "<chartName>": "https://charts.example.com" } }
+      ```
+      Editierbar über ein kleines Modal aus dem Helm-Dashboard heraus
+      (Settings-Persistenz-Muster aus kube.go). Overrides schlagen Stufe 1+2.
+- [ ] Releases ohne Zuordnung: `repoSource=none` — UI zeigt „Quelle unbekannt"
+      mit Tooltip, warum (kein Flux, kein lokaler Treffer, OCI, …) und Hinweis
+      auf den Override. **Kein** automatischer ArtifactHub-Lookup: externe
+      Anfragen mit Chart-Namen nur, wenn überhaupt, als späteres Opt-in
+      (Open-Source-/Privacy-Linie, Entscheidungslog).
+
+### V4 — Outdated-Check gegen `index.yaml`
+Abhängig von: V3.
+- [ ] Backend `HelmCheckUpdates(releases …) ([]HelmUpdateInfo, error)` (oder in
+      `HelmReleases` integriert mit `checkUpdates bool`): pro distinct `repoURL`
+      **einmal** `GET <repoURL>/index.yaml` laden, YAML parsen
+      (`entries: {<chart>: [{version, created, …}]}`), pro Chart die höchste
+      **stabile** Semver ermitteln (Prereleases ignorieren, außer die installierte
+      Version ist selbst eine Prerelease).
+- [ ] Semver-Vergleich über `github.com/Masterminds/semver/v3` (kleine, etablierte
+      Lib — kein Hand-Parser); nicht parsebare Versionen → Status `unknown`,
+      niemals falsch-positiv „outdated".
+- [ ] **Cache zwingend** (index.yaml kann >10 MB sein, z. B. Bitnami): In-Memory
+      pro Repo-URL mit TTL ~1 h; expliziter „Nach Updates suchen"-Button im
+      Dashboard invalidiert den Cache. Kein automatischer Check bei jedem
+      Dashboard-Öffnen — erster Check on-demand oder einmal pro App-Lauf.
+      HTTP-Timeout (~15 s) und Größenlimit; Fehler pro Repo isolieren
+      (ein totes Repo darf die anderen Ergebnisse nicht blockieren).
+- [ ] Ergebnis pro Release: `latestVersion`, `outdated bool`, `checkStatus`
+      (`ok | unknown | repoUnreachable | chartNotFound | ambiguous | oci`).
+      UI: Outdated-Badge (Farbe orange), Tooltip mit installiert → neueste,
+      Summary-Kachel „Outdated" zählt nur `checkStatus=ok && outdated`.
+- [ ] OCI-Charts in diesem Milestone **nicht** prüfen (Tag-Listing bräuchte
+      Registry-Auth) → `checkStatus=oci`, ehrlich als „nicht prüfbar" angezeigt;
+      eigener späterer Punkt.
+
+### V5 — i18n, Sicherheit & Tests
+Abhängig von: V1–V4.
+- [ ] Alle Strings EN/DE (`src/i18n/gen/dashboards.ts`, `dash.helm.*`).
+- [ ] Sicherheitslinie: Release-`config`/Values werden weder dekodiert noch
+      geloggt noch ans Frontend gegeben (V1); index.yaml-Requests gehen nur an
+      Repo-URLs aus Cluster/lokaler Config/Overrides — keine Drittdienste.
+- [ ] Go-Unit-Tests (`helm_test.go`): Storage-Decode (base64+gzip+JSON aus
+      Fixture), höchste-Revision-Auswahl, kaputtes Secret wird übersprungen,
+      Flux-Label-Erkennung; Outdated-Logik: Semver-Vergleich inkl. Prerelease-
+      Regeln, `index.yaml`-Parsing (Fixture), Chart-not-found/ambiguous-Pfade.
+- [ ] Vitest für reine Frontend-Helfer (Filter-/Sortierlogik), falls ausgelagert.
+- [ ] Manuelle Verifikation: Cluster mit Flux-HelmReleases (Repo automatisch
+      erkannt, Outdated korrekt), ein CLI-installiertes Release (lokale
+      repositories.yaml greift), ein Release ohne Quelle („unbekannt"),
+      Cache-/Refresh-Verhalten. *(Nur vom User mit Live-Cluster durchführbar.)*
 
 ---
 
@@ -781,3 +1597,12 @@ Abhängig von: N1–N4.
 | 2026-07-08 | Tabellen (L): Spaltenreihenfolge wird pro Kontext/Ressource persistiert und mit Server-Side-Table-Spalten gemergt, damit CRD-`additionalPrinterColumns` erhalten bleiben. Requests/Limits bei Workloads bedeuten PodTemplate-Werte pro Pod, nicht automatisch Replica-hochgerechnete Summen. |
 | 2026-07-08 | Flux-Fehlerübersicht (M): Failed/NotReady bekommt eine zentrale Dashboard-Ansicht mit Row-Headern pro Flux-Kind/Kategorie. Suspended wird sichtbar gemacht, aber nicht automatisch als Fehler gezählt. |
 | 2026-07-08 | Pod Environment Variables (N): Secret-Werte werden im neuen Pod-Tab standardmäßig maskiert und nur nach explizitem Klick revealed. Revealed Secrets dürfen nicht persistiert oder geloggt werden; fuzzy search darf Secret-Werte erst nach Reveal durchsuchen. |
+| 2026-07-09 | Theme (O): Farbschema-Persistenz in localStorage (`kube-lens-color-scheme`, wie Sprache) statt settings.json; Default bleibt Dark. Terminals/Logs dürfen als bewusste Vereinfachung dauerhaft dunkel bleiben. |
+| 2026-07-09 | Rollout/Scale (P): Restart über kubectl-identische Annotation `kubectl.kubernetes.io/restartedAt` im PodTemplate; Pod-„Restart" = Delete (Controller erstellt neu, Warnung bei Pods ohne ownerReferences); Scale als Merge-Patch auf `spec.replicas` statt Scale-Subresource-Client. |
+| 2026-07-09 | Suspended-Übersicht (Q): teilt sich die Komponentenbasis mit der Problems-Übersicht aus M (eine generische gruppierte Listen-Komponente, kein Duplikat). Suspended+NotReady erscheint bewusst in beiden Ansichten. |
+| 2026-07-09 | Flux-Suspend-Popup (R): Ownership über die Controller-Labels `kustomize.toolkit.fluxcd.io/name|namespace` bzw. `helm.toolkit.fluxcd.io/name|namespace`; bei beiden gewinnt HelmRelease (direkterer Owner). Suspend wirkt nur auf den direkten Owner; kein automatisches Resume — Wiederaufnahme über die Suspended-Übersicht (Q). Guard greift bei Apply/Restart/Scale, nicht bei Pod-Delete. |
+| 2026-07-09 | Server-Mode (S): kein Fork der generierten wailsjs-Bindings — Backend-HTTP/WS-Bridge (`POST /api/call` + `/api/events`) plus Frontend-Shim, der `window.go`/`window.runtime` im Browser nachbildet. Events laufen über eine `a.emit`-Abstraktion statt direkter `runtime.EventsEmit`-Calls. Lokales Terminal-Panel ist im Server-Mode standardmäßig deaktiviert (Shell im Container), Auth per Bearer-Token, TLS extern via Reverse-Proxy. |
+| 2026-07-09 | Restpunkte-Runde: Test-Grundstock eingeführt — Go-Unit-Tests (`quantities_test.go`, `flux_test.go`, `env_test.go` mit fake dynamic client) und vitest fürs Frontend (`npm test`; nur pure Funktionen, kein jsdom/testing-library). C4-Fast-Polling entfällt endgültig (durch Watch aus F ersetzt). C3-Inline-Aktionen: Suspend/Resume als getrennte idempotente Aktionen, da der Suspend-Zustand aus der Server-Side-Table-Zeile nicht ablesbar ist. |
+| 2026-07-09 | Dependency-Graph (U, aus C5): Scope = Kustomizations **und** HelmReleases (`spec.dependsOn`, gleiche Semantik, Ziel immer dieselbe Kind; fehlender Namespace = eigener). Keine Graph-/Pan-Zoom-Library — eigenes Layered-Layout als pure, unit-testbare Funktion + SVG (Graphen sind klein, konsistent mit der No-Chart-Bundle-Linie aus J). Unresolved-Ziele werden als synthetische „fehlt"-Knoten gezeigt, Zyklen dürfen das Layout nicht crashen. |
+| 2026-07-09 | Helm Dashboard (V): Release-Discovery direkt über Helm-Storage-Secrets (`helm.sh/release.v1`, base64+gzip+JSON) — **kein Helm-SDK** als Dependency. Release-Values werden nie dekodiert/ausgeliefert (können Secrets enthalten). Repo-Zuordnung dreistufig: Flux-HelmRepository (zuverlässig) → lokale `repositories.yaml` (Heuristik, desktop-only) → manueller Override; ohne Zuordnung ehrlich „Quelle unbekannt", kein Raten, kein automatischer ArtifactHub-Call (Privacy). Outdated-Check gegen `index.yaml` mit Pflicht-Cache (~1 h TTL) und `Masterminds/semver`; OCI-Registries ausgeklammert (Status „oci", späterer Punkt). Keine Helm-Aktionen (Rollback/Uninstall) in V. |
+| 2026-07-09 | Multiselect (T): kein Backend-Batch-Binding — das Frontend iteriert mit begrenzter Parallelität über die Einzel-Bindings und meldet Ergebnisse pro Ressource (Teilfehler bleiben ausgewählt für Retry). Selection-Key = `namespace/name` innerhalb der aktiven GVR; Checkbox-Spalte ist von der L2-Spaltenreihenfolge ausgenommen. Bulk-Flux-Guard als ein Sammel-Modal statt N Einzel-Popups. |

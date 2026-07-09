@@ -1,6 +1,6 @@
 # Kube Lens
 
-[![Build](https://github.com/OWNER/kube-lens/actions/workflows/build.yml/badge.svg)](https://github.com/OWNER/kube-lens/actions/workflows/build.yml)
+[![Build](https://github.com/scramb/kube-lens/actions/workflows/build.yml/badge.svg)](https://github.com/scramb/kube-lens/actions/workflows/build.yml)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](./LICENSE)
 
 An interactive Kubernetes desktop UI for macOS, Windows and Linux — built with

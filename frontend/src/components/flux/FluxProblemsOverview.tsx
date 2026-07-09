@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Badge, Center, Group, ScrollArea, Stack, Table, Text, TextInput, Title, ActionIcon, Tooltip } from '@mantine/core';
+import { Badge, Center, Group, ScrollArea, Select, Stack, Table, Text, TextInput, Title, ActionIcon, Tooltip } from '@mantine/core';
 import { IconChevronDown, IconChevronRight, IconRefresh, IconSearch } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import type { FluxProblemResource } from './types';
@@ -20,13 +20,27 @@ function statusColor(status: string): string {
 export default function FluxProblemsOverview({ problems, loading, onRefresh, onOpenResource }: Props) {
   const { t } = useTranslation();
   const [filter, setFilter] = useState('');
+  const [nsFilter, setNsFilter] = useState<string | null>(null);
+  const [kindFilter, setKindFilter] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+
+  const namespaces = useMemo(
+    () => [...new Set(problems.map((p) => p.namespace).filter(Boolean))].sort(),
+    [problems]
+  );
+  const kinds = useMemo(
+    () => [...new Set(problems.map((p) => p.kind).filter(Boolean))].sort(),
+    [problems]
+  );
 
   const filtered = useMemo(() => {
     const needle = filter.trim().toLowerCase();
+    const scoped = problems.filter(
+      (p) => (!nsFilter || p.namespace === nsFilter) && (!kindFilter || p.kind === kindFilter)
+    );
     const list = !needle
-      ? problems
-      : problems.filter((p) => [p.kind, p.namespace, p.name, p.status, p.reason, p.message, p.revision].some((v) => (v ?? '').toLowerCase().includes(needle)));
+      ? scoped
+      : scoped.filter((p) => [p.kind, p.namespace, p.name, p.status, p.reason, p.message, p.revision].some((v) => (v ?? '').toLowerCase().includes(needle)));
     const byKind = new Map<string, FluxProblemResource[]>();
     for (const problem of list) {
       const items = byKind.get(problem.kind) ?? [];
@@ -34,7 +48,7 @@ export default function FluxProblemsOverview({ problems, loading, onRefresh, onO
       byKind.set(problem.kind, items);
     }
     return [...byKind.entries()].sort(([a], [b]) => a.localeCompare(b));
-  }, [problems, filter]);
+  }, [problems, filter, nsFilter, kindFilter]);
 
   return (
     <Stack p="md" gap="md" h="100%">
@@ -50,13 +64,36 @@ export default function FluxProblemsOverview({ problems, loading, onRefresh, onO
         </Tooltip>
       </Group>
 
-      <TextInput
-        size="sm"
-        placeholder={t('dash.flux.problems.search')}
-        leftSection={<IconSearch size={14} />}
-        value={filter}
-        onChange={(event) => setFilter(event.currentTarget.value)}
-      />
+      <Group gap="xs" wrap="nowrap" align="flex-start">
+        <TextInput
+          size="sm"
+          style={{ flex: 1 }}
+          placeholder={t('dash.flux.problems.search')}
+          leftSection={<IconSearch size={14} />}
+          value={filter}
+          onChange={(event) => setFilter(event.currentTarget.value)}
+        />
+        <Select
+          size="sm"
+          w={200}
+          placeholder={t('dash.flux.problems.filterNamespace')}
+          data={namespaces}
+          value={nsFilter}
+          onChange={setNsFilter}
+          clearable
+          searchable
+        />
+        <Select
+          size="sm"
+          w={200}
+          placeholder={t('dash.flux.problems.filterKind')}
+          data={kinds}
+          value={kindFilter}
+          onChange={setKindFilter}
+          clearable
+          searchable
+        />
+      </Group>
 
       {problems.length === 0 ? (
         <Center flex={1}>

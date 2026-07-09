@@ -70,6 +70,7 @@ import CRDGroupingModal from './components/CRDGroupingModal';
 import { ClusterOverview } from './components/cluster/ClusterOverview';
 import { formatBytes, formatCPU } from './components/metrics/format';
 import { FluxOverview, FluxProblemsOverview, FluxProblemResource } from './components/flux';
+import FluxRowActions from './components/flux/FluxRowActions';
 import { NewResourceModal } from './components/editor';
 import TerminalPanel from './components/terminal/TerminalPanel';
 
@@ -512,6 +513,19 @@ export default function App() {
     ];
   }, [selected, tableQuantities]);
 
+  const fluxActionColumns = useMemo<ExtraTableColumn[]>(() => {
+    if (!selected || !selected.group.endsWith('.fluxcd.io')) return [];
+    return [
+      {
+        key: 'flux-actions',
+        label: '',
+        render: (row) => (
+          <FluxRowActions resource={selected} row={row} onChanged={() => loadTableRef.current(false)} />
+        ),
+      },
+    ];
+  }, [selected]);
+
   const updateTableViewSettings = useCallback(
     async (settings: TableViewSettings) => {
       if (!currentContext || !selected) return;
@@ -720,7 +734,7 @@ export default function App() {
             error={tableError}
             allNamespaces={namespace === ''}
             filter={filter}
-            extraColumns={[...metricColumns, ...quantityColumns]}
+            extraColumns={[...metricColumns, ...quantityColumns, ...fluxActionColumns]}
             viewSettings={tableViewSettings}
             onViewSettingsChange={updateTableViewSettings}
             onRowClick={openDetail}

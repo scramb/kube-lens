@@ -1,3 +1,4 @@
+import { useState, type MouseEvent, type ReactNode } from 'react';
 import { Box, Group, Text } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
 import { MetricPoint } from '../../types';
@@ -126,6 +127,7 @@ function dayKey(date: Date): string {
 
 export function SimpleTimeSeriesChart({ name, unit, points, referenceLines = [] }: Props) {
   const { t, i18n } = useTranslation();
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
 
   const clean: ChartPoint[] = points
     .map((p) => ({
@@ -225,13 +227,87 @@ export function SimpleTimeSeriesChart({ name, unit, points, referenceLines = [] 
     return { x, timeLabel, marker, key: `${index}-${point.timestamp}` };
   });
 
+  // Crosshair/tooltip: map mouse position back into viewBox coordinates.
+  // preserveAspectRatio default ("meet") can letterbox, so account for scale + offset.
+  const handleMouseMove = (event: MouseEvent<SVGSVGElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const scale = Math.min(rect.width / width, rect.height / height);
+    if (!scale || !Number.isFinite(scale)) return;
+    const offsetX = (rect.width - width * scale) / 2;
+    const viewX = (event.clientX - rect.left - offsetX) / scale;
+    let nearest = 0;
+    let best = Infinity;
+    for (let index = 0; index < clean.length; index += 1) {
+      const distance = Math.abs(xForPoint(clean[index], index) - viewX);
+      if (distance < best) {
+        best = distance;
+        nearest = index;
+      }
+    }
+    setHoverIdx(nearest);
+  };
+
+  const hoverPoint = hoverIdx !== null && hoverIdx < clean.length ? clean[hoverIdx] : null;
+  let hoverTooltip: ReactNode = null;
+  if (hoverPoint) {
+    const hx = xForPoint(hoverPoint, clean.indexOf(hoverPoint));
+    const hy = yForValue(hoverPoint.value);
+    const hoverDate = Number.isFinite(hoverPoint.timeMs) ? new Date(hoverPoint.timeMs) : null;
+    const valueLabel = formatMetricValue(hoverPoint.value, unit);
+    const timeLabel = hoverDate
+      ? `${showDayMarkers ? `${dayFormatter.format(hoverDate)} ` : ''}${timeFormatter.format(hoverDate)}`
+      : '';
+    const boxWidth = Math.max(valueLabel.length, timeLabel.length) * 6.2 + 14;
+    const boxHeight = timeLabel ? 32 : 20;
+    const boxX = hx + 10 + boxWidth > width - rightPad ? hx - 10 - boxWidth : hx + 10;
+    const boxY = clamp(hy - boxHeight / 2, topPad, height - bottomPad - boxHeight);
+    hoverTooltip = (
+      <g pointerEvents="none">
+        <line
+          x1={hx}
+          y1={topPad}
+          x2={hx}
+          y2={height - bottomPad}
+          stroke="var(--mantine-color-gray-5)"
+          strokeDasharray="3 3"
+        />
+        <circle cx={hx} cy={hy} r={3.5} fill="var(--mantine-color-cyan-4)" />
+        <rect
+          x={boxX}
+          y={boxY}
+          width={boxWidth}
+          height={boxHeight}
+          rx={4}
+          fill="var(--mantine-color-dark-6)"
+          stroke="var(--mantine-color-dark-4)"
+        />
+        <text x={boxX + 7} y={boxY + 13} fontSize={10} fontWeight={600} fill="var(--mantine-color-gray-2)">
+          {valueLabel}
+        </text>
+        {timeLabel ? (
+          <text x={boxX + 7} y={boxY + 26} fontSize={9} fill="var(--mantine-color-dimmed)">
+            {timeLabel}
+          </text>
+        ) : null}
+      </g>
+    );
+  }
+
   return (
     <Box p="sm" style={{ border: '1px solid var(--mantine-color-dark-4)', borderRadius: 8 }}>
       <Group justify="space-between" mb={4}>
         <Text size="sm" fw={600}>{name}</Text>
         <Text size="sm" c="dimmed">{formatMetricValue(latest, unit)}</Text>
       </Group>
-      <svg viewBox={`0 0 ${width} ${height}`} width="100%" height={height} role="img" aria-label={name}>
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        width="100%"
+        height={height}
+        role="img"
+        aria-label={name}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={() => setHoverIdx(null)}
+      >
         {yTicks.map((tick) => {
           const y = yForValue(tick);
           return (
@@ -330,6 +406,8 @@ export function SimpleTimeSeriesChart({ name, unit, points, referenceLines = [] 
         {clean.length > 1 ? (
           <path d={path} fill="none" stroke="var(--mantine-color-cyan-5)" strokeWidth={2} />
         ) : null}
+
+        {hoverTooltip}
       </svg>
     </Box>
   );

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ActionIcon, Alert, Badge, Button, Center, CopyButton, Group, Loader, PasswordInput, Stack, Table, Text, TextInput, Tooltip } from '@mantine/core';
-import { IconCopy, IconEye, IconEyeOff, IconSearch } from '@tabler/icons-react';
+import { ActionIcon, Alert, Badge, Button, Center, CopyButton, Group, Highlight, Loader, PasswordInput, Stack, Table, Text, TextInput, Tooltip } from '@mantine/core';
+import { IconCopy, IconEye, IconEyeOff, IconSearch, IconX } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { GetPodEnvironment, RevealPodEnvironmentSecret } from '../../../wailsjs/go/main/App';
 import { PodEnvironment, PodEnvironmentEntry } from '../../types';
@@ -41,12 +41,14 @@ export default function EnvironmentTab({ namespace, pod }: Props) {
   const [filter, setFilter] = useState('');
   const [revealed, setRevealed] = useState<Record<string, string>>({});
   const [revealing, setRevealing] = useState<Record<string, boolean>>({});
+  const [revealError, setRevealError] = useState('');
 
   useEffect(() => {
     setLoading(true);
     setError('');
     setData(null);
     setRevealed({});
+    setRevealError('');
     GetPodEnvironment(namespace, pod)
       .then((result) => setData(result ?? { entries: [], warnings: [] }))
       .catch((e) => setError(errText(e)))
@@ -83,8 +85,9 @@ export default function EnvironmentTab({ namespace, pod }: Props) {
     try {
       const value = await RevealPodEnvironmentSecret(namespace, entry.refName, entry.refKey);
       setRevealed((prev) => ({ ...prev, [key]: value }));
+      setRevealError('');
     } catch (e) {
-      setError(errText(e));
+      setRevealError(errText(e));
     } finally {
       setRevealing((prev) => ({ ...prev, [key]: false }));
     }
@@ -106,12 +109,31 @@ export default function EnvironmentTab({ namespace, pod }: Props) {
           {data.warnings.map((warning) => <Text key={warning} size="sm">{warning}</Text>)}
         </Alert>
       )}
+      {revealError && (
+        <Alert color="red" title={t('detail.env.revealFailed')} withCloseButton onClose={() => setRevealError('')}>
+          {revealError}
+        </Alert>
+      )}
       <TextInput
         placeholder={t('detail.env.search')}
         leftSection={<IconSearch size={14} />}
+        rightSection={
+          filter ? (
+            <Tooltip label={t('detail.env.clearSearch')}>
+              <ActionIcon size="sm" variant="subtle" color="gray" onClick={() => setFilter('')}>
+                <IconX size={14} />
+              </ActionIcon>
+            </Tooltip>
+          ) : undefined
+        }
         value={filter}
         onChange={(event) => setFilter(event.currentTarget.value)}
       />
+      {filter.trim() !== '' && (
+        <Text size="xs" c="dimmed">
+          {t('detail.env.matches', { count: grouped.reduce((n, [, entries]) => n + entries.length, 0) })}
+        </Text>
+      )}
       {grouped.length === 0 ? (
         <Center h={160}><Text c="dimmed">{t('detail.env.empty')}</Text></Center>
       ) : grouped.map(([group, entries]) => {
@@ -140,12 +162,12 @@ export default function EnvironmentTab({ namespace, pod }: Props) {
                   const isRevealed = !!revealed[secretKey(entry)];
                   return (
                     <Table.Tr key={secretKey(entry)}>
-                      <Table.Td><Text size="sm" fw={600}>{entry.name}</Text></Table.Td>
+                      <Table.Td><Highlight highlight={filter.trim()} size="sm" fw={600}>{entry.name}</Highlight></Table.Td>
                       <Table.Td>
                         {entry.sensitive && !isRevealed ? (
                           <PasswordInput value={value} readOnly variant="unstyled" size="xs" />
                         ) : (
-                          <Text size="sm" lineClamp={3} title={value} style={{ wordBreak: 'break-word' }}>{value}</Text>
+                          <Highlight highlight={filter.trim()} size="sm" lineClamp={3} title={value} style={{ wordBreak: 'break-word' }}>{value}</Highlight>
                         )}
                       </Table.Td>
                       <Table.Td><Badge variant="light">{entry.source}</Badge></Table.Td>

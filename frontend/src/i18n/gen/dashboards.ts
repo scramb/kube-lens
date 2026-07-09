@@ -19,6 +19,8 @@ export const dashboards = {
     'dash.flux.problems.message': 'Message',
     'dash.flux.problems.revision': 'Revision',
     'dash.flux.problems.age': 'Age',
+    'dash.flux.problems.filterNamespace': 'Namespace',
+    'dash.flux.problems.filterKind': 'Kind',
     // Flux category labels
     'dash.flux.category.Appliers': 'Appliers',
     'dash.flux.category.Sources': 'Sources',
@@ -69,6 +71,8 @@ export const dashboards = {
     'dash.flux.problems.message': 'Nachricht',
     'dash.flux.problems.revision': 'Revision',
     'dash.flux.problems.age': 'Alter',
+    'dash.flux.problems.filterNamespace': 'Namespace',
+    'dash.flux.problems.filterKind': 'Kind',
     // Flux category labels
     'dash.flux.category.Appliers': 'Appliers',
     'dash.flux.category.Sources': 'Sources',

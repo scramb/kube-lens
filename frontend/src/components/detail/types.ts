@@ -1,7 +1,11 @@
+import type { ResourceQuantitySummary } from '../../types';
+
 export type KubeObject = Record<string, any>;
 
 export interface OverviewProps {
   obj: KubeObject;
+  /** Requests/Limits-Summary (bei Workloads: PodTemplate-Werte pro Pod). */
+  quantitySummary?: ResourceQuantitySummary | null;
 }
 
 /**

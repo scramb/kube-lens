@@ -2,6 +2,7 @@ import { Badge, Card, Group, Stack, Table, Text, Title } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
 import { OverviewProps, getPath } from './types';
 import { ConditionsTable } from './ConditionsTable';
+import { formatCPU, formatBytes } from '../metrics/format';
 
 function StatNumber({ label, value, color }: { label: string; value: React.ReactNode; color?: string }) {
   if (value === undefined || value === null) return null;
@@ -17,7 +18,7 @@ function StatNumber({ label, value, color }: { label: string; value: React.React
   );
 }
 
-export function WorkloadOverview({ obj }: OverviewProps) {
+export function WorkloadOverview({ obj, quantitySummary }: OverviewProps) {
   const { t } = useTranslation();
   const kind: string | undefined = obj?.kind;
   const status = getPath(obj, ['status']) ?? {};
@@ -78,6 +79,35 @@ export function WorkloadOverview({ obj }: OverviewProps) {
           </>
         )}
       </Card>
+
+      {quantitySummary &&
+        (quantitySummary.hasCPURequest ||
+          quantitySummary.hasCPULimit ||
+          quantitySummary.hasMemRequest ||
+          quantitySummary.hasMemLimit) && (
+          <Card withBorder radius="md" padding="md">
+            <Group gap="xs" mb="sm">
+              <Title order={5}>{t('detail.workload.resources')}</Title>
+              <Badge variant="light" color="gray" size="xs">
+                {t('detail.workload.perPodTemplate')}
+              </Badge>
+            </Group>
+            <Group gap="xs" wrap="wrap">
+              {quantitySummary.hasCPURequest && (
+                <Badge variant="light">CPU request {formatCPU(quantitySummary.cpuRequest)}</Badge>
+              )}
+              {quantitySummary.hasCPULimit && (
+                <Badge variant="light" color="orange">CPU limit {formatCPU(quantitySummary.cpuLimit)}</Badge>
+              )}
+              {quantitySummary.hasMemRequest && (
+                <Badge variant="light">Memory request {formatBytes(quantitySummary.memoryRequest)}</Badge>
+              )}
+              {quantitySummary.hasMemLimit && (
+                <Badge variant="light" color="orange">Memory limit {formatBytes(quantitySummary.memoryLimit)}</Badge>
+              )}
+            </Group>
+          </Card>
+        )}
 
       {templateContainers.length > 0 && (
         <Card withBorder radius="md" padding="md">

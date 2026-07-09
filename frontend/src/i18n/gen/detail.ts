@@ -153,6 +153,12 @@ export const detail = {
     'detail.env.hideSecret': 'Hide secret value',
     'detail.env.hideAllSecrets': 'Hide all revealed secrets',
     'detail.env.copy': 'Copy value',
+    'detail.env.matches_one': '{{count}} match',
+    'detail.env.matches_other': '{{count}} matches',
+    'detail.env.clearSearch': 'Clear search',
+    'detail.env.revealFailed': 'Could not reveal secret',
+    'detail.workload.resources': 'Resources',
+    'detail.workload.perPodTemplate': 'per pod template',
   },
   de: {
     // Tabs
@@ -308,5 +314,11 @@ export const detail = {
     'detail.env.hideSecret': 'Secret-Wert verbergen',
     'detail.env.hideAllSecrets': 'Alle angezeigten Secrets verbergen',
     'detail.env.copy': 'Wert kopieren',
+    'detail.env.matches_one': '{{count}} Treffer',
+    'detail.env.matches_other': '{{count}} Treffer',
+    'detail.env.clearSearch': 'Suche leeren',
+    'detail.env.revealFailed': 'Secret konnte nicht angezeigt werden',
+    'detail.workload.resources': 'Ressourcen',
+    'detail.workload.perPodTemplate': 'pro Pod-Template',
   },
 };

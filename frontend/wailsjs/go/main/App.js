@@ -34,16 +34,16 @@ export function ExecWrite(arg1, arg2) {
   return window['go']['main']['App']['ExecWrite'](arg1, arg2);
 }
 
+export function FluxProblemResources() {
+  return window['go']['main']['App']['FluxProblemResources']();
+}
+
 export function FluxReconcile(arg1, arg2, arg3, arg4, arg5) {
   return window['go']['main']['App']['FluxReconcile'](arg1, arg2, arg3, arg4, arg5);
 }
 
 export function FluxReconcileWithSource(arg1, arg2, arg3, arg4, arg5) {
   return window['go']['main']['App']['FluxReconcileWithSource'](arg1, arg2, arg3, arg4, arg5);
-}
-
-export function FluxProblemResources() {
-  return window['go']['main']['App']['FluxProblemResources']();
 }
 
 export function FluxStatus() {
@@ -158,16 +158,16 @@ export function RevealPodEnvironmentSecret(arg1, arg2, arg3) {
   return window['go']['main']['App']['RevealPodEnvironmentSecret'](arg1, arg2, arg3);
 }
 
+export function SetCRDGroupingSettings(arg1) {
+  return window['go']['main']['App']['SetCRDGroupingSettings'](arg1);
+}
+
 export function SetHideEmptyCRDs(arg1) {
   return window['go']['main']['App']['SetHideEmptyCRDs'](arg1);
 }
 
 export function SetPrometheusSettings(arg1, arg2) {
   return window['go']['main']['App']['SetPrometheusSettings'](arg1, arg2);
-}
-
-export function SetCRDGroupingSettings(arg1) {
-  return window['go']['main']['App']['SetCRDGroupingSettings'](arg1);
 }
 
 export function SetResourceFavorite(arg1, arg2, arg3) {
@@ -178,12 +178,12 @@ export function SetSectionCollapsed(arg1, arg2, arg3) {
   return window['go']['main']['App']['SetSectionCollapsed'](arg1, arg2, arg3);
 }
 
-export function SetTableViewSettings(arg1, arg2, arg3) {
-  return window['go']['main']['App']['SetTableViewSettings'](arg1, arg2, arg3);
-}
-
 export function SetSuspend(arg1, arg2, arg3, arg4, arg5, arg6) {
   return window['go']['main']['App']['SetSuspend'](arg1, arg2, arg3, arg4, arg5, arg6);
+}
+
+export function SetTableViewSettings(arg1, arg2, arg3) {
+  return window['go']['main']['App']['SetTableViewSettings'](arg1, arg2, arg3);
 }
 
 export function StartExec(arg1, arg2, arg3, arg4) {
