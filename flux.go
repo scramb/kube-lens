@@ -42,6 +42,18 @@ type FluxProblemResource struct {
 	Suspended bool   `json:"suspended"`
 }
 
+type FluxOwnership struct {
+	Managed        bool   `json:"managed"`
+	OwnerKind      string `json:"ownerKind"`
+	OwnerName      string `json:"ownerName"`
+	OwnerNamespace string `json:"ownerNamespace"`
+	OwnerFound     bool   `json:"ownerFound"`
+	OwnerSuspended bool   `json:"ownerSuspended"`
+	OwnerGroup     string `json:"ownerGroup"`
+	OwnerVersion   string `json:"ownerVersion"`
+	OwnerResource  string `json:"ownerResource"`
+}
+
 // fluxResources returns all discovered API resources in *.fluxcd.io groups.
 func (m *KubeManager) fluxResources() ([]APIResource, error) {
 	all, err := m.DiscoverResources()
@@ -179,6 +191,78 @@ func (m *KubeManager) FluxProblemResources() ([]FluxProblemResource, error) {
 // and in the problems overview.
 func (m *KubeManager) FluxSuspendedResources() ([]FluxProblemResource, error) {
 	return m.collectFluxResources(fluxSuspendedPredicate)
+}
+
+func fluxOwnershipFromLabels(labels map[string]string) FluxOwnership {
+	if labels == nil {
+		return FluxOwnership{}
+	}
+	pick := func(kind, group, nameLabel, namespaceLabel, resource string) (FluxOwnership, bool) {
+		name := strings.TrimSpace(labels[nameLabel])
+		namespace := strings.TrimSpace(labels[namespaceLabel])
+		if name == "" || namespace == "" {
+			return FluxOwnership{}, false
+		}
+		return FluxOwnership{
+			Managed:        true,
+			OwnerKind:      kind,
+			OwnerName:      name,
+			OwnerNamespace: namespace,
+			OwnerGroup:     group,
+			OwnerResource:  resource,
+		}, true
+	}
+	// HelmRelease is the more direct owner if both controller label sets exist.
+	if owner, ok := pick("HelmRelease", "helm.toolkit.fluxcd.io", "helm.toolkit.fluxcd.io/name", "helm.toolkit.fluxcd.io/namespace", "helmreleases"); ok {
+		return owner
+	}
+	if owner, ok := pick("Kustomization", "kustomize.toolkit.fluxcd.io", "kustomize.toolkit.fluxcd.io/name", "kustomize.toolkit.fluxcd.io/namespace", "kustomizations"); ok {
+		return owner
+	}
+	return FluxOwnership{}
+}
+
+func (m *KubeManager) GetFluxOwnership(group, version, resource, namespace, name string) (FluxOwnership, error) {
+	_, dyn, _, err := m.clients()
+	if err != nil {
+		return FluxOwnership{}, err
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	gvr := schema.GroupVersionResource{Group: group, Version: version, Resource: resource}
+	var obj *unstructured.Unstructured
+	if namespace != "" {
+		obj, err = dyn.Resource(gvr).Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
+	} else {
+		obj, err = dyn.Resource(gvr).Get(ctx, name, metav1.GetOptions{})
+	}
+	if err != nil {
+		return FluxOwnership{}, err
+	}
+
+	ownership := fluxOwnershipFromLabels(obj.GetLabels())
+	if !ownership.Managed {
+		return ownership, nil
+	}
+	if ownerGroup, ownerVersion, ownerResource, ok := m.resolveFluxGVR(ownership.OwnerKind); ok {
+		ownership.OwnerGroup = ownerGroup
+		ownership.OwnerVersion = ownerVersion
+		ownership.OwnerResource = ownerResource
+	}
+	if ownership.OwnerGroup == "" || ownership.OwnerVersion == "" || ownership.OwnerResource == "" {
+		return ownership, nil
+	}
+
+	ownerGVR := schema.GroupVersionResource{Group: ownership.OwnerGroup, Version: ownership.OwnerVersion, Resource: ownership.OwnerResource}
+	owner, err := dyn.Resource(ownerGVR).Namespace(ownership.OwnerNamespace).Get(ctx, ownership.OwnerName, metav1.GetOptions{})
+	if err != nil {
+		ownership.OwnerFound = false
+		return ownership, nil
+	}
+	ownership.OwnerFound = true
+	ownership.OwnerSuspended = isSuspended(owner.Object)
+	return ownership, nil
 }
 
 func (m *KubeManager) FluxStatus() ([]FluxKindStatus, error) {

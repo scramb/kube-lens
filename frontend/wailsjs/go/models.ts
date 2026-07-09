@@ -176,6 +176,34 @@ export namespace main {
 	        this.lastTimestamp = source["lastTimestamp"];
 	    }
 	}
+	export class FluxOwnership {
+	    managed: boolean;
+	    ownerKind: string;
+	    ownerName: string;
+	    ownerNamespace: string;
+	    ownerFound: boolean;
+	    ownerSuspended: boolean;
+	    ownerGroup: string;
+	    ownerVersion: string;
+	    ownerResource: string;
+
+	    static createFrom(source: any = {}) {
+	        return new FluxOwnership(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.managed = source["managed"];
+	        this.ownerKind = source["ownerKind"];
+	        this.ownerName = source["ownerName"];
+	        this.ownerNamespace = source["ownerNamespace"];
+	        this.ownerFound = source["ownerFound"];
+	        this.ownerSuspended = source["ownerSuspended"];
+	        this.ownerGroup = source["ownerGroup"];
+	        this.ownerVersion = source["ownerVersion"];
+	        this.ownerResource = source["ownerResource"];
+	    }
+	}
 	export class FluxKindStatus {
 	    kind: string;
 	    group: string;

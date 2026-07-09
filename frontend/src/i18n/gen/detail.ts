@@ -52,6 +52,15 @@ export const detail = {
     'detail.notify.resumed': 'Resumed',
     'detail.notify.rolloutRestarted': 'Rollout restart triggered',
     'detail.notify.scaled': 'Scaled',
+    'detail.fluxGuard.title': 'Flux-managed resource',
+    'detail.fluxGuard.message': '{{kind}}/{{name}} is managed by Flux ({{ownerKind}} {{ownerNamespace}}/{{ownerName}}). Flux may overwrite this manual change during the next reconcile.',
+    'detail.fluxGuard.suspendHint': 'Suspend the owner before continuing if you want the manual change to stay in place.',
+    'detail.fluxGuard.ownerNotReadable': 'The owner is not readable. The change can still be overwritten, but the owner cannot be suspended from here.',
+    'detail.fluxGuard.suspendAndContinue': 'Suspend & continue',
+    'detail.fluxGuard.continueWithoutSuspend': 'Continue without suspend',
+    'detail.fluxGuard.suspendedNotice': '{{ownerKind}} {{ownerName}} is suspended and stays suspended. Use the suspended overview to resume it later.',
+    'detail.fluxGuard.suspendFailed': 'Could not suspend Flux owner: {{error}}',
+    'detail.fluxGuard.checkFailed': 'Could not check Flux ownership: {{error}}',
 
     // Events table
     'detail.events.type': 'Type',
@@ -226,6 +235,15 @@ export const detail = {
     'detail.notify.resumed': 'Fortgesetzt',
     'detail.notify.rolloutRestarted': 'Rollout-Neustart ausgelöst',
     'detail.notify.scaled': 'Skaliert',
+    'detail.fluxGuard.title': 'Flux-verwaltete Ressource',
+    'detail.fluxGuard.message': '{{kind}}/{{name}} wird von Flux verwaltet ({{ownerKind}} {{ownerNamespace}}/{{ownerName}}). Flux kann diese manuelle Änderung beim nächsten Reconcile überschreiben.',
+    'detail.fluxGuard.suspendHint': 'Pausiere den Owner vor dem Fortfahren, wenn die manuelle Änderung bestehen bleiben soll.',
+    'detail.fluxGuard.ownerNotReadable': 'Der Owner ist nicht lesbar. Die Änderung kann trotzdem überschrieben werden, aber der Owner kann hier nicht pausiert werden.',
+    'detail.fluxGuard.suspendAndContinue': 'Pausieren & fortfahren',
+    'detail.fluxGuard.continueWithoutSuspend': 'Ohne Pause fortfahren',
+    'detail.fluxGuard.suspendedNotice': '{{ownerKind}} {{ownerName}} ist pausiert und bleibt pausiert. Nutze die Suspended-Übersicht, um später fortzufahren.',
+    'detail.fluxGuard.suspendFailed': 'Flux-Owner konnte nicht pausiert werden: {{error}}',
+    'detail.fluxGuard.checkFailed': 'Flux-Ownership konnte nicht geprüft werden: {{error}}',
 
     // Events table
     'detail.events.type': 'Typ',

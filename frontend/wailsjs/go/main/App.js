@@ -62,6 +62,10 @@ export function GetEventsFor(arg1, arg2, arg3) {
   return window['go']['main']['App']['GetEventsFor'](arg1, arg2, arg3);
 }
 
+export function GetFluxOwnership(arg1, arg2, arg3, arg4, arg5) {
+  return window['go']['main']['App']['GetFluxOwnership'](arg1, arg2, arg3, arg4, arg5);
+}
+
 export function GetMetricsAvailability(arg1) {
   return window['go']['main']['App']['GetMetricsAvailability'](arg1);
 }

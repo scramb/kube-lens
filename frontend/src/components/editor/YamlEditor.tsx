@@ -19,6 +19,7 @@ export interface YamlEditorProps {
   editable: boolean;
   /** nach erfolgreichem echten Apply */
   onApplied?: (result: main.ApplyResult) => void;
+  beforeApply?: () => Promise<boolean>;
   height?: string;
 }
 
@@ -43,6 +44,7 @@ export function YamlEditor({
   initialYaml,
   editable,
   onApplied,
+  beforeApply,
   height = 'calc(100vh - 220px)',
 }: YamlEditorProps) {
   const { t } = useTranslation();
@@ -104,6 +106,10 @@ export function YamlEditor({
     setAlert(null);
     if (!force) setConflict(false);
     try {
+      if (beforeApply) {
+        const proceed = await beforeApply();
+        if (!proceed) return;
+      }
       const result = await ApplyResourceYAML(text, false, force);
       if (result.ok) {
         setConflict(false);
