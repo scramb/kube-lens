@@ -135,6 +135,25 @@ export interface TableViewSettings {
   hiddenColumns: string[];
 }
 
+export interface PodEnvironmentEntry {
+  containerType: string;
+  container: string;
+  name: string;
+  value: string;
+  source: string;
+  refName: string;
+  refKey: string;
+  prefix: string;
+  status: string;
+  sensitive: boolean;
+  revealable: boolean;
+}
+
+export interface PodEnvironment {
+  entries: PodEnvironmentEntry[];
+  warnings: string[];
+}
+
 export interface MetricPoint {
   timestamp: string;
   value: number;

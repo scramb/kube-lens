@@ -41,6 +41,7 @@ import { getOverviewRenderer, KubeObject } from './detail';
 import { ResourceMetricsTab } from './metrics/ResourceMetricsTab';
 import { LogsTab } from './logs';
 import TerminalTab from './terminal/TerminalTab';
+import EnvironmentTab from './env/EnvironmentTab';
 import { YamlEditor } from './editor';
 
 interface Props {
@@ -298,6 +299,7 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
           <Tabs.Tab value="yaml">{t('detail.tab.yaml')}</Tabs.Tab>
           {isPod && <Tabs.Tab value="logs">{t('detail.tab.logs')}</Tabs.Tab>}
           {isPod && <Tabs.Tab value="terminal">{t('detail.tab.terminal')}</Tabs.Tab>}
+          {isPod && <Tabs.Tab value="env">{t('detail.tab.env')}</Tabs.Tab>}
           <Tabs.Tab value="events">{t('detail.tab.events')}</Tabs.Tab>
           {showMetricsTab && <Tabs.Tab value="metrics">{t('detail.tab.metrics')}</Tabs.Tab>}
         </Tabs.List>
@@ -345,6 +347,14 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
         {isPod && (
           <Tabs.Panel value="terminal">
             <TerminalTab namespace={namespace} pod={name} />
+          </Tabs.Panel>
+        )}
+
+        {isPod && (
+          <Tabs.Panel value="env">
+            <ScrollArea h="calc(100vh - 165px)" type="scroll">
+              <EnvironmentTab namespace={namespace} pod={name} />
+            </ScrollArea>
           </Tabs.Panel>
         )}
 

@@ -111,6 +111,14 @@ func (a *App) GetResourceQuantity(group, version, resourceName, namespace, name 
 	return a.kube.GetResourceQuantity(group, version, resourceName, namespace, name)
 }
 
+func (a *App) GetPodEnvironment(namespace, podName string) (PodEnvironment, error) {
+	return a.kube.GetPodEnvironment(namespace, podName)
+}
+
+func (a *App) RevealPodEnvironmentSecret(namespace, secretName, key string) (string, error) {
+	return a.kube.RevealPodEnvironmentSecret(namespace, secretName, key)
+}
+
 func (a *App) ResourceHasItems(group, version, resource, namespace string) (bool, error) {
 	return a.kube.ResourceHasItems(group, version, resource, namespace)
 }

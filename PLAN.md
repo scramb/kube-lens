@@ -693,23 +693,23 @@ maskiert und erst nach explizitem Klick angezeigt. Eine fuzzy Suche filtert schn
 nach Name, Wert, Container und Quelle.
 
 ### N1 — Backend: Environment-Variablen für Pods auflösen
-- [ ] Neues Binding z. B. `GetPodEnvironment(namespace, podName)` oder Erweiterung der
+- [x] Neues Binding z. B. `GetPodEnvironment(namespace, podName)` oder Erweiterung der
       Detail-JSON-Schicht definieren, das Pod-Spec und referenzierte ConfigMaps/Secrets
       im selben Namespace ausliest.
-- [ ] Datenmodell pro Eintrag festlegen: Container/InitContainer/EphemeralContainer,
+- [x] Datenmodell pro Eintrag festlegen: Container/InitContainer/EphemeralContainer,
       Env-Name, Wert bzw. maskierter Secret-Platzhalter, Quelle (`literal`,
       `configMapKeyRef`, `secretKeyRef`, `envFrom configMap`, `envFrom secret`,
       `fieldRef`, `resourceFieldRef`), optional key/name/prefix und Auflösungsstatus.
-- [ ] `envFrom` vollständig expandieren: ConfigMap-/Secret-Keys mit Prefix anwenden;
+- [x] `envFrom` vollständig expandieren: ConfigMap-/Secret-Keys mit Prefix anwenden;
       fehlende optionale Quellen nicht als Fehler behandeln, fehlende nicht-optionale
       Quellen als Warnung pro Eintrag/Quelle zurückgeben.
-- [ ] Secret-Werte nur im Backend laden, wenn sie für Reveal gebraucht werden, oder im
+- [x] Secret-Werte nur im Backend laden, wenn sie für Reveal gebraucht werden, oder im
       Response getrennt als sensitive markiert behandeln; keine Secret-Werte in Logs,
       Fehlertexten oder dauerhaftem Frontend-State persistieren.
 
 ### N2 — Secret-Reveal-Mechanik
 Abhängig von: N1.
-- [ ] Secret-Einträge standardmäßig maskiert anzeigen (`••••••••`) mit klarem
+- [x] Secret-Einträge standardmäßig maskiert anzeigen (`••••••••`) mit klarem
       Source-Hinweis, Secret-Name und Key.
 - [ ] Reveal nur per explizitem Klick pro Wert oder pro Zeile; kein globales
       automatisches Entmaskieren beim Tab-Öffnen.

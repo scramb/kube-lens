@@ -34,6 +34,8 @@ export function GetMetricsAvailability(arg1:string):Promise<main.MetricsAvailabi
 
 export function GetNodeListMetrics(arg1:string,arg2:Array<string>):Promise<Array<main.ResourceListMetric>>;
 
+export function GetPodEnvironment(arg1:string,arg2:string):Promise<main.PodEnvironment>;
+
 export function GetPodListMetrics(arg1:string,arg2:string,arg3:Array<string>):Promise<Array<main.ResourceListMetric>>;
 
 export function GetPrometheusLabelValues(arg1:string,arg2:main.PrometheusContextSettings,arg3:string):Promise<Array<string>>;
@@ -75,6 +77,8 @@ export function PatchResource(arg1:string,arg2:string,arg3:string,arg4:string,ar
 export function RemoveKubeConfig(arg1:string):Promise<void>;
 
 export function ResourceHasItems(arg1:string,arg2:string,arg3:string,arg4:string):Promise<boolean>;
+
+export function RevealPodEnvironmentSecret(arg1:string,arg2:string,arg3:string):Promise<string>;
 
 export function SetHideEmptyCRDs(arg1:boolean):Promise<main.ResourceUISettings>;
 

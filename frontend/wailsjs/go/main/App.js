@@ -66,6 +66,10 @@ export function GetNodeListMetrics(arg1, arg2) {
   return window['go']['main']['App']['GetNodeListMetrics'](arg1, arg2);
 }
 
+export function GetPodEnvironment(arg1, arg2) {
+  return window['go']['main']['App']['GetPodEnvironment'](arg1, arg2);
+}
+
 export function GetPodListMetrics(arg1, arg2, arg3) {
   return window['go']['main']['App']['GetPodListMetrics'](arg1, arg2, arg3);
 }
@@ -148,6 +152,10 @@ export function RemoveKubeConfig(arg1) {
 
 export function ResourceHasItems(arg1, arg2, arg3, arg4) {
   return window['go']['main']['App']['ResourceHasItems'](arg1, arg2, arg3, arg4);
+}
+
+export function RevealPodEnvironmentSecret(arg1, arg2, arg3) {
+  return window['go']['main']['App']['RevealPodEnvironmentSecret'](arg1, arg2, arg3);
 }
 
 export function SetHideEmptyCRDs(arg1) {

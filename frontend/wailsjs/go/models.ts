@@ -306,6 +306,70 @@ export namespace main {
 	        this.proxyForbidden = source["proxyForbidden"];
 	    }
 	}
+	export class PodEnvironmentEntry {
+	    containerType: string;
+	    container: string;
+	    name: string;
+	    value: string;
+	    source: string;
+	    refName: string;
+	    refKey: string;
+	    prefix: string;
+	    status: string;
+	    sensitive: boolean;
+	    revealable: boolean;
+
+	    static createFrom(source: any = {}) {
+	        return new PodEnvironmentEntry(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.containerType = source["containerType"];
+	        this.container = source["container"];
+	        this.name = source["name"];
+	        this.value = source["value"];
+	        this.source = source["source"];
+	        this.refName = source["refName"];
+	        this.refKey = source["refKey"];
+	        this.prefix = source["prefix"];
+	        this.status = source["status"];
+	        this.sensitive = source["sensitive"];
+	        this.revealable = source["revealable"];
+	    }
+	}
+	export class PodEnvironment {
+	    entries: PodEnvironmentEntry[];
+	    warnings: string[];
+
+	    static createFrom(source: any = {}) {
+	        return new PodEnvironment(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.entries = this.convertValues(source["entries"], PodEnvironmentEntry);
+	        this.warnings = source["warnings"];
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class PrometheusClusterSelector {
 	    label: string;
 	    value: string;
