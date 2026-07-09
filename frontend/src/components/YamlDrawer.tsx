@@ -48,6 +48,7 @@ import { LogsTab } from './logs';
 import TerminalTab from './terminal/TerminalTab';
 import EnvironmentTab from './env/EnvironmentTab';
 import { YamlEditor } from './editor';
+import { useFluxSuspendGuard } from './flux/useFluxSuspendGuard';
 
 interface Props {
   opened: boolean;
@@ -175,6 +176,10 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
   const metricsSupported = !!resource && (resource.kind === 'Pod' || resource.kind === 'Node');
   const showMetricsTab = metricsAvailable && metricsSupported;
   const suspended = obj?.spec?.suspend === true;
+  const fluxGuardRef = resource
+    ? { group: resource.group, version: resource.version, resource: resource.name, namespace, name, kind: resource.kind }
+    : null;
+  const { confirmFluxSuspendIfManaged, fluxSuspendGuardModal } = useFluxSuspendGuard(fluxGuardRef, identity);
 
   const runFlux = useCallback(
     async (action: 'reconcile' | 'reconcileSource' | 'suspend' | 'resume', label: string) => {
@@ -204,6 +209,8 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
     async (label: string, fn: () => Promise<void>) => {
       setWorkloadBusy(true);
       try {
+        const proceed = await confirmFluxSuspendIfManaged();
+        if (!proceed) return;
         await fn();
         notifications.show({ message: `${label}: ${name}`, color: 'teal' });
         setTimeout(() => loadObj(), 400);
@@ -213,7 +220,7 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
         setWorkloadBusy(false);
       }
     },
-    [name, loadObj]
+    [name, loadObj, confirmFluxSuspendIfManaged]
   );
 
   const handleRolloutRestart = useCallback(async () => {
@@ -419,6 +426,7 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
               initialYaml={yaml}
               editable
               height="calc(100vh - 210px)"
+              beforeApply={confirmFluxSuspendIfManaged}
               onApplied={() => {
                 setYaml('');
                 loadObj();
@@ -461,6 +469,8 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
           </Tabs.Panel>
         )}
       </Tabs>
+
+      {fluxSuspendGuardModal}
 
       <Modal
         opened={restartConfirmOpen}

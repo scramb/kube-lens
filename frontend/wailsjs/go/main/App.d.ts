@@ -32,6 +32,8 @@ export function GetClusterOverviewMetrics(arg1:string):Promise<main.ClusterOverv
 
 export function GetEventsFor(arg1:string,arg2:string,arg3:string):Promise<Array<main.EventInfo>>;
 
+export function GetFluxOwnership(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string):Promise<main.FluxOwnership>;
+
 export function GetMetricsAvailability(arg1:string):Promise<main.MetricsAvailability>;
 
 export function GetNodeListMetrics(arg1:string,arg2:Array<string>):Promise<Array<main.ResourceListMetric>>;

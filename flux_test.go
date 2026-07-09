@@ -65,6 +65,33 @@ func TestIsReady(t *testing.T) {
 	}
 }
 
+func TestFluxOwnershipFromLabels(t *testing.T) {
+	owner := fluxOwnershipFromLabels(map[string]string{
+		"kustomize.toolkit.fluxcd.io/name":      "apps",
+		"kustomize.toolkit.fluxcd.io/namespace": "flux-system",
+	})
+	if !owner.Managed || owner.OwnerKind != "Kustomization" || owner.OwnerName != "apps" || owner.OwnerNamespace != "flux-system" {
+		t.Fatalf("unexpected kustomize owner: %+v", owner)
+	}
+
+	owner = fluxOwnershipFromLabels(map[string]string{
+		"kustomize.toolkit.fluxcd.io/name":      "apps",
+		"kustomize.toolkit.fluxcd.io/namespace": "flux-system",
+		"helm.toolkit.fluxcd.io/name":           "chart",
+		"helm.toolkit.fluxcd.io/namespace":      "apps",
+	})
+	if owner.OwnerKind != "HelmRelease" || owner.OwnerName != "chart" || owner.OwnerNamespace != "apps" {
+		t.Fatalf("HelmRelease should win over Kustomization, got %+v", owner)
+	}
+
+	owner = fluxOwnershipFromLabels(map[string]string{
+		"helm.toolkit.fluxcd.io/name": "chart",
+	})
+	if owner.Managed {
+		t.Fatalf("incomplete label pair should not be managed: %+v", owner)
+	}
+}
+
 func TestFluxResourcePredicates(t *testing.T) {
 	ready := fluxObj(false, []any{map[string]any{"type": "Ready", "status": "True"}}, nil)
 	if fluxProblemPredicate(ready, "True", true, false) {
