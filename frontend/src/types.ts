@@ -39,10 +39,23 @@ export interface TableResult {
   rows: TableRow[];
 }
 
+export interface CRDGroupRule {
+  id: string;
+  label: string;
+  patterns: string[];
+  icon: string;
+  enabled: boolean;
+}
+
+export interface CRDGroupingSettings {
+  rules: CRDGroupRule[];
+}
+
 export interface ResourceUISettings {
   favorites: string[];
   collapsedSections: Record<string, boolean>;
   hideEmptyCRDs: boolean;
+  crdGrouping: CRDGroupingSettings;
 }
 
 export interface PrometheusClusterSelector {
@@ -98,6 +111,47 @@ export interface ResourceListMetric {
   name: string;
   cpu: number;
   memory: number;
+}
+
+export interface ResourceQuantitySummary {
+  cpuRequest: number;
+  cpuLimit: number;
+  memoryRequest: number;
+  memoryLimit: number;
+  hasCPURequest: boolean;
+  hasCPULimit: boolean;
+  hasMemRequest: boolean;
+  hasMemLimit: boolean;
+}
+
+export interface ResourceQuantityInfo {
+  namespace: string;
+  name: string;
+  summary: ResourceQuantitySummary;
+}
+
+export interface TableViewSettings {
+  columnOrder: string[];
+  hiddenColumns: string[];
+}
+
+export interface PodEnvironmentEntry {
+  containerType: string;
+  container: string;
+  name: string;
+  value: string;
+  source: string;
+  refName: string;
+  refKey: string;
+  prefix: string;
+  status: string;
+  sensitive: boolean;
+  revealable: boolean;
+}
+
+export interface PodEnvironment {
+  entries: PodEnvironmentEntry[];
+  warnings: string[];
 }
 
 export interface MetricPoint {

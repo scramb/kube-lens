@@ -36,11 +36,12 @@ import {
   SetSuspend,
 } from '../../wailsjs/go/main/App';
 import { main } from '../../wailsjs/go/models';
-import { APIResource } from '../types';
+import { APIResource, ResourceQuantitySummary } from '../types';
 import { getOverviewRenderer, KubeObject } from './detail';
 import { ResourceMetricsTab } from './metrics/ResourceMetricsTab';
 import { LogsTab } from './logs';
 import TerminalTab from './terminal/TerminalTab';
+import EnvironmentTab from './env/EnvironmentTab';
 import { YamlEditor } from './editor';
 
 interface Props {
@@ -52,13 +53,14 @@ interface Props {
   onDelete: () => Promise<void>;
   metricsAvailable: boolean;
   contextName: string | null;
+  quantitySummary?: ResourceQuantitySummary | null;
 }
 
 function errText(e: unknown): string {
   return typeof e === 'string' ? e : e instanceof Error ? e.message : String(e);
 }
 
-export default function YamlDrawer({ opened, onClose, resource, name, namespace, onDelete, metricsAvailable, contextName }: Props) {
+export default function YamlDrawer({ opened, onClose, resource, name, namespace, onDelete, metricsAvailable, contextName, quantitySummary }: Props) {
   const { t } = useTranslation();
   const [tab, setTab] = useState<string>('overview');
 
@@ -297,6 +299,7 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
           <Tabs.Tab value="yaml">{t('detail.tab.yaml')}</Tabs.Tab>
           {isPod && <Tabs.Tab value="logs">{t('detail.tab.logs')}</Tabs.Tab>}
           {isPod && <Tabs.Tab value="terminal">{t('detail.tab.terminal')}</Tabs.Tab>}
+          {isPod && <Tabs.Tab value="env">{t('detail.tab.env')}</Tabs.Tab>}
           <Tabs.Tab value="events">{t('detail.tab.events')}</Tabs.Tab>
           {showMetricsTab && <Tabs.Tab value="metrics">{t('detail.tab.metrics')}</Tabs.Tab>}
         </Tabs.List>
@@ -347,6 +350,14 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
           </Tabs.Panel>
         )}
 
+        {isPod && (
+          <Tabs.Panel value="env">
+            <ScrollArea h="calc(100vh - 165px)" type="scroll">
+              <EnvironmentTab namespace={namespace} pod={name} />
+            </ScrollArea>
+          </Tabs.Panel>
+        )}
+
         <Tabs.Panel value="events">
           <ScrollArea h="calc(100vh - 165px)" type="scroll">
             <EventsView events={events} loading={eventsLoading} error={eventsError} />
@@ -356,7 +367,7 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
         {showMetricsTab && resource && (
           <Tabs.Panel value="metrics">
             <ScrollArea h="calc(100vh - 165px)" type="scroll">
-              <ResourceMetricsTab contextName={contextName} resource={resource} namespace={namespace} name={name} />
+              <ResourceMetricsTab contextName={contextName} resource={resource} namespace={namespace} name={name} quantitySummary={quantitySummary} />
             </ScrollArea>
           </Tabs.Panel>
         )}

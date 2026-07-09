@@ -33,11 +33,14 @@ import {
   AddKubeConfigDialog,
   DeleteResource,
   DiscoverResources,
+  FluxProblemResources,
   FluxStatus,
   GetMetricsAvailability,
   GetNodeListMetrics,
   GetPodListMetrics,
+  GetResourceQuantities,
   GetResourceUISettings,
+  GetTableViewSettings,
   InitialContext,
   ListContexts,
   ListKubeConfigs,
@@ -45,25 +48,28 @@ import {
   ListResourceTable,
   RemoveKubeConfig,
   ResourceHasItems,
+  SetCRDGroupingSettings,
   SetHideEmptyCRDs,
   SetResourceFavorite,
   SetSectionCollapsed,
+  SetTableViewSettings,
   StartResourceWatch,
   StopResourceWatch,
   UseContext,
 } from '../wailsjs/go/main/App';
 import { EventsOn } from '../wailsjs/runtime/runtime';
 import { main } from '../wailsjs/go/models';
-import { APIResource, ContextInfo, KubeConfigInfo, ResourceListMetric, ResourceUISettings, TableResult, TableRow, resourceKey } from './types';
-import { buildCrdNav, buildStandardNav, NavSection } from './resourceCatalog';
+import { APIResource, ContextInfo, CRDGroupingSettings, KubeConfigInfo, ResourceListMetric, ResourceQuantityInfo, ResourceUISettings, TableResult, TableRow, TableViewSettings, resourceKey } from './types';
+import { buildCrdNav, buildStandardNav, NavSection, normalizeCRDGroupingSettings } from './resourceCatalog';
 import Sidebar from './components/Sidebar';
 import ResourceTable, { ExtraTableColumn } from './components/ResourceTable';
 import YamlDrawer from './components/YamlDrawer';
 import KubeConfigModal from './components/KubeConfigModal';
 import PrometheusConfigModal from './components/PrometheusConfigModal';
+import CRDGroupingModal from './components/CRDGroupingModal';
 import { ClusterOverview } from './components/cluster/ClusterOverview';
 import { formatBytes, formatCPU } from './components/metrics/format';
-import { FluxOverview } from './components/flux';
+import { FluxOverview, FluxProblemsOverview, FluxProblemResource } from './components/flux';
 import { NewResourceModal } from './components/editor';
 import TerminalPanel from './components/terminal/TerminalPanel';
 
@@ -75,6 +81,7 @@ const EMPTY_UI_SETTINGS: ResourceUISettings = {
   favorites: [],
   collapsedSections: {},
   hideEmptyCRDs: false,
+  crdGrouping: { rules: [] },
 };
 
 function errText(e: unknown): string {
@@ -100,15 +107,20 @@ export default function App() {
   const [filter, setFilter] = useState('');
 
   const [showFlux, setShowFlux] = useState(false);
+  const [showFluxProblems, setShowFluxProblems] = useState(false);
   const [showCluster, setShowCluster] = useState(false);
   const [fluxStatus, setFluxStatus] = useState<main.FluxKindStatus[]>([]);
+  const [fluxProblems, setFluxProblems] = useState<FluxProblemResource[]>([]);
   const [fluxLoading, setFluxLoading] = useState(false);
   const [metricsAvailable, setMetricsAvailable] = useState(false);
   const [tableMetrics, setTableMetrics] = useState<Record<string, ResourceListMetric>>({});
+  const [tableQuantities, setTableQuantities] = useState<Record<string, ResourceQuantityInfo>>({});
+  const [tableViewSettings, setTableViewSettings] = useState<TableViewSettings>({ columnOrder: [], hiddenColumns: [] });
   const [clusterRefreshToken, setClusterRefreshToken] = useState(0);
 
   const [configModalOpen, setConfigModalOpen] = useState(false);
   const [prometheusModalOpen, setPrometheusModalOpen] = useState(false);
+  const [crdGroupingModalOpen, setCrdGroupingModalOpen] = useState(false);
   const [newResourceOpen, setNewResourceOpen] = useState(false);
   const [terminalPanelOpen, setTerminalPanelOpen] = useState(false);
   const [drawer, setDrawer] = useState<{
@@ -122,7 +134,7 @@ export default function App() {
   const [crdItemPresence, setCrdItemPresence] = useState<Record<string, boolean | undefined>>({});
 
   const standardNav = useMemo<NavSection[]>(() => buildStandardNav(resources), [resources]);
-  const crdNav = useMemo<NavSection[]>(() => buildCrdNav(resources), [resources]);
+  const crdNav = useMemo<NavSection[]>(() => buildCrdNav(resources, resourceUI.crdGrouping), [resources, resourceUI.crdGrouping]);
   const fluxAvailable = useMemo(() => crdNav.some((s) => s.label === 'Flux'), [crdNav]);
 
   const applyResourceUI = useCallback((settings: ResourceUISettings) => {
@@ -130,13 +142,16 @@ export default function App() {
       favorites: settings.favorites ?? [],
       collapsedSections: settings.collapsedSections ?? {},
       hideEmptyCRDs: settings.hideEmptyCRDs ?? false,
+      crdGrouping: normalizeCRDGroupingSettings(settings.crdGrouping),
     });
   }, []);
 
   const loadFluxStatus = useCallback(async () => {
     setFluxLoading(true);
     try {
-      setFluxStatus((await FluxStatus()) ?? []);
+      const [status, problems] = await Promise.all([FluxStatus(), FluxProblemResources()]);
+      setFluxStatus(status ?? []);
+      setFluxProblems((problems ?? []) as FluxProblemResource[]);
     } catch (e) {
       notifications.show({ message: errText(e), color: 'red' });
     } finally {
@@ -146,18 +161,28 @@ export default function App() {
 
   const openFlux = useCallback(() => {
     setShowCluster(false);
+    setShowFluxProblems(false);
     setShowFlux(true);
+    loadFluxStatus();
+  }, [loadFluxStatus]);
+
+  const openFluxProblems = useCallback(() => {
+    setShowCluster(false);
+    setShowFlux(false);
+    setShowFluxProblems(true);
     loadFluxStatus();
   }, [loadFluxStatus]);
 
   const openCluster = useCallback(() => {
     setShowFlux(false);
+    setShowFluxProblems(false);
     setShowCluster(true);
     setClusterRefreshToken((v) => v + 1);
   }, []);
 
   const selectResource = useCallback((r: APIResource) => {
     setShowFlux(false);
+    setShowFluxProblems(false);
     setShowCluster(false);
     setSelected(r);
   }, []);
@@ -167,9 +192,19 @@ export default function App() {
       const r = resources.find((x) => x.group === s.group && x.name === s.resource);
       if (r) {
         setShowFlux(false);
+        setShowFluxProblems(false);
         setShowCluster(false);
         setSelected(r);
       }
+    },
+    [resources]
+  );
+
+  const openFluxProblemResource = useCallback(
+    (p: FluxProblemResource) => {
+      const r = resources.find((x) => x.group === p.group && x.version === p.version && x.name === p.resource);
+      if (!r) return;
+      setDrawer({ open: true, resource: r, name: p.name, namespace: p.namespace });
     },
     [resources]
   );
@@ -185,9 +220,12 @@ export default function App() {
     setTable(null);
     setTableError('');
     setShowFlux(false);
+    setShowFluxProblems(false);
     setShowCluster(false);
     setMetricsAvailable(false);
     setTableMetrics({});
+    setTableQuantities({});
+    setTableViewSettings({ columnOrder: [], hiddenColumns: [] });
     setCrdItemPresence({});
     try {
       await UseContext(ctxName);
@@ -248,6 +286,28 @@ export default function App() {
         setTable(result);
         setTableError('');
         setTableMetrics({});
+        setTableQuantities({});
+
+        if (currentContext) {
+          GetTableViewSettings(currentContext, resourceKey(selected))
+            .then((settings) => setTableViewSettings({ columnOrder: settings?.columnOrder ?? [], hiddenColumns: settings?.hiddenColumns ?? [] }))
+            .catch(() => setTableViewSettings({ columnOrder: [], hiddenColumns: [] }));
+        }
+
+        if (selected.name === 'pods' || (selected.group === 'apps' && ['deployments', 'statefulsets', 'daemonsets', 'replicasets'].includes(selected.name))) {
+          try {
+            const names = (result.rows ?? []).map((row) => row.name).filter(Boolean);
+            const quantities = await GetResourceQuantities(selected.group, selected.version, selected.name, selected.namespaced ? namespace : '', names);
+            const mapped: Record<string, ResourceQuantityInfo> = {};
+            for (const q of quantities ?? []) {
+              mapped[`${q.namespace}/${q.name}`] = q;
+              mapped[q.name] = q;
+            }
+            setTableQuantities(mapped);
+          } catch {
+            setTableQuantities({});
+          }
+        }
 
         if (currentContext && metricsAvailable && selected.group === '' && (selected.name === 'pods' || selected.name === 'nodes')) {
           try {
@@ -397,6 +457,19 @@ export default function App() {
     [applyResourceUI]
   );
 
+  const updateCRDGrouping = useCallback(
+    async (settings: CRDGroupingSettings) => {
+      setResourceUI((prev) => ({ ...prev, crdGrouping: settings }));
+      try {
+        applyResourceUI(await SetCRDGroupingSettings(new main.CRDGroupingSettings(settings)));
+        setCrdItemPresence({});
+      } catch (e) {
+        notifications.show({ message: errText(e), color: 'red' });
+      }
+    },
+    [applyResourceUI]
+  );
+
   const ensureCrdSectionPresence = useCallback(
     (section: NavSection) => {
       if (!resourceUI.hideEmptyCRDs) return;
@@ -425,6 +498,33 @@ export default function App() {
       { key: 'metric-memory', label: 'Memory', render: (row) => <Text size="sm">{formatBytes(metricFor(row)?.memory)}</Text> },
     ];
   }, [metricsAvailable, selected, tableMetrics]);
+
+  const quantityColumns = useMemo<ExtraTableColumn[]>(() => {
+    if (!selected || !(selected.name === 'pods' || (selected.group === 'apps' && ['deployments', 'statefulsets', 'daemonsets', 'replicasets'].includes(selected.name)))) return [];
+    const quantityFor = (row: TableRow) => tableQuantities[`${row.namespace}/${row.name}`] ?? tableQuantities[row.name];
+    const hasAny = Object.values(tableQuantities).some((q) => q.summary?.hasCPURequest || q.summary?.hasCPULimit || q.summary?.hasMemRequest || q.summary?.hasMemLimit);
+    if (!hasAny) return [];
+    return [
+      { key: 'resource-cpu-request', label: 'CPU Request', render: (row) => <Text size="sm">{quantityFor(row)?.summary?.hasCPURequest ? formatCPU(quantityFor(row).summary.cpuRequest) : '—'}</Text> },
+      { key: 'resource-cpu-limit', label: 'CPU Limit', render: (row) => <Text size="sm">{quantityFor(row)?.summary?.hasCPULimit ? formatCPU(quantityFor(row).summary.cpuLimit) : '—'}</Text> },
+      { key: 'resource-memory-request', label: 'Memory Request', render: (row) => <Text size="sm">{quantityFor(row)?.summary?.hasMemRequest ? formatBytes(quantityFor(row).summary.memoryRequest) : '—'}</Text> },
+      { key: 'resource-memory-limit', label: 'Memory Limit', render: (row) => <Text size="sm">{quantityFor(row)?.summary?.hasMemLimit ? formatBytes(quantityFor(row).summary.memoryLimit) : '—'}</Text> },
+    ];
+  }, [selected, tableQuantities]);
+
+  const updateTableViewSettings = useCallback(
+    async (settings: TableViewSettings) => {
+      if (!currentContext || !selected) return;
+      setTableViewSettings(settings);
+      try {
+        const saved = await SetTableViewSettings(currentContext, resourceKey(selected), new main.TableViewSettings(settings));
+        setTableViewSettings({ columnOrder: saved?.columnOrder ?? [], hiddenColumns: saved?.hiddenColumns ?? [] });
+      } catch (e) {
+        notifications.show({ message: errText(e), color: 'red' });
+      }
+    },
+    [currentContext, selected]
+  );
 
   const noContexts = contexts.length === 0;
 
@@ -484,8 +584,8 @@ export default function App() {
           <Tooltip label={t('shell.tooltip.refresh')}>
             <ActionIcon
               variant="subtle"
-              onClick={() => (showFlux ? loadFluxStatus() : showCluster ? setClusterRefreshToken((v) => v + 1) : loadTable(true))}
-              disabled={!selected && !showFlux && !showCluster}
+              onClick={() => (showFlux || showFluxProblems ? loadFluxStatus() : showCluster ? setClusterRefreshToken((v) => v + 1) : loadTable(true))}
+              disabled={!selected && !showFlux && !showFluxProblems && !showCluster}
             >
               <IconRefresh size={18} />
             </ActionIcon>
@@ -506,6 +606,9 @@ export default function App() {
                 disabled={!currentContext || !!connectError}
               >
                 {t('shell.menu.prometheus')}
+              </Menu.Item>
+              <Menu.Item leftSection={<IconFileSettings size={16} />} onClick={() => setCrdGroupingModalOpen(true)}>
+                {t('shell.menu.crdGroups')}
               </Menu.Item>
               <Menu.Divider />
               <Menu.Label>{t('shell.menu.language')}</Menu.Label>
@@ -532,7 +635,7 @@ export default function App() {
         <Sidebar
           standard={standardNav}
           crds={crdNav}
-          selected={showFlux || showCluster ? null : selected}
+          selected={showFlux || showFluxProblems || showCluster ? null : selected}
           favorites={resourceUI.favorites}
           collapsedSections={resourceUI.collapsedSections}
           hideEmptyCRDs={resourceUI.hideEmptyCRDs}
@@ -543,7 +646,7 @@ export default function App() {
           onHideEmptyCRDsChange={updateHideEmptyCRDs}
           onEnsureCrdSectionPresence={ensureCrdSectionPresence}
           fluxAvailable={fluxAvailable}
-          fluxActive={showFlux}
+          fluxActive={showFlux || showFluxProblems}
           onOpenFlux={openFlux}
           metricsAvailable={metricsAvailable}
           clusterActive={showCluster}
@@ -599,7 +702,15 @@ export default function App() {
             status={fluxStatus}
             loading={fluxLoading}
             onOpenKind={openFluxKind}
+            onOpenProblems={openFluxProblems}
             onRefresh={loadFluxStatus}
+          />
+        ) : showFluxProblems ? (
+          <FluxProblemsOverview
+            problems={fluxProblems}
+            loading={fluxLoading}
+            onRefresh={loadFluxStatus}
+            onOpenResource={openFluxProblemResource}
           />
         ) : selected ? (
           <ResourceTable
@@ -609,7 +720,9 @@ export default function App() {
             error={tableError}
             allNamespaces={namespace === ''}
             filter={filter}
-            extraColumns={metricColumns}
+            extraColumns={[...metricColumns, ...quantityColumns]}
+            viewSettings={tableViewSettings}
+            onViewSettingsChange={updateTableViewSettings}
             onRowClick={openDetail}
           />
         ) : (
@@ -630,6 +743,7 @@ export default function App() {
         onDelete={deleteCurrent}
         metricsAvailable={metricsAvailable}
         contextName={currentContext}
+        quantitySummary={tableQuantities[`${drawer.namespace}/${drawer.name}`]?.summary ?? tableQuantities[drawer.name]?.summary ?? null}
       />
 
       <KubeConfigModal
@@ -644,6 +758,14 @@ export default function App() {
         opened={prometheusModalOpen}
         onClose={() => setPrometheusModalOpen(false)}
         contextName={currentContext}
+      />
+
+      <CRDGroupingModal
+        opened={crdGroupingModalOpen}
+        onClose={() => setCrdGroupingModalOpen(false)}
+        settings={resourceUI.crdGrouping}
+        resources={resources}
+        onSave={updateCRDGrouping}
       />
 
       <NewResourceModal

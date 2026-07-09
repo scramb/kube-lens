@@ -5,6 +5,7 @@ export const detail = {
     'detail.tab.yaml': 'YAML',
     'detail.tab.logs': 'Logs',
     'detail.tab.terminal': 'Terminal',
+    'detail.tab.env': 'Environment Variables',
     'detail.tab.events': 'Events',
     'detail.tab.metrics': 'Metrics',
 
@@ -139,6 +140,19 @@ export const detail = {
     // Resource table
     'detail.table.namespace': 'Namespace',
     'detail.table.empty': 'No {{kind}} resources found',
+    'detail.table.resetColumns': 'Reset column order',
+    'detail.env.search': 'Fuzzy search environment variables …',
+    'detail.env.empty': 'No environment variables found.',
+    'detail.env.warnings': 'Warnings',
+    'detail.env.name': 'Name',
+    'detail.env.value': 'Value',
+    'detail.env.source': 'Source',
+    'detail.env.reference': 'Reference',
+    'detail.env.status': 'Status',
+    'detail.env.revealSecret': 'Reveal secret value',
+    'detail.env.hideSecret': 'Hide secret value',
+    'detail.env.hideAllSecrets': 'Hide all revealed secrets',
+    'detail.env.copy': 'Copy value',
   },
   de: {
     // Tabs
@@ -146,6 +160,7 @@ export const detail = {
     'detail.tab.yaml': 'YAML',
     'detail.tab.logs': 'Logs',
     'detail.tab.terminal': 'Terminal',
+    'detail.tab.env': 'Environment Variables',
     'detail.tab.events': 'Events',
     'detail.tab.metrics': 'Metriken',
 
@@ -280,5 +295,18 @@ export const detail = {
     // Resource table
     'detail.table.namespace': 'Namespace',
     'detail.table.empty': 'Keine {{kind}}-Ressourcen gefunden',
+    'detail.table.resetColumns': 'Spaltenreihenfolge zurücksetzen',
+    'detail.env.search': 'Environment-Variablen fuzzy suchen …',
+    'detail.env.empty': 'Keine Environment-Variablen gefunden.',
+    'detail.env.warnings': 'Warnungen',
+    'detail.env.name': 'Name',
+    'detail.env.value': 'Wert',
+    'detail.env.source': 'Quelle',
+    'detail.env.reference': 'Referenz',
+    'detail.env.status': 'Status',
+    'detail.env.revealSecret': 'Secret-Wert anzeigen',
+    'detail.env.hideSecret': 'Secret-Wert verbergen',
+    'detail.env.hideAllSecrets': 'Alle angezeigten Secrets verbergen',
+    'detail.env.copy': 'Wert kopieren',
   },
 };

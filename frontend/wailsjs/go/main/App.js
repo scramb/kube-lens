@@ -42,6 +42,10 @@ export function FluxReconcileWithSource(arg1, arg2, arg3, arg4, arg5) {
   return window['go']['main']['App']['FluxReconcileWithSource'](arg1, arg2, arg3, arg4, arg5);
 }
 
+export function FluxProblemResources() {
+  return window['go']['main']['App']['FluxProblemResources']();
+}
+
 export function FluxStatus() {
   return window['go']['main']['App']['FluxStatus']();
 }
@@ -60,6 +64,10 @@ export function GetMetricsAvailability(arg1) {
 
 export function GetNodeListMetrics(arg1, arg2) {
   return window['go']['main']['App']['GetNodeListMetrics'](arg1, arg2);
+}
+
+export function GetPodEnvironment(arg1, arg2) {
+  return window['go']['main']['App']['GetPodEnvironment'](arg1, arg2);
 }
 
 export function GetPodListMetrics(arg1, arg2, arg3) {
@@ -82,12 +90,24 @@ export function GetResourceMetricsSeries(arg1, arg2, arg3, arg4, arg5) {
   return window['go']['main']['App']['GetResourceMetricsSeries'](arg1, arg2, arg3, arg4, arg5);
 }
 
+export function GetResourceQuantities(arg1, arg2, arg3, arg4, arg5) {
+  return window['go']['main']['App']['GetResourceQuantities'](arg1, arg2, arg3, arg4, arg5);
+}
+
+export function GetResourceQuantity(arg1, arg2, arg3, arg4, arg5) {
+  return window['go']['main']['App']['GetResourceQuantity'](arg1, arg2, arg3, arg4, arg5);
+}
+
 export function GetResourceUISettings(arg1) {
   return window['go']['main']['App']['GetResourceUISettings'](arg1);
 }
 
 export function GetResourceYAML(arg1, arg2, arg3, arg4, arg5) {
   return window['go']['main']['App']['GetResourceYAML'](arg1, arg2, arg3, arg4, arg5);
+}
+
+export function GetTableViewSettings(arg1, arg2) {
+  return window['go']['main']['App']['GetTableViewSettings'](arg1, arg2);
 }
 
 export function InitialContext() {
@@ -134,6 +154,10 @@ export function ResourceHasItems(arg1, arg2, arg3, arg4) {
   return window['go']['main']['App']['ResourceHasItems'](arg1, arg2, arg3, arg4);
 }
 
+export function RevealPodEnvironmentSecret(arg1, arg2, arg3) {
+  return window['go']['main']['App']['RevealPodEnvironmentSecret'](arg1, arg2, arg3);
+}
+
 export function SetHideEmptyCRDs(arg1) {
   return window['go']['main']['App']['SetHideEmptyCRDs'](arg1);
 }
@@ -142,12 +166,20 @@ export function SetPrometheusSettings(arg1, arg2) {
   return window['go']['main']['App']['SetPrometheusSettings'](arg1, arg2);
 }
 
+export function SetCRDGroupingSettings(arg1) {
+  return window['go']['main']['App']['SetCRDGroupingSettings'](arg1);
+}
+
 export function SetResourceFavorite(arg1, arg2, arg3) {
   return window['go']['main']['App']['SetResourceFavorite'](arg1, arg2, arg3);
 }
 
 export function SetSectionCollapsed(arg1, arg2, arg3) {
   return window['go']['main']['App']['SetSectionCollapsed'](arg1, arg2, arg3);
+}
+
+export function SetTableViewSettings(arg1, arg2, arg3) {
+  return window['go']['main']['App']['SetTableViewSettings'](arg1, arg2, arg3);
 }
 
 export function SetSuspend(arg1, arg2, arg3, arg4, arg5, arg6) {

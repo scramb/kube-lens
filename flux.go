@@ -27,6 +27,21 @@ type FluxKindStatus struct {
 	Suspended int    `json:"suspended"`
 }
 
+type FluxProblemResource struct {
+	Kind      string `json:"kind"`
+	Group     string `json:"group"`
+	Version   string `json:"version"`
+	Resource  string `json:"resource"`
+	Namespace string `json:"namespace"`
+	Name      string `json:"name"`
+	Status    string `json:"status"`
+	Reason    string `json:"reason"`
+	Message   string `json:"message"`
+	Age       string `json:"age"`
+	Revision  string `json:"revision"`
+	Suspended bool   `json:"suspended"`
+}
+
 // fluxResources returns all discovered API resources in *.fluxcd.io groups.
 func (m *KubeManager) fluxResources() ([]APIResource, error) {
 	all, err := m.DiscoverResources()
@@ -47,25 +62,103 @@ func isSuspended(obj map[string]any) bool {
 	return found && err == nil && v
 }
 
-func isReady(obj map[string]any) bool {
+func readyCondition(obj map[string]any) (status, reason, message string, found bool) {
 	conds, found, err := unstructured.NestedSlice(obj, "status", "conditions")
 	if !found || err != nil {
-		return false
+		return "", "", "", false
 	}
 	for _, c := range conds {
 		cm, ok := c.(map[string]any)
 		if !ok {
 			continue
 		}
-		if cm["type"] == "Ready" && cm["status"] == "True" {
-			return true
+		if cm["type"] == "Ready" {
+			status, _ = cm["status"].(string)
+			reason, _ = cm["reason"].(string)
+			message, _ = cm["message"].(string)
+			return status, reason, message, true
 		}
 	}
-	return false
+	return "", "", "", false
+}
+
+func isReady(obj map[string]any) bool {
+	status, _, _, found := readyCondition(obj)
+	return found && status == "True"
+}
+
+func fluxRevision(obj map[string]any) string {
+	for _, path := range [][]string{
+		{"status", "lastAppliedRevision"},
+		{"status", "lastAttemptedRevision"},
+		{"status", "artifact", "revision"},
+		{"status", "lastHandledReconcileAt"},
+	} {
+		if v, found, err := unstructured.NestedString(obj, path...); found && err == nil && v != "" {
+			return v
+		}
+	}
+	return ""
 }
 
 // FluxStatus lists every Flux resource type and counts ready / not-ready /
 // suspended instances across all namespaces.
+func (m *KubeManager) FluxProblemResources() ([]FluxProblemResource, error) {
+	_, dyn, _, err := m.clients()
+	if err != nil {
+		return nil, err
+	}
+	resources, err := m.fluxResources()
+	if err != nil {
+		return nil, err
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	out := []FluxProblemResource{}
+	for _, r := range resources {
+		gvr := schema.GroupVersionResource{Group: r.Group, Version: r.Version, Resource: r.Name}
+		list, err := dyn.Resource(gvr).List(ctx, metav1.ListOptions{})
+		if err != nil {
+			continue
+		}
+		for _, item := range list.Items {
+			status, reason, message, found := readyCondition(item.Object)
+			suspended := isSuspended(item.Object)
+			if suspended || (found && status == "True") {
+				continue
+			}
+			if !found {
+				status = "Unknown"
+			}
+			out = append(out, FluxProblemResource{
+				Kind:      r.Kind,
+				Group:     r.Group,
+				Version:   r.Version,
+				Resource:  r.Name,
+				Namespace: item.GetNamespace(),
+				Name:      item.GetName(),
+				Status:    status,
+				Reason:    reason,
+				Message:   message,
+				Age:       humanAge(item.GetCreationTimestamp().Time),
+				Revision:  fluxRevision(item.Object),
+				Suspended: suspended,
+			})
+		}
+	}
+	sort.Slice(out, func(i, j int) bool {
+		if out[i].Kind != out[j].Kind {
+			return out[i].Kind < out[j].Kind
+		}
+		if out[i].Namespace != out[j].Namespace {
+			return out[i].Namespace < out[j].Namespace
+		}
+		return out[i].Name < out[j].Name
+	})
+	return out, nil
+}
+
 func (m *KubeManager) FluxStatus() ([]FluxKindStatus, error) {
 	_, dyn, _, err := m.clients()
 	if err != nil {

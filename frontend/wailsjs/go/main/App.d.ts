@@ -22,6 +22,8 @@ export function FluxReconcile(arg1:string,arg2:string,arg3:string,arg4:string,ar
 
 export function FluxReconcileWithSource(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string):Promise<void>;
 
+export function FluxProblemResources():Promise<Array<main.FluxProblemResource>>;
+
 export function FluxStatus():Promise<Array<main.FluxKindStatus>>;
 
 export function GetClusterOverviewMetrics(arg1:string):Promise<main.ClusterOverviewMetrics>;
@@ -31,6 +33,8 @@ export function GetEventsFor(arg1:string,arg2:string,arg3:string):Promise<Array<
 export function GetMetricsAvailability(arg1:string):Promise<main.MetricsAvailability>;
 
 export function GetNodeListMetrics(arg1:string,arg2:Array<string>):Promise<Array<main.ResourceListMetric>>;
+
+export function GetPodEnvironment(arg1:string,arg2:string):Promise<main.PodEnvironment>;
 
 export function GetPodListMetrics(arg1:string,arg2:string,arg3:Array<string>):Promise<Array<main.ResourceListMetric>>;
 
@@ -42,9 +46,15 @@ export function GetResourceJSON(arg1:string,arg2:string,arg3:string,arg4:string,
 
 export function GetResourceMetricsSeries(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string):Promise<main.ResourceMetricsSeries>;
 
+export function GetResourceQuantities(arg1:string,arg2:string,arg3:string,arg4:string,arg5:Array<string>):Promise<Array<main.ResourceQuantityInfo>>;
+
+export function GetResourceQuantity(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string):Promise<main.ResourceQuantitySummary>;
+
 export function GetResourceUISettings(arg1:string):Promise<main.ResourceUISettings>;
 
 export function GetResourceYAML(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string):Promise<string>;
+
+export function GetTableViewSettings(arg1:string,arg2:string):Promise<main.TableViewSettings>;
 
 export function InitialContext():Promise<string>;
 
@@ -68,13 +78,19 @@ export function RemoveKubeConfig(arg1:string):Promise<void>;
 
 export function ResourceHasItems(arg1:string,arg2:string,arg3:string,arg4:string):Promise<boolean>;
 
+export function RevealPodEnvironmentSecret(arg1:string,arg2:string,arg3:string):Promise<string>;
+
 export function SetHideEmptyCRDs(arg1:boolean):Promise<main.ResourceUISettings>;
 
 export function SetPrometheusSettings(arg1:string,arg2:main.PrometheusContextSettings):Promise<main.PrometheusContextSettings>;
 
+export function SetCRDGroupingSettings(arg1:main.CRDGroupingSettings):Promise<main.ResourceUISettings>;
+
 export function SetResourceFavorite(arg1:string,arg2:string,arg3:boolean):Promise<main.ResourceUISettings>;
 
 export function SetSectionCollapsed(arg1:string,arg2:string,arg3:boolean):Promise<main.ResourceUISettings>;
+
+export function SetTableViewSettings(arg1:string,arg2:string,arg3:main.TableViewSettings):Promise<main.TableViewSettings>;
 
 export function SetSuspend(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string,arg6:boolean):Promise<void>;
 

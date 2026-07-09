@@ -1,3 +1,18 @@
+export interface FluxProblemResource {
+  kind: string;
+  group: string;
+  version: string;
+  resource: string;
+  namespace: string;
+  name: string;
+  status: string;
+  reason: string;
+  message: string;
+  age: string;
+  revision: string;
+  suspended: boolean;
+}
+
 export interface FluxKindStatus {
   kind: string; // z.B. "Kustomization", "HelmRelease", "GitRepository", "ImageRepository"
   group: string; // z.B. "kustomize.toolkit.fluxcd.io"

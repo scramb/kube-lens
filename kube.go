@@ -70,18 +70,55 @@ type TableResult struct {
 // ---------- Settings persistence ----------
 
 type Settings struct {
-	KubeConfigs       []string                             `json:"kubeconfigs"`
-	LastContext       string                               `json:"lastContext"`
-	Favorites         map[string][]string                  `json:"favorites,omitempty"`
-	CollapsedSections map[string]map[string]bool           `json:"collapsedSections,omitempty"`
-	HideEmptyCRDs     bool                                 `json:"hideEmptyCRDs,omitempty"`
-	Prometheus        map[string]PrometheusContextSettings `json:"prometheus,omitempty"`
+	KubeConfigs       []string                                `json:"kubeconfigs"`
+	LastContext       string                                  `json:"lastContext"`
+	Favorites         map[string][]string                     `json:"favorites,omitempty"`
+	CollapsedSections map[string]map[string]bool              `json:"collapsedSections,omitempty"`
+	HideEmptyCRDs     bool                                    `json:"hideEmptyCRDs,omitempty"`
+	Prometheus        map[string]PrometheusContextSettings    `json:"prometheus,omitempty"`
+	CRDGrouping       CRDGroupingSettings                     `json:"crdGrouping,omitempty"`
+	Tables            map[string]map[string]TableViewSettings `json:"tables,omitempty"`
 }
 
 type ResourceUISettings struct {
-	Favorites         []string        `json:"favorites"`
-	CollapsedSections map[string]bool `json:"collapsedSections"`
-	HideEmptyCRDs     bool            `json:"hideEmptyCRDs"`
+	Favorites         []string            `json:"favorites"`
+	CollapsedSections map[string]bool     `json:"collapsedSections"`
+	HideEmptyCRDs     bool                `json:"hideEmptyCRDs"`
+	CRDGrouping       CRDGroupingSettings `json:"crdGrouping"`
+}
+
+type CRDGroupRule struct {
+	ID       string   `json:"id"`
+	Label    string   `json:"label"`
+	Patterns []string `json:"patterns"`
+	Icon     string   `json:"icon"`
+	Enabled  bool     `json:"enabled"`
+}
+
+type CRDGroupingSettings struct {
+	Rules []CRDGroupRule `json:"rules"`
+}
+
+type TableViewSettings struct {
+	ColumnOrder   []string `json:"columnOrder"`
+	HiddenColumns []string `json:"hiddenColumns"`
+}
+
+type ResourceQuantitySummary struct {
+	CPURequest    float64 `json:"cpuRequest"`
+	CPULimit      float64 `json:"cpuLimit"`
+	MemoryRequest float64 `json:"memoryRequest"`
+	MemoryLimit   float64 `json:"memoryLimit"`
+	HasCPURequest bool    `json:"hasCPURequest"`
+	HasCPULimit   bool    `json:"hasCPULimit"`
+	HasMemRequest bool    `json:"hasMemRequest"`
+	HasMemLimit   bool    `json:"hasMemLimit"`
+}
+
+type ResourceQuantityInfo struct {
+	Namespace string                  `json:"namespace"`
+	Name      string                  `json:"name"`
+	Summary   ResourceQuantitySummary `json:"summary"`
 }
 
 func settingsPath() string {
@@ -123,6 +160,33 @@ func cloneBoolMap(in map[string]bool) map[string]bool {
 		out[k] = v
 	}
 	return out
+}
+
+func cloneCRDGroupingSettings(in CRDGroupingSettings) CRDGroupingSettings {
+	out := CRDGroupingSettings{Rules: []CRDGroupRule{}}
+	for _, rule := range in.Rules {
+		out.Rules = append(out.Rules, CRDGroupRule{
+			ID:       rule.ID,
+			Label:    rule.Label,
+			Patterns: cloneStringSlice(rule.Patterns),
+			Icon:     rule.Icon,
+			Enabled:  rule.Enabled,
+		})
+	}
+	return out
+}
+
+func cloneTableViewSettings(in TableViewSettings) TableViewSettings {
+	return TableViewSettings{ColumnOrder: cloneStringSlice(in.ColumnOrder), HiddenColumns: cloneStringSlice(in.HiddenColumns)}
+}
+
+func resourceUISettingsFromSettings(s Settings, contextName string) ResourceUISettings {
+	return ResourceUISettings{
+		Favorites:         cloneStringSlice(s.Favorites[contextName]),
+		CollapsedSections: cloneBoolMap(s.CollapsedSections[contextName]),
+		HideEmptyCRDs:     s.HideEmptyCRDs,
+		CRDGrouping:       cloneCRDGroupingSettings(s.CRDGrouping),
+	}
 }
 
 // ---------- Manager ----------
@@ -297,11 +361,7 @@ func (m *KubeManager) CurrentContext() string {
 func (m *KubeManager) ResourceUISettings(contextName string) ResourceUISettings {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	return ResourceUISettings{
-		Favorites:         cloneStringSlice(m.settings.Favorites[contextName]),
-		CollapsedSections: cloneBoolMap(m.settings.CollapsedSections[contextName]),
-		HideEmptyCRDs:     m.settings.HideEmptyCRDs,
-	}
+	return resourceUISettingsFromSettings(m.settings, contextName)
 }
 
 func (m *KubeManager) SetResourceFavorite(contextName, resourceKey string, favorite bool) ResourceUISettings {
@@ -322,11 +382,7 @@ func (m *KubeManager) SetResourceFavorite(contextName, resourceKey string, favor
 	}
 	m.settings.Favorites[contextName] = cloneStringSlice(filtered)
 	m.settings.save()
-	return ResourceUISettings{
-		Favorites:         cloneStringSlice(m.settings.Favorites[contextName]),
-		CollapsedSections: cloneBoolMap(m.settings.CollapsedSections[contextName]),
-		HideEmptyCRDs:     m.settings.HideEmptyCRDs,
-	}
+	return resourceUISettingsFromSettings(m.settings, contextName)
 }
 
 func (m *KubeManager) SetSectionCollapsed(contextName, sectionKey string, collapsed bool) ResourceUISettings {
@@ -340,11 +396,7 @@ func (m *KubeManager) SetSectionCollapsed(contextName, sectionKey string, collap
 	}
 	m.settings.CollapsedSections[contextName][sectionKey] = collapsed
 	m.settings.save()
-	return ResourceUISettings{
-		Favorites:         cloneStringSlice(m.settings.Favorites[contextName]),
-		CollapsedSections: cloneBoolMap(m.settings.CollapsedSections[contextName]),
-		HideEmptyCRDs:     m.settings.HideEmptyCRDs,
-	}
+	return resourceUISettingsFromSettings(m.settings, contextName)
 }
 
 func (m *KubeManager) SetHideEmptyCRDs(hide bool) ResourceUISettings {
@@ -353,11 +405,39 @@ func (m *KubeManager) SetHideEmptyCRDs(hide bool) ResourceUISettings {
 	m.settings.HideEmptyCRDs = hide
 	contextName := m.currentContext
 	m.settings.save()
-	return ResourceUISettings{
-		Favorites:         cloneStringSlice(m.settings.Favorites[contextName]),
-		CollapsedSections: cloneBoolMap(m.settings.CollapsedSections[contextName]),
-		HideEmptyCRDs:     m.settings.HideEmptyCRDs,
+	return resourceUISettingsFromSettings(m.settings, contextName)
+}
+
+func (m *KubeManager) SetCRDGroupingSettings(settings CRDGroupingSettings) ResourceUISettings {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.settings.CRDGrouping = cloneCRDGroupingSettings(settings)
+	contextName := m.currentContext
+	m.settings.save()
+	return resourceUISettingsFromSettings(m.settings, contextName)
+}
+
+func (m *KubeManager) TableViewSettings(contextName, resourceKey string) TableViewSettings {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.settings.Tables == nil || m.settings.Tables[contextName] == nil {
+		return TableViewSettings{ColumnOrder: []string{}, HiddenColumns: []string{}}
 	}
+	return cloneTableViewSettings(m.settings.Tables[contextName][resourceKey])
+}
+
+func (m *KubeManager) SetTableViewSettings(contextName, resourceKey string, settings TableViewSettings) TableViewSettings {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.settings.Tables == nil {
+		m.settings.Tables = map[string]map[string]TableViewSettings{}
+	}
+	if m.settings.Tables[contextName] == nil {
+		m.settings.Tables[contextName] = map[string]TableViewSettings{}
+	}
+	m.settings.Tables[contextName][resourceKey] = cloneTableViewSettings(settings)
+	m.settings.save()
+	return cloneTableViewSettings(m.settings.Tables[contextName][resourceKey])
 }
 
 // InitialContext returns the context to auto-connect on startup:

@@ -79,12 +79,44 @@ func (a *App) SetHideEmptyCRDs(hide bool) ResourceUISettings {
 	return a.kube.SetHideEmptyCRDs(hide)
 }
 
+func (a *App) SetCRDGroupingSettings(settings CRDGroupingSettings) ResourceUISettings {
+	return a.kube.SetCRDGroupingSettings(settings)
+}
+
+func (a *App) GetTableViewSettings(contextName, resourceKey string) TableViewSettings {
+	return a.kube.TableViewSettings(contextName, resourceKey)
+}
+
+func (a *App) SetTableViewSettings(contextName, resourceKey string, settings TableViewSettings) TableViewSettings {
+	return a.kube.SetTableViewSettings(contextName, resourceKey, settings)
+}
+
 func (a *App) DiscoverResources() ([]APIResource, error) {
 	return a.kube.DiscoverResources()
 }
 
+func (a *App) FluxProblemResources() ([]FluxProblemResource, error) {
+	return a.kube.FluxProblemResources()
+}
+
 func (a *App) ListResourceTable(group, version, resource, namespace string) (*TableResult, error) {
 	return a.kube.ListResourceTable(group, version, resource, namespace)
+}
+
+func (a *App) GetResourceQuantities(group, version, resourceName, namespace string, names []string) ([]ResourceQuantityInfo, error) {
+	return a.kube.GetResourceQuantities(group, version, resourceName, namespace, names)
+}
+
+func (a *App) GetResourceQuantity(group, version, resourceName, namespace, name string) (ResourceQuantitySummary, error) {
+	return a.kube.GetResourceQuantity(group, version, resourceName, namespace, name)
+}
+
+func (a *App) GetPodEnvironment(namespace, podName string) (PodEnvironment, error) {
+	return a.kube.GetPodEnvironment(namespace, podName)
+}
+
+func (a *App) RevealPodEnvironmentSecret(namespace, secretName, key string) (string, error) {
+	return a.kube.RevealPodEnvironmentSecret(namespace, secretName, key)
 }
 
 func (a *App) ResourceHasItems(group, version, resource, namespace string) (bool, error) {

@@ -126,6 +126,40 @@ export namespace main {
 	        this.lastTimestamp = source["lastTimestamp"];
 	    }
 	}
+	export class FluxProblemResource {
+	    kind: string;
+	    group: string;
+	    version: string;
+	    resource: string;
+	    namespace: string;
+	    name: string;
+	    status: string;
+	    reason: string;
+	    message: string;
+	    age: string;
+	    revision: string;
+	    suspended: boolean;
+
+	    static createFrom(source: any = {}) {
+	        return new FluxProblemResource(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.kind = source["kind"];
+	        this.group = source["group"];
+	        this.version = source["version"];
+	        this.resource = source["resource"];
+	        this.namespace = source["namespace"];
+	        this.name = source["name"];
+	        this.status = source["status"];
+	        this.reason = source["reason"];
+	        this.message = source["message"];
+	        this.age = source["age"];
+	        this.revision = source["revision"];
+	        this.suspended = source["suspended"];
+	    }
+	}
 	export class FluxKindStatus {
 	    kind: string;
 	    group: string;
@@ -272,6 +306,70 @@ export namespace main {
 	        this.proxyForbidden = source["proxyForbidden"];
 	    }
 	}
+	export class PodEnvironmentEntry {
+	    containerType: string;
+	    container: string;
+	    name: string;
+	    value: string;
+	    source: string;
+	    refName: string;
+	    refKey: string;
+	    prefix: string;
+	    status: string;
+	    sensitive: boolean;
+	    revealable: boolean;
+
+	    static createFrom(source: any = {}) {
+	        return new PodEnvironmentEntry(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.containerType = source["containerType"];
+	        this.container = source["container"];
+	        this.name = source["name"];
+	        this.value = source["value"];
+	        this.source = source["source"];
+	        this.refName = source["refName"];
+	        this.refKey = source["refKey"];
+	        this.prefix = source["prefix"];
+	        this.status = source["status"];
+	        this.sensitive = source["sensitive"];
+	        this.revealable = source["revealable"];
+	    }
+	}
+	export class PodEnvironment {
+	    entries: PodEnvironmentEntry[];
+	    warnings: string[];
+
+	    static createFrom(source: any = {}) {
+	        return new PodEnvironment(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.entries = this.convertValues(source["entries"], PodEnvironmentEntry);
+	        this.warnings = source["warnings"];
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class PrometheusClusterSelector {
 	    label: string;
 	    value: string;
@@ -393,6 +491,66 @@ export namespace main {
 	        this.reasons = source["reasons"];
 	    }
 	}
+	export class ResourceQuantitySummary {
+	    cpuRequest: number;
+	    cpuLimit: number;
+	    memoryRequest: number;
+	    memoryLimit: number;
+	    hasCPURequest: boolean;
+	    hasCPULimit: boolean;
+	    hasMemRequest: boolean;
+	    hasMemLimit: boolean;
+
+	    static createFrom(source: any = {}) {
+	        return new ResourceQuantitySummary(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.cpuRequest = source["cpuRequest"];
+	        this.cpuLimit = source["cpuLimit"];
+	        this.memoryRequest = source["memoryRequest"];
+	        this.memoryLimit = source["memoryLimit"];
+	        this.hasCPURequest = source["hasCPURequest"];
+	        this.hasCPULimit = source["hasCPULimit"];
+	        this.hasMemRequest = source["hasMemRequest"];
+	        this.hasMemLimit = source["hasMemLimit"];
+	    }
+	}
+	export class ResourceQuantityInfo {
+	    namespace: string;
+	    name: string;
+	    summary: ResourceQuantitySummary;
+
+	    static createFrom(source: any = {}) {
+	        return new ResourceQuantityInfo(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.namespace = source["namespace"];
+	        this.name = source["name"];
+	        this.summary = this.convertValues(source["summary"], ResourceQuantitySummary);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class ResourceListMetric {
 	    namespace: string;
 	    name: string;
@@ -443,20 +601,104 @@ export namespace main {
 		    return a;
 		}
 	}
+	export class CRDGroupRule {
+	    id: string;
+	    label: string;
+	    patterns: string[];
+	    icon: string;
+	    enabled: boolean;
+
+	    static createFrom(source: any = {}) {
+	        return new CRDGroupRule(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.label = source["label"];
+	        this.patterns = source["patterns"];
+	        this.icon = source["icon"];
+	        this.enabled = source["enabled"];
+	    }
+	}
+	export class CRDGroupingSettings {
+	    rules: CRDGroupRule[];
+
+	    static createFrom(source: any = {}) {
+	        return new CRDGroupingSettings(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.rules = this.convertValues(source["rules"], CRDGroupRule);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class ResourceUISettings {
 	    favorites: string[];
 	    collapsedSections: Record<string, boolean>;
 	    hideEmptyCRDs: boolean;
-	
+	    crdGrouping: CRDGroupingSettings;
+
 	    static createFrom(source: any = {}) {
 	        return new ResourceUISettings(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.favorites = source["favorites"];
 	        this.collapsedSections = source["collapsedSections"];
 	        this.hideEmptyCRDs = source["hideEmptyCRDs"];
+	        this.crdGrouping = this.convertValues(source["crdGrouping"], CRDGroupingSettings);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class TableViewSettings {
+	    columnOrder: string[];
+	    hiddenColumns: string[];
+
+	    static createFrom(source: any = {}) {
+	        return new TableViewSettings(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.columnOrder = source["columnOrder"];
+	        this.hiddenColumns = source["hiddenColumns"];
 	    }
 	}
 	export class TableColumn {
