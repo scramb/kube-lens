@@ -122,6 +122,9 @@ type ResourceQuantityInfo struct {
 }
 
 func settingsPath() string {
+	if dir := strings.TrimSpace(os.Getenv("KUBE_LENS_CONFIG_DIR")); dir != "" {
+		return filepath.Join(dir, "settings.json")
+	}
 	dir, err := os.UserConfigDir()
 	if err != nil {
 		dir = os.TempDir()

@@ -4,22 +4,50 @@ import (
 	"context"
 	"os"
 	"path/filepath"
-
-	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
-// App is the Wails binding layer; it delegates to KubeManager.
+type eventEmitter interface {
+	Emit(ctx context.Context, event string, data ...interface{})
+}
+
+type Capabilities struct {
+	Mode          string `json:"mode"`
+	FileDialogs   bool   `json:"fileDialogs"`
+	LocalTerminal bool   `json:"localTerminal"`
+}
+
+// App is the binding layer; it delegates to KubeManager and emits UI events.
 type App struct {
-	ctx  context.Context
-	kube *KubeManager
+	ctx          context.Context
+	kube         *KubeManager
+	emitter      eventEmitter
+	capabilities Capabilities
 }
 
 func NewApp() *App {
-	return &App{kube: NewKubeManager()}
+	return &App{kube: NewKubeManager(), capabilities: Capabilities{Mode: "desktop", FileDialogs: true, LocalTerminal: true}}
 }
 
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
+}
+
+func (a *App) setEmitter(emitter eventEmitter) {
+	a.emitter = emitter
+}
+
+func (a *App) emit(event string, data ...interface{}) {
+	if a.emitter != nil {
+		a.emitter.Emit(a.ctx, event, data...)
+	}
+}
+
+func (a *App) setRuntimeMode(mode string, fileDialogs, localTerminal bool) {
+	a.capabilities = Capabilities{Mode: mode, FileDialogs: fileDialogs, LocalTerminal: localTerminal}
+}
+
+func (a *App) GetCapabilities() Capabilities {
+	return a.capabilities
 }
 
 func (a *App) ListKubeConfigs() []KubeConfigInfo {
@@ -29,11 +57,11 @@ func (a *App) ListKubeConfigs() []KubeConfigInfo {
 // AddKubeConfigDialog opens a native file picker and registers the chosen
 // kubeconfig. Returns the selected path ("" if cancelled).
 func (a *App) AddKubeConfigDialog() (string, error) {
+	if !a.capabilities.FileDialogs {
+		return "", os.ErrPermission
+	}
 	home, _ := os.UserHomeDir()
-	path, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
-		Title:            "Kubeconfig auswählen",
-		DefaultDirectory: filepath.Join(home, ".kube"),
-	})
+	path, err := openKubeConfigDialog(a.ctx, filepath.Join(home, ".kube"))
 	if err != nil || path == "" {
 		return "", err
 	}

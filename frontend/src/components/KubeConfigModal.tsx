@@ -7,7 +7,7 @@ interface Props {
   opened: boolean;
   onClose: () => void;
   configs: KubeConfigInfo[];
-  onAdd: () => void;
+  onAdd?: () => void;
   onRemove: (path: string) => void;
 }
 
@@ -49,12 +49,15 @@ export default function KubeConfigModal({ opened, onClose, configs, onAdd, onRem
             )}
           </Group>
         ))}
-        <Button leftSection={<IconPlus size={16} />} variant="light" onClick={onAdd} mt="sm">
-          Kubeconfig hinzufügen
-        </Button>
+        {onAdd && (
+          <Button leftSection={<IconPlus size={16} />} variant="light" onClick={onAdd} mt="sm">
+            Kubeconfig hinzufügen
+          </Button>
+        )}
         <Text size="xs" c="dimmed">
-          ~/.kube/config wird immer geladen. Zusätzliche Dateien werden gespeichert und beim
-          nächsten Start automatisch eingelesen.
+          {onAdd
+            ? '~/.kube/config wird immer geladen. Zusätzliche Dateien werden gespeichert und beim nächsten Start automatisch eingelesen.'
+            : 'Im Server-Modus werden Kubeconfigs über KUBECONFIG oder gemountete Dateien bereitgestellt; native Dateidialoge sind deaktiviert.'}
         </Text>
       </Stack>
     </Modal>
