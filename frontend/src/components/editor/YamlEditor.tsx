@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, Button, Code, Group, Loader, Stack } from '@mantine/core';
+import { Alert, Button, Code, Group, Loader, Stack, useComputedColorScheme } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
 import { notifications } from '@mantine/notifications';
 import {
@@ -46,6 +46,7 @@ export function YamlEditor({
   height = 'calc(100vh - 220px)',
 }: YamlEditorProps) {
   const { t } = useTranslation();
+  const computedColorScheme = useComputedColorScheme('dark', { getInitialValueInEffect: true });
   const [text, setText] = useState<string>(initialYaml ?? '');
   const [dryRunLoading, setDryRunLoading] = useState(false);
   const [applyLoading, setApplyLoading] = useState(false);
@@ -145,7 +146,7 @@ export function YamlEditor({
     <CodeMirror
       value={text}
       height={height}
-      theme="dark"
+      theme={computedColorScheme}
       editable={editable}
       extensions={[yaml()]}
       onChange={editable ? setText : undefined}

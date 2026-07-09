@@ -147,7 +147,7 @@ export function SimpleTimeSeriesChart({ name, unit, points, referenceLines = [] 
 
   if (clean.length === 0) {
     return (
-      <Box p="sm" style={{ border: '1px solid var(--mantine-color-dark-4)', borderRadius: 8 }}>
+      <Box p="sm" style={{ border: '1px solid var(--mantine-color-default-border)', borderRadius: 8 }}>
         <Group justify="space-between" mb={4}>
           <Text size="sm" fw={600}>{name}</Text>
           <Text size="sm" c="dimmed">{formatMetricValue(latest, unit)}</Text>
@@ -278,10 +278,10 @@ export function SimpleTimeSeriesChart({ name, unit, points, referenceLines = [] 
           width={boxWidth}
           height={boxHeight}
           rx={4}
-          fill="var(--mantine-color-dark-6)"
-          stroke="var(--mantine-color-dark-4)"
+          fill="var(--mantine-color-body)"
+          stroke="var(--mantine-color-default-border)"
         />
-        <text x={boxX + 7} y={boxY + 13} fontSize={10} fontWeight={600} fill="var(--mantine-color-gray-2)">
+        <text x={boxX + 7} y={boxY + 13} fontSize={10} fontWeight={600} fill="var(--mantine-color-text)">
           {valueLabel}
         </text>
         {timeLabel ? (
@@ -294,7 +294,7 @@ export function SimpleTimeSeriesChart({ name, unit, points, referenceLines = [] 
   }
 
   return (
-    <Box p="sm" style={{ border: '1px solid var(--mantine-color-dark-4)', borderRadius: 8 }}>
+    <Box p="sm" style={{ border: '1px solid var(--mantine-color-default-border)', borderRadius: 8 }}>
       <Group justify="space-between" mb={4}>
         <Text size="sm" fw={600}>{name}</Text>
         <Text size="sm" c="dimmed">{formatMetricValue(latest, unit)}</Text>
@@ -317,7 +317,7 @@ export function SimpleTimeSeriesChart({ name, unit, points, referenceLines = [] 
                 y1={y}
                 x2={width - rightPad}
                 y2={y}
-                stroke="var(--mantine-color-dark-4)"
+                stroke="var(--mantine-color-default-border)"
                 strokeOpacity={0.45}
               />
               <text
@@ -333,8 +333,8 @@ export function SimpleTimeSeriesChart({ name, unit, points, referenceLines = [] 
           );
         })}
 
-        <line x1={leftPad} y1={topPad} x2={leftPad} y2={height - bottomPad} stroke="var(--mantine-color-dark-4)" />
-        <line x1={leftPad} y1={height - bottomPad} x2={width - rightPad} y2={height - bottomPad} stroke="var(--mantine-color-dark-4)" />
+        <line x1={leftPad} y1={topPad} x2={leftPad} y2={height - bottomPad} stroke="var(--mantine-color-default-border)" />
+        <line x1={leftPad} y1={height - bottomPad} x2={width - rightPad} y2={height - bottomPad} stroke="var(--mantine-color-default-border)" />
 
         {xTicks.map((tick) => (
           <g key={`x-${tick.key}`}>
@@ -343,7 +343,7 @@ export function SimpleTimeSeriesChart({ name, unit, points, referenceLines = [] 
               y1={height - bottomPad}
               x2={tick.x}
               y2={height - bottomPad + 4}
-              stroke="var(--mantine-color-dark-4)"
+              stroke="var(--mantine-color-default-border)"
             />
             {tick.marker ? (
               <text

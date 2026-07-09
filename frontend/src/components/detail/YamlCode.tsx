@@ -13,13 +13,13 @@ interface Segment {
 }
 
 const COLORS: Record<TokenKind, string> = {
-  comment: 'var(--mantine-color-dark-2)',
-  key: 'var(--mantine-color-cyan-3)',
-  string: 'var(--mantine-color-green-3)',
-  number: 'var(--mantine-color-orange-3)',
-  boolean: 'var(--mantine-color-violet-3)',
-  null: 'var(--mantine-color-red-3)',
-  document: 'var(--mantine-color-yellow-3)',
+  comment: 'var(--mantine-color-dimmed)',
+  key: 'light-dark(var(--mantine-color-cyan-7), var(--mantine-color-cyan-3))',
+  string: 'light-dark(var(--mantine-color-green-7), var(--mantine-color-green-3))',
+  number: 'light-dark(var(--mantine-color-orange-7), var(--mantine-color-orange-3))',
+  boolean: 'light-dark(var(--mantine-color-violet-7), var(--mantine-color-violet-3))',
+  null: 'light-dark(var(--mantine-color-red-7), var(--mantine-color-red-3))',
+  document: 'light-dark(var(--mantine-color-yellow-8), var(--mantine-color-yellow-3))',
 };
 
 function classifyValue(value: string): TokenKind | undefined {
@@ -99,7 +99,7 @@ export function YamlCode({ code }: Props) {
         fontSize: 12,
         lineHeight: 1.5,
         fontFamily: 'var(--mantine-font-family-monospace)',
-        background: 'var(--mantine-color-dark-8)',
+        background: 'var(--mantine-color-default)',
         borderRadius: 8,
         whiteSpace: 'pre-wrap',
         wordBreak: 'break-word',
