@@ -17,6 +17,8 @@ export const detail = {
 
     // Common actions
     'detail.action.delete': 'Delete',
+    'detail.action.restart': 'Restart',
+    'detail.action.scale': 'Scale',
     'detail.cancel': 'Cancel',
 
     // YAML copy
@@ -30,6 +32,15 @@ export const detail = {
     'detail.delete.confirm': '{{kind}} {{name}} will be permanently deleted.',
     'detail.delete.confirmInNamespace':
       '{{kind}} {{name}} in namespace {{namespace}} will be permanently deleted.',
+    'detail.restart.title': 'Trigger rollout restart?',
+    'detail.restart.confirm': 'A rollout restart will be triggered for {{kind}} {{name}}.',
+    'detail.scale.title': 'Scale workload',
+    'detail.scale.replicas': 'Replicas',
+    'detail.scale.missingReplicas': 'No replicas value is set on the resource; choose the desired value explicitly.',
+    'detail.scale.apply': 'Scale',
+    'detail.podRestart.title': 'Restart pod?',
+    'detail.podRestart.confirm': 'Pod {{namespace}}/{{name}} will be deleted. A controller should recreate it if it owns the pod.',
+    'detail.podRestart.noOwnerWarning': 'This pod has no owner references and may not be recreated automatically.',
 
     // Badge
     'detail.suspended': 'suspended',
@@ -39,6 +50,8 @@ export const detail = {
     'detail.notify.reconcileWithSourceRequested': 'Reconcile with source requested',
     'detail.notify.suspended': 'Suspended',
     'detail.notify.resumed': 'Resumed',
+    'detail.notify.rolloutRestarted': 'Rollout restart triggered',
+    'detail.notify.scaled': 'Scaled',
 
     // Events table
     'detail.events.type': 'Type',
@@ -178,6 +191,8 @@ export const detail = {
 
     // Common actions
     'detail.action.delete': 'Löschen',
+    'detail.action.restart': 'Neu starten',
+    'detail.action.scale': 'Skalieren',
     'detail.cancel': 'Abbrechen',
 
     // YAML copy
@@ -191,6 +206,15 @@ export const detail = {
     'detail.delete.confirm': '{{kind}} {{name}} wird endgültig gelöscht.',
     'detail.delete.confirmInNamespace':
       '{{kind}} {{name}} im Namespace {{namespace}} wird endgültig gelöscht.',
+    'detail.restart.title': 'Rollout-Neustart auslösen?',
+    'detail.restart.confirm': 'Für {{kind}} {{name}} wird ein Rollout-Neustart ausgelöst.',
+    'detail.scale.title': 'Workload skalieren',
+    'detail.scale.replicas': 'Replicas',
+    'detail.scale.missingReplicas': 'Auf der Ressource ist kein Replicas-Wert gesetzt; wähle den gewünschten Wert explizit.',
+    'detail.scale.apply': 'Skalieren',
+    'detail.podRestart.title': 'Pod neu starten?',
+    'detail.podRestart.confirm': 'Pod {{namespace}}/{{name}} wird gelöscht. Ein Controller sollte ihn neu erstellen, wenn er den Pod besitzt.',
+    'detail.podRestart.noOwnerWarning': 'Dieser Pod hat keine Owner-References und wird möglicherweise nicht automatisch neu erstellt.',
 
     // Badge
     'detail.suspended': 'pausiert',
@@ -200,6 +224,8 @@ export const detail = {
     'detail.notify.reconcileWithSourceRequested': 'Reconcile mit Source angefordert',
     'detail.notify.suspended': 'Pausiert',
     'detail.notify.resumed': 'Fortgesetzt',
+    'detail.notify.rolloutRestarted': 'Rollout-Neustart ausgelöst',
+    'detail.notify.scaled': 'Skaliert',
 
     // Events table
     'detail.events.type': 'Typ',

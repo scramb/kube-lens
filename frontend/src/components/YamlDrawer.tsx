@@ -10,6 +10,7 @@ import {
   Loader,
   Menu,
   Modal,
+  NumberInput,
   ScrollArea,
   Table,
   Tabs,
@@ -25,6 +26,8 @@ import {
   IconPlayerPause,
   IconPlayerPlay,
   IconRefresh,
+  IconRotateClockwise,
+  IconScale,
   IconTrash,
 } from '@tabler/icons-react';
 import {
@@ -33,6 +36,8 @@ import {
   GetEventsFor,
   GetResourceJSON,
   GetResourceYAML,
+  RolloutRestart,
+  ScaleResource,
   SetSuspend,
 } from '../../wailsjs/go/main/App';
 import { main } from '../../wailsjs/go/models';
@@ -75,8 +80,12 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
   const [eventsError, setEventsError] = useState('');
 
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [restartConfirmOpen, setRestartConfirmOpen] = useState(false);
+  const [scaleOpen, setScaleOpen] = useState(false);
+  const [scaleReplicas, setScaleReplicas] = useState<number | string>(1);
   const [deleting, setDeleting] = useState(false);
   const [fluxBusy, setFluxBusy] = useState(false);
+  const [workloadBusy, setWorkloadBusy] = useState(false);
 
   const identity = resource
     ? `${resource.group}/${resource.version}/${resource.name}/${namespace}/${name}`
@@ -160,6 +169,9 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
 
   const isFlux = !!resource?.group.endsWith('.fluxcd.io');
   const isPod = resource?.kind === 'Pod' && resource?.group === '';
+  const canRolloutRestart = !!resource && resource.group === 'apps' && resource.version === 'v1' && ['Deployment', 'StatefulSet', 'DaemonSet'].includes(resource.kind);
+  const canScale = !!resource && resource.group === 'apps' && resource.version === 'v1' && ['Deployment', 'StatefulSet'].includes(resource.kind);
+  const podHasOwner = Array.isArray(obj?.metadata?.ownerReferences) && obj.metadata.ownerReferences.length > 0;
   const metricsSupported = !!resource && (resource.kind === 'Pod' || resource.kind === 'Node');
   const showMetricsTab = metricsAvailable && metricsSupported;
   const suspended = obj?.spec?.suspend === true;
@@ -187,6 +199,49 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
     },
     [resource, namespace, name, loadObj]
   );
+
+  const runWorkloadAction = useCallback(
+    async (label: string, fn: () => Promise<void>) => {
+      setWorkloadBusy(true);
+      try {
+        await fn();
+        notifications.show({ message: `${label}: ${name}`, color: 'teal' });
+        setTimeout(() => loadObj(), 400);
+      } catch (e) {
+        notifications.show({ message: errText(e), color: 'red' });
+      } finally {
+        setWorkloadBusy(false);
+      }
+    },
+    [name, loadObj]
+  );
+
+  const handleRolloutRestart = useCallback(async () => {
+    if (!resource) return;
+    await runWorkloadAction(t('detail.notify.rolloutRestarted'), () => RolloutRestart(resource.group, resource.version, resource.name, namespace, name));
+    setRestartConfirmOpen(false);
+  }, [resource, namespace, name, runWorkloadAction, t]);
+
+  const openScaleDialog = useCallback(async () => {
+    if (!resource) return;
+    try {
+      const json = await GetResourceJSON(resource.group, resource.version, resource.name, namespace, name);
+      const fresh = JSON.parse(json) as KubeObject;
+      const replicas = fresh?.spec?.replicas;
+      setScaleReplicas(typeof replicas === 'number' ? replicas : 1);
+      setObj(fresh);
+    } catch {
+      const replicas = obj?.spec?.replicas;
+      setScaleReplicas(typeof replicas === 'number' ? replicas : 1);
+    }
+    setScaleOpen(true);
+  }, [resource, namespace, name, obj]);
+
+  const handleScale = useCallback(async () => {
+    if (!resource || typeof scaleReplicas !== 'number') return;
+    await runWorkloadAction(t('detail.notify.scaled'), () => ScaleResource(resource.group, resource.version, resource.name, namespace, name, scaleReplicas));
+    setScaleOpen(false);
+  }, [resource, namespace, name, scaleReplicas, runWorkloadAction, t]);
 
   useEffect(() => {
     if (tab === 'metrics' && !showMetricsTab) setTab('overview');
@@ -217,6 +272,40 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
     >
       <Group justify="space-between" mb="xs" gap="xs" wrap="nowrap">
         <Group gap="xs">
+          {canRolloutRestart && (
+            <Button
+              size="xs"
+              variant="light"
+              leftSection={<IconRotateClockwise size={14} />}
+              loading={workloadBusy}
+              onClick={() => setRestartConfirmOpen(true)}
+            >
+              {t('detail.action.restart')}
+            </Button>
+          )}
+          {canScale && (
+            <Button
+              size="xs"
+              variant="light"
+              leftSection={<IconScale size={14} />}
+              loading={workloadBusy}
+              onClick={openScaleDialog}
+            >
+              {t('detail.action.scale')}
+            </Button>
+          )}
+          {isPod && (
+            <Button
+              size="xs"
+              variant="light"
+              color="orange"
+              leftSection={<IconRotateClockwise size={14} />}
+              loading={deleting}
+              onClick={() => setConfirmOpen(true)}
+            >
+              {t('detail.action.restart')}
+            </Button>
+          )}
           {isFlux && (
             <>
               <Button.Group>
@@ -374,27 +463,80 @@ export default function YamlDrawer({ opened, onClose, resource, name, namespace,
       </Tabs>
 
       <Modal
-        opened={confirmOpen}
-        onClose={() => setConfirmOpen(false)}
-        title={t('detail.delete.title')}
+        opened={restartConfirmOpen}
+        onClose={() => setRestartConfirmOpen(false)}
+        title={t('detail.restart.title')}
         centered
         zIndex={400}
       >
         <Text size="sm" mb="md">
-          {namespace
-            ? t('detail.delete.confirmInNamespace', {
-                kind: resource?.kind,
-                name,
-                namespace,
-              })
-            : t('detail.delete.confirm', { kind: resource?.kind, name })}
+          {t('detail.restart.confirm', { kind: resource?.kind, name })}
         </Text>
+        <Group justify="flex-end">
+          <Button variant="default" onClick={() => setRestartConfirmOpen(false)}>
+            {t('detail.cancel')}
+          </Button>
+          <Button loading={workloadBusy} leftSection={<IconRotateClockwise size={16} />} onClick={handleRolloutRestart}>
+            {t('detail.action.restart')}
+          </Button>
+        </Group>
+      </Modal>
+
+      <Modal
+        opened={scaleOpen}
+        onClose={() => setScaleOpen(false)}
+        title={t('detail.scale.title')}
+        centered
+        zIndex={400}
+      >
+        <NumberInput
+          label={t('detail.scale.replicas')}
+          description={obj?.spec?.replicas === undefined ? t('detail.scale.missingReplicas') : undefined}
+          min={0}
+          allowNegative={false}
+          value={scaleReplicas}
+          onChange={setScaleReplicas}
+          mb="md"
+        />
+        <Group justify="flex-end">
+          <Button variant="default" onClick={() => setScaleOpen(false)}>
+            {t('detail.cancel')}
+          </Button>
+          <Button loading={workloadBusy} disabled={typeof scaleReplicas !== 'number'} leftSection={<IconScale size={16} />} onClick={handleScale}>
+            {t('detail.scale.apply')}
+          </Button>
+        </Group>
+      </Modal>
+
+      <Modal
+        opened={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        title={isPod ? t('detail.podRestart.title') : t('detail.delete.title')}
+        centered
+        zIndex={400}
+      >
+        <Text size="sm" mb="md">
+          {isPod
+            ? t('detail.podRestart.confirm', { name, namespace })
+            : namespace
+              ? t('detail.delete.confirmInNamespace', {
+                  kind: resource?.kind,
+                  name,
+                  namespace,
+                })
+              : t('detail.delete.confirm', { kind: resource?.kind, name })}
+        </Text>
+        {isPod && !podHasOwner && (
+          <Text size="sm" c="red" mb="md">
+            {t('detail.podRestart.noOwnerWarning')}
+          </Text>
+        )}
         <Group justify="flex-end">
           <Button variant="default" onClick={() => setConfirmOpen(false)}>
             {t('detail.cancel')}
           </Button>
-          <Button color="red" loading={deleting} onClick={handleDelete}>
-            {t('detail.action.delete')}
+          <Button color={isPod ? 'orange' : 'red'} loading={deleting} onClick={handleDelete}>
+            {isPod ? t('detail.action.restart') : t('detail.action.delete')}
           </Button>
         </Group>
       </Modal>
