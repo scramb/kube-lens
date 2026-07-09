@@ -33,6 +33,7 @@ import {
   AddKubeConfigDialog,
   DeleteResource,
   DiscoverResources,
+  FluxProblemResources,
   FluxStatus,
   GetMetricsAvailability,
   GetNodeListMetrics,
@@ -68,7 +69,7 @@ import PrometheusConfigModal from './components/PrometheusConfigModal';
 import CRDGroupingModal from './components/CRDGroupingModal';
 import { ClusterOverview } from './components/cluster/ClusterOverview';
 import { formatBytes, formatCPU } from './components/metrics/format';
-import { FluxOverview } from './components/flux';
+import { FluxOverview, FluxProblemsOverview, FluxProblemResource } from './components/flux';
 import { NewResourceModal } from './components/editor';
 import TerminalPanel from './components/terminal/TerminalPanel';
 
@@ -106,8 +107,10 @@ export default function App() {
   const [filter, setFilter] = useState('');
 
   const [showFlux, setShowFlux] = useState(false);
+  const [showFluxProblems, setShowFluxProblems] = useState(false);
   const [showCluster, setShowCluster] = useState(false);
   const [fluxStatus, setFluxStatus] = useState<main.FluxKindStatus[]>([]);
+  const [fluxProblems, setFluxProblems] = useState<FluxProblemResource[]>([]);
   const [fluxLoading, setFluxLoading] = useState(false);
   const [metricsAvailable, setMetricsAvailable] = useState(false);
   const [tableMetrics, setTableMetrics] = useState<Record<string, ResourceListMetric>>({});
@@ -146,7 +149,9 @@ export default function App() {
   const loadFluxStatus = useCallback(async () => {
     setFluxLoading(true);
     try {
-      setFluxStatus((await FluxStatus()) ?? []);
+      const [status, problems] = await Promise.all([FluxStatus(), FluxProblemResources()]);
+      setFluxStatus(status ?? []);
+      setFluxProblems((problems ?? []) as FluxProblemResource[]);
     } catch (e) {
       notifications.show({ message: errText(e), color: 'red' });
     } finally {
@@ -156,18 +161,28 @@ export default function App() {
 
   const openFlux = useCallback(() => {
     setShowCluster(false);
+    setShowFluxProblems(false);
     setShowFlux(true);
+    loadFluxStatus();
+  }, [loadFluxStatus]);
+
+  const openFluxProblems = useCallback(() => {
+    setShowCluster(false);
+    setShowFlux(false);
+    setShowFluxProblems(true);
     loadFluxStatus();
   }, [loadFluxStatus]);
 
   const openCluster = useCallback(() => {
     setShowFlux(false);
+    setShowFluxProblems(false);
     setShowCluster(true);
     setClusterRefreshToken((v) => v + 1);
   }, []);
 
   const selectResource = useCallback((r: APIResource) => {
     setShowFlux(false);
+    setShowFluxProblems(false);
     setShowCluster(false);
     setSelected(r);
   }, []);
@@ -177,9 +192,19 @@ export default function App() {
       const r = resources.find((x) => x.group === s.group && x.name === s.resource);
       if (r) {
         setShowFlux(false);
+        setShowFluxProblems(false);
         setShowCluster(false);
         setSelected(r);
       }
+    },
+    [resources]
+  );
+
+  const openFluxProblemResource = useCallback(
+    (p: FluxProblemResource) => {
+      const r = resources.find((x) => x.group === p.group && x.version === p.version && x.name === p.resource);
+      if (!r) return;
+      setDrawer({ open: true, resource: r, name: p.name, namespace: p.namespace });
     },
     [resources]
   );
@@ -195,6 +220,7 @@ export default function App() {
     setTable(null);
     setTableError('');
     setShowFlux(false);
+    setShowFluxProblems(false);
     setShowCluster(false);
     setMetricsAvailable(false);
     setTableMetrics({});
@@ -558,8 +584,8 @@ export default function App() {
           <Tooltip label={t('shell.tooltip.refresh')}>
             <ActionIcon
               variant="subtle"
-              onClick={() => (showFlux ? loadFluxStatus() : showCluster ? setClusterRefreshToken((v) => v + 1) : loadTable(true))}
-              disabled={!selected && !showFlux && !showCluster}
+              onClick={() => (showFlux || showFluxProblems ? loadFluxStatus() : showCluster ? setClusterRefreshToken((v) => v + 1) : loadTable(true))}
+              disabled={!selected && !showFlux && !showFluxProblems && !showCluster}
             >
               <IconRefresh size={18} />
             </ActionIcon>
@@ -609,7 +635,7 @@ export default function App() {
         <Sidebar
           standard={standardNav}
           crds={crdNav}
-          selected={showFlux || showCluster ? null : selected}
+          selected={showFlux || showFluxProblems || showCluster ? null : selected}
           favorites={resourceUI.favorites}
           collapsedSections={resourceUI.collapsedSections}
           hideEmptyCRDs={resourceUI.hideEmptyCRDs}
@@ -620,7 +646,7 @@ export default function App() {
           onHideEmptyCRDsChange={updateHideEmptyCRDs}
           onEnsureCrdSectionPresence={ensureCrdSectionPresence}
           fluxAvailable={fluxAvailable}
-          fluxActive={showFlux}
+          fluxActive={showFlux || showFluxProblems}
           onOpenFlux={openFlux}
           metricsAvailable={metricsAvailable}
           clusterActive={showCluster}
@@ -676,7 +702,15 @@ export default function App() {
             status={fluxStatus}
             loading={fluxLoading}
             onOpenKind={openFluxKind}
+            onOpenProblems={openFluxProblems}
             onRefresh={loadFluxStatus}
+          />
+        ) : showFluxProblems ? (
+          <FluxProblemsOverview
+            problems={fluxProblems}
+            loading={fluxLoading}
+            onRefresh={loadFluxStatus}
+            onOpenResource={openFluxProblemResource}
           />
         ) : selected ? (
           <ResourceTable

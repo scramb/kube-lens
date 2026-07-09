@@ -95,6 +95,10 @@ func (a *App) DiscoverResources() ([]APIResource, error) {
 	return a.kube.DiscoverResources()
 }
 
+func (a *App) FluxProblemResources() ([]FluxProblemResource, error) {
+	return a.kube.FluxProblemResources()
+}
+
 func (a *App) ListResourceTable(group, version, resource, namespace string) (*TableResult, error) {
 	return a.kube.ListResourceTable(group, version, resource, namespace)
 }

@@ -42,6 +42,10 @@ export function FluxReconcileWithSource(arg1, arg2, arg3, arg4, arg5) {
   return window['go']['main']['App']['FluxReconcileWithSource'](arg1, arg2, arg3, arg4, arg5);
 }
 
+export function FluxProblemResources() {
+  return window['go']['main']['App']['FluxProblemResources']();
+}
+
 export function FluxStatus() {
   return window['go']['main']['App']['FluxStatus']();
 }

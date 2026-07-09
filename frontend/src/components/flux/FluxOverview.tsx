@@ -26,6 +26,7 @@ interface FluxOverviewProps {
   status: FluxKindStatus[];
   loading: boolean;
   onOpenKind: (s: FluxKindStatus) => void; // Navigation zur Ressourcenliste
+  onOpenProblems: () => void;
   onRefresh: () => void;
 }
 
@@ -75,23 +76,25 @@ function SummaryTile({
   color,
   icon,
   prominent,
+  onClick,
 }: {
   label: string;
   value: number;
   color: string;
   icon: React.ReactNode;
   prominent?: boolean;
+  onClick?: () => void;
 }) {
   return (
     <Card
       withBorder
       padding="sm"
       radius="md"
-      style={
-        prominent
-          ? { borderColor: `var(--mantine-color-${color}-6)`, borderWidth: 2 }
-          : undefined
-      }
+      onClick={onClick}
+      style={{
+        ...(prominent ? { borderColor: `var(--mantine-color-${color}-6)`, borderWidth: 2 } : {}),
+        cursor: onClick ? 'pointer' : 'default',
+      }}
     >
       <Group gap="sm" wrap="nowrap">
         <ActionIcon
@@ -121,6 +124,7 @@ export default function FluxOverview({
   status,
   loading,
   onOpenKind,
+  onOpenProblems,
   onRefresh,
 }: FluxOverviewProps) {
   const { t } = useTranslation();
@@ -190,6 +194,7 @@ export default function FluxOverview({
           color="red"
           icon={<IconAlertTriangle size={20} />}
           prominent={hasNotReady}
+          onClick={hasNotReady ? onOpenProblems : undefined}
         />
         <SummaryTile
           label={t('dash.status.suspended')}

@@ -622,56 +622,56 @@ Row-Header/Abschnittszeilen, statt dass der User jede Flux-Kind-Liste einzeln ö
 muss.
 
 ### M1 — Datenmodell: Failed/NotReady Flux-Ressourcen aggregieren
-- [ ] Bestehende Flux-Erkennung aus C2/C3 wiederverwenden: alle `*.fluxcd.io`-Kinds
+- [x] Bestehende Flux-Erkennung aus C2/C3 wiederverwenden: alle `*.fluxcd.io`-Kinds
       einbeziehen, insbesondere Appliers, Sources, Image Automation und Notification.
-- [ ] Backend- oder Frontend-Aggregation definieren, die pro Ressource mindestens
+- [x] Backend- oder Frontend-Aggregation definieren, die pro Ressource mindestens
       Kind, Namespace, Name, Ready-Status, Suspended-Status, Message/Reason, Age,
       Revision/Artifact sofern vorhanden und GVR enthält.
-- [ ] Filterlogik eindeutig festlegen: aufnehmen, wenn `Ready != True`, ein
+- [x] Filterlogik eindeutig festlegen: aufnehmen, wenn `Ready != True`, ein
       `NotReady`/`False`-Condition vorhanden ist oder die bestehende Flux-Status-
       Aggregation die Ressource als failed/not ready zählt. Suspended separat sichtbar
       machen, aber nicht stillschweigend als Fehler werten.
 
 ### M2 — Dashboard-Einstieg: Klick auf Failed/NotReady-Karten
 Abhängig von: M1.
-- [ ] Flux-Dashboard-Karten für Failed/NotReady klickbar machen; Klick öffnet die neue
+- [x] Flux-Dashboard-Karten für Failed/NotReady klickbar machen; Klick öffnet die neue
       zentrale Fehlerübersicht statt nur eine einzelne Kind-Liste.
-- [ ] Leerer Zustand: Wenn keine failed/not ready Ressourcen vorhanden sind,
+- [x] Leerer Zustand: Wenn keine failed/not ready Ressourcen vorhanden sind,
       positive Empty-State-Ansicht im Flux-Bereich anzeigen.
-- [ ] Navigation so bauen, dass Zurück/Sidebar-Zustand konsistent bleibt und ein
+- [x] Navigation so bauen, dass Zurück/Sidebar-Zustand konsistent bleibt und ein
       Refresh nach Flux-Aktionen die Übersicht aktualisiert.
 
 ### M3 — UI: Gruppierte Übersicht mit Row-Headern
 Abhängig von: M1, M2.
-- [ ] Neue Flux-Fehlerübersicht als Tabelle/Liste mit Row-Headern pro Flux-Kind bzw.
+- [x] Neue Flux-Fehlerübersicht als Tabelle/Liste mit Row-Headern pro Flux-Kind bzw.
       Kategorie (z. B. Kustomizations, HelmReleases, GitRepositories,
       ImageUpdateAutomations). Jede Gruppe zeigt Count und Status-Zusammenfassung.
-- [ ] Unter jedem Row-Header die betroffenen Ressourcen als klickbare Zeilen anzeigen:
+- [x] Unter jedem Row-Header die betroffenen Ressourcen als klickbare Zeilen anzeigen:
       Namespace, Name, Status/Reason, Message, Age, Revision und relevante Source-
       Informationen soweit verfügbar.
-- [ ] Row-Header einklappbar machen und optional initial alle Gruppen mit Fehlern
+- [x] Row-Header einklappbar machen und optional initial alle Gruppen mit Fehlern
       geöffnet anzeigen; Gruppen ohne Fehler ausblenden.
-- [ ] Klick auf eine Ressourcenzeile öffnet den bestehenden Detail-Drawer für genau
+- [x] Klick auf eine Ressourcenzeile öffnet den bestehenden Detail-Drawer für genau
       diese Flux-Ressource; bestehende Aktionen (Reconcile, Reconcile with source,
       Suspend/Resume) bleiben erreichbar.
 
 ### M4 — Status-Details & Priorisierung
 Abhängig von: M3.
-- [ ] Lange Flux-Condition-Messages kompakt darstellen (einzeilig mit Tooltip/
+- [x] Lange Flux-Condition-Messages kompakt darstellen (einzeilig mit Tooltip/
       Expand), damit die Übersicht scannbar bleibt.
-- [ ] Sortierung innerhalb der Gruppen definieren: NotReady/Failed zuerst, dann ggf.
+- [x] Sortierung innerhalb der Gruppen definieren: NotReady/Failed zuerst, dann ggf.
       Suspended/Unknown, danach Namespace/Name oder zuletzt geänderte Ressource,
       abhängig von vorhandenen Daten.
-- [ ] Unterschiedliche Zustände visuell klar trennen: Failed/NotReady, Unknown,
+- [x] Unterschiedliche Zustände visuell klar trennen: Failed/NotReady, Unknown,
       Suspended, Reconciling/Progressing.
 - [ ] Optional: Schnellfilter für Namespace, Kind und Freitext in Name/Message.
 
 ### M5 — Live-Updates, i18n & Tests
 Abhängig von: M1–M4.
-- [ ] Bestehende Refresh-/Watch-Mechanik nutzen, damit die Fehlerübersicht nach
+- [x] Bestehende Refresh-/Watch-Mechanik nutzen, damit die Fehlerübersicht nach
       Reconcile/Suspend/Resume und Watch-Events aktualisiert wird; kein separater
       aggressiver Polling-Pfad.
-- [ ] Alle neuen UI-Strings in EN/DE ergänzen (`src/i18n/gen/dashboards.ts` oder
+- [x] Alle neuen UI-Strings in EN/DE ergänzen (`src/i18n/gen/dashboards.ts` oder
       passendes neues Bundle).
 - [ ] Unit-Tests für Failed/NotReady-Filterung, Suspended-Semantik, Gruppierung und
       Sortierung.

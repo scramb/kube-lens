@@ -126,6 +126,40 @@ export namespace main {
 	        this.lastTimestamp = source["lastTimestamp"];
 	    }
 	}
+	export class FluxProblemResource {
+	    kind: string;
+	    group: string;
+	    version: string;
+	    resource: string;
+	    namespace: string;
+	    name: string;
+	    status: string;
+	    reason: string;
+	    message: string;
+	    age: string;
+	    revision: string;
+	    suspended: boolean;
+
+	    static createFrom(source: any = {}) {
+	        return new FluxProblemResource(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.kind = source["kind"];
+	        this.group = source["group"];
+	        this.version = source["version"];
+	        this.resource = source["resource"];
+	        this.namespace = source["namespace"];
+	        this.name = source["name"];
+	        this.status = source["status"];
+	        this.reason = source["reason"];
+	        this.message = source["message"];
+	        this.age = source["age"];
+	        this.revision = source["revision"];
+	        this.suspended = source["suspended"];
+	    }
+	}
 	export class FluxKindStatus {
 	    kind: string;
 	    group: string;
