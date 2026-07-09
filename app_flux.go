@@ -6,6 +6,10 @@ func (a *App) FluxStatus() ([]FluxKindStatus, error) {
 	return a.kube.FluxStatus()
 }
 
+func (a *App) FluxSuspendedResources() ([]FluxProblemResource, error) {
+	return a.kube.FluxSuspendedResources()
+}
+
 func (a *App) FluxReconcile(group, version, resource, namespace, name string) error {
 	return a.kube.FluxReconcile(group, version, resource, namespace, name)
 }

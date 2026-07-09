@@ -27,6 +27,7 @@ interface FluxOverviewProps {
   loading: boolean;
   onOpenKind: (s: FluxKindStatus) => void; // Navigation zur Ressourcenliste
   onOpenProblems: () => void;
+  onOpenSuspended: () => void;
   onRefresh: () => void;
 }
 
@@ -125,6 +126,7 @@ export default function FluxOverview({
   loading,
   onOpenKind,
   onOpenProblems,
+  onOpenSuspended,
   onRefresh,
 }: FluxOverviewProps) {
   const { t } = useTranslation();
@@ -152,6 +154,7 @@ export default function FluxOverview({
   }
 
   const hasNotReady = totals.notReady > 0;
+  const hasSuspended = totals.suspended > 0;
 
   return (
     <Stack p="md" gap="lg">
@@ -201,6 +204,8 @@ export default function FluxOverview({
           value={totals.suspended}
           color="yellow"
           icon={<IconPlayerPause size={20} />}
+          prominent={hasSuspended}
+          onClick={hasSuspended ? onOpenSuspended : undefined}
         />
       </SimpleGrid>
 
