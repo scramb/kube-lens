@@ -115,7 +115,7 @@ export default function FluxProblemsOverview({ problems, loading, onRefresh, onO
                     justify="space-between"
                     px="sm"
                     py={6}
-                    bg="dark.7"
+                    bg="var(--mantine-color-default)"
                     style={{ borderRadius: 6, cursor: 'pointer' }}
                     onClick={() => setCollapsed((prev) => ({ ...prev, [kind]: !isCollapsed }))}
                   >

@@ -274,15 +274,15 @@ export default function TerminalPanel({ opened, currentContext, disabled = false
     <Box
       h={height}
       style={{
-        borderTop: '1px solid var(--mantine-color-dark-4)',
-        background: 'var(--mantine-color-dark-8)',
+        borderTop: '1px solid var(--mantine-color-default-border)',
+        background: 'var(--mantine-color-body)',
         display: 'flex',
         flexDirection: 'column',
         minHeight: MIN_HEIGHT,
       }}
     >
       <Box h={6} style={{ cursor: 'ns-resize', borderTop: '1px solid transparent' }} onMouseDown={beginDrag} />
-      <Group px="xs" py={4} gap="xs" wrap="nowrap" style={{ borderBottom: '1px solid var(--mantine-color-dark-5)' }}>
+      <Group px="xs" py={4} gap="xs" wrap="nowrap" style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}>
         <IconTerminal2 size={16} color="var(--mantine-color-cyan-4)" />
         <Text size="xs" fw={600} tt="uppercase" c="dimmed" style={{ letterSpacing: 0.6 }}>
           {t('shell.terminal.panel')}
@@ -329,7 +329,7 @@ export default function TerminalPanel({ opened, currentContext, disabled = false
         {tabs.length === 0 ? (
           <Center h="100%">
             <Stack align="center" gap="xs">
-              <IconTerminal2 size={28} color="var(--mantine-color-dark-2)" />
+              <IconTerminal2 size={28} color="var(--mantine-color-dimmed)" />
               <Text size="sm" c="dimmed">{t('shell.terminal.empty')}</Text>
               <Tooltip label={addTooltip}>
                 <Button size="xs" leftSection={<IconPlus size={14} />} onClick={startTerminal} disabled={addDisabled}>

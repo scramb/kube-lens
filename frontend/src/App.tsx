@@ -10,6 +10,7 @@ import {
   Loader,
   Menu,
   Select,
+  useMantineColorScheme,
   Text,
   TextInput,
   Title,
@@ -22,6 +23,8 @@ import {
   IconCheck,
   IconFileSettings,
   IconLanguage,
+  IconMoon,
+  IconSun,
   IconPlus,
   IconRefresh,
   IconSearch,
@@ -91,6 +94,7 @@ function errText(e: unknown): string {
 
 export default function App() {
   const { t, i18n } = useTranslation();
+  const { colorScheme, setColorScheme } = useMantineColorScheme();
   const [configs, setConfigs] = useState<KubeConfigInfo[]>([]);
   const [contexts, setContexts] = useState<ContextInfo[]>([]);
   const [currentContext, setCurrentContext] = useState<string | null>(null);
@@ -623,6 +627,29 @@ export default function App() {
               </Menu.Item>
               <Menu.Item leftSection={<IconFileSettings size={16} />} onClick={() => setCrdGroupingModalOpen(true)}>
                 {t('shell.menu.crdGroups')}
+              </Menu.Item>
+              <Menu.Divider />
+              <Menu.Label>{t('shell.menu.colorScheme')}</Menu.Label>
+              <Menu.Item
+                leftSection={<IconSun size={16} />}
+                rightSection={colorScheme === 'light' ? <IconCheck size={14} /> : undefined}
+                onClick={() => setColorScheme('light')}
+              >
+                {t('shell.colorScheme.light')}
+              </Menu.Item>
+              <Menu.Item
+                leftSection={<IconMoon size={16} />}
+                rightSection={colorScheme === 'dark' ? <IconCheck size={14} /> : undefined}
+                onClick={() => setColorScheme('dark')}
+              >
+                {t('shell.colorScheme.dark')}
+              </Menu.Item>
+              <Menu.Item
+                leftSection={<IconSettings size={16} />}
+                rightSection={colorScheme === 'auto' ? <IconCheck size={14} /> : undefined}
+                onClick={() => setColorScheme('auto')}
+              >
+                {t('shell.colorScheme.system')}
               </Menu.Item>
               <Menu.Divider />
               <Menu.Label>{t('shell.menu.language')}</Menu.Label>
