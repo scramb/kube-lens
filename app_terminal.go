@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -14,7 +15,6 @@ import (
 	"time"
 
 	pty "github.com/aymanbagabas/go-pty"
-	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
@@ -188,6 +188,9 @@ func homeDir() string {
 // StartLocalTerminal starts a local shell attached to a PTY. The shell receives a
 // temporary flattened kubeconfig through KUBECONFIG, pinned to contextName.
 func (a *App) StartLocalTerminal(contextName string) (LocalTerminalInfo, error) {
+	if !a.capabilities.LocalTerminal {
+		return LocalTerminalInfo{}, errors.New("local terminal is disabled in server mode")
+	}
 	if strings.TrimSpace(contextName) == "" {
 		return LocalTerminalInfo{}, errors.New("no Kubernetes context selected")
 	}
@@ -277,7 +280,7 @@ func (a *App) pumpLocalTerminal(id string, sess *localTerminalSession) {
 		if len(pending) == 0 {
 			return
 		}
-		wailsruntime.EventsEmit(a.ctx, dataEvent, string(pending))
+		a.emit(dataEvent, string(pending))
 		pending = pending[:0]
 	}
 
@@ -301,7 +304,7 @@ func (a *App) pumpLocalTerminal(id string, sess *localTerminalSession) {
 				endMsg = err.Error()
 			}
 			cleanupLocalTerminal(id, sess)
-			wailsruntime.EventsEmit(a.ctx, endEvent, endMsg)
+			a.emit(endEvent, endMsg)
 			return
 		}
 	}
@@ -346,7 +349,7 @@ func (a *App) LocalTerminalWrite(id, data string) {
 		return
 	}
 	if _, err := sess.pty.Write([]byte(data)); err != nil {
-		wailsruntime.LogWarningf(a.ctx, "local terminal write failed for %s: %v", id, err)
+		log.Printf("local terminal write failed for %s: %v", id, err)
 	}
 }
 
@@ -360,7 +363,7 @@ func (a *App) LocalTerminalResize(id string, cols, rows int) {
 		return
 	}
 	if err := sess.pty.Resize(cols, rows); err != nil {
-		wailsruntime.LogWarningf(a.ctx, "local terminal resize failed for %s: %v", id, err)
+		log.Printf("local terminal resize failed for %s: %v", id, err)
 	}
 }
 

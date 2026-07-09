@@ -60,6 +60,44 @@ On Windows an NSIS installer can additionally be produced with `wails build -nsi
 macOS builds are currently **unsigned** (code signing / notarization are not yet
 configured).
 
+## Server mode
+
+Kube Lens can also run as a browser-accessible server. This is useful for a
+container or a remote host where a native webview is not available:
+
+```sh
+KUBE_LENS_AUTH_TOKEN=change-me \
+  docker run --rm -p 8399:8399 \
+  -e KUBE_LENS_AUTH_TOKEN \
+  -e KUBECONFIG=/home/nonroot/.kube/config \
+  -v ~/.kube/config:/home/nonroot/.kube/config:ro \
+  ghcr.io/scramb/kube-lens:latest
+```
+
+Or build/run locally:
+
+```sh
+cd frontend && npm ci && npm run build
+cd ..
+go run -tags server . --server --addr 127.0.0.1:8399 --auth-token change-me
+```
+
+Security notes:
+
+- The server exposes the full Kubernetes permissions of the mounted kubeconfig.
+  Use a reverse proxy for TLS and network access control.
+- A bearer token is required when binding to a non-loopback address. For local
+  loopback-only development the token may be omitted.
+- Native file dialogs are disabled in server mode. Provide kubeconfigs via
+  `KUBECONFIG` or mounted files. Settings can be stored in a mounted directory by
+  setting `KUBE_LENS_CONFIG_DIR`.
+- Exec-auth plugins referenced by kubeconfigs (for example `kubelogin`, `az` or
+  `gke-gcloud-auth-plugin`) must exist inside the container image. Otherwise use
+  a kubeconfig that does not depend on external exec plugins.
+- The local terminal panel is disabled by default in server mode because it would
+  open a shell in the container. Enable it explicitly with
+  `--enable-local-terminal` if that is intended. Pod exec remains available.
+
 ### Linux system packages
 
 Linux requires the GTK and WebKit development headers:

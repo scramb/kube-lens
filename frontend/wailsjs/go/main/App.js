@@ -54,6 +54,10 @@ export function FluxSuspendedResources() {
   return window['go']['main']['App']['FluxSuspendedResources']();
 }
 
+export function GetCapabilities() {
+  return window['go']['main']['App']['GetCapabilities']();
+}
+
 export function GetClusterOverviewMetrics(arg1) {
   return window['go']['main']['App']['GetClusterOverviewMetrics'](arg1);
 }
@@ -158,16 +162,20 @@ export function RemoveKubeConfig(arg1) {
   return window['go']['main']['App']['RemoveKubeConfig'](arg1);
 }
 
-export function RolloutRestart(arg1, arg2, arg3, arg4, arg5) {
-  return window['go']['main']['App']['RolloutRestart'](arg1, arg2, arg3, arg4, arg5);
-}
-
 export function ResourceHasItems(arg1, arg2, arg3, arg4) {
   return window['go']['main']['App']['ResourceHasItems'](arg1, arg2, arg3, arg4);
 }
 
 export function RevealPodEnvironmentSecret(arg1, arg2, arg3) {
   return window['go']['main']['App']['RevealPodEnvironmentSecret'](arg1, arg2, arg3);
+}
+
+export function RolloutRestart(arg1, arg2, arg3, arg4, arg5) {
+  return window['go']['main']['App']['RolloutRestart'](arg1, arg2, arg3, arg4, arg5);
+}
+
+export function ScaleResource(arg1, arg2, arg3, arg4, arg5, arg6) {
+  return window['go']['main']['App']['ScaleResource'](arg1, arg2, arg3, arg4, arg5, arg6);
 }
 
 export function SetCRDGroupingSettings(arg1) {
@@ -184,10 +192,6 @@ export function SetPrometheusSettings(arg1, arg2) {
 
 export function SetResourceFavorite(arg1, arg2, arg3) {
   return window['go']['main']['App']['SetResourceFavorite'](arg1, arg2, arg3);
-}
-
-export function ScaleResource(arg1, arg2, arg3, arg4, arg5, arg6) {
-  return window['go']['main']['App']['ScaleResource'](arg1, arg2, arg3, arg4, arg5, arg6);
 }
 
 export function SetSectionCollapsed(arg1, arg2, arg3) {

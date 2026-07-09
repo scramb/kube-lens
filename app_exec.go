@@ -4,14 +4,13 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"sync"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/remotecommand"
-
-	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // execSession holds the runtime handles for one interactive exec stream.
@@ -75,7 +74,7 @@ type execEmitter struct {
 }
 
 func (e *execEmitter) Write(p []byte) (int, error) {
-	wailsruntime.EventsEmit(e.app.ctx, e.event, string(p))
+	e.app.emit(e.event, string(p))
 	return len(p), nil
 }
 
@@ -148,7 +147,7 @@ func (a *App) StartExec(namespace, pod, container, shell string) (string, error)
 		if streamErr != nil {
 			errStr = streamErr.Error()
 		}
-		wailsruntime.EventsEmit(a.ctx, endEvent, errStr)
+		a.emit(endEvent, errStr)
 
 		// Cleanup: cancel context, drop from registry, close pipes.
 		cancel()
@@ -167,7 +166,7 @@ func (a *App) ExecWrite(execID, data string) {
 		return
 	}
 	if _, err := sess.stdinW.Write([]byte(data)); err != nil {
-		wailsruntime.LogWarningf(a.ctx, "exec write failed for %s: %v", execID, err)
+		log.Printf("exec write failed for %s: %v", execID, err)
 	}
 }
 

@@ -39,6 +39,7 @@ import {
   FluxProblemResources,
   FluxStatus,
   FluxSuspendedResources,
+  GetCapabilities,
   GetMetricsAvailability,
   GetNodeListMetrics,
   GetPodListMetrics,
@@ -131,6 +132,7 @@ export default function App() {
   const [crdGroupingModalOpen, setCrdGroupingModalOpen] = useState(false);
   const [newResourceOpen, setNewResourceOpen] = useState(false);
   const [terminalPanelOpen, setTerminalPanelOpen] = useState(false);
+  const [capabilities, setCapabilities] = useState<main.Capabilities>({ mode: 'desktop', fileDialogs: true, localTerminal: true });
   const [drawer, setDrawer] = useState<{
     open: boolean;
     resource: APIResource | null;
@@ -280,6 +282,9 @@ export default function App() {
 
   // Initial load: kubeconfigs, contexts, auto-connect to last/current context.
   useEffect(() => {
+    GetCapabilities()
+      .then((caps) => setCapabilities(caps ?? { mode: 'desktop', fileDialogs: true, localTerminal: true }))
+      .catch(() => setCapabilities({ mode: 'desktop', fileDialogs: true, localTerminal: true }));
     (async () => {
       try {
         await refreshConfigsAndContexts();
@@ -608,15 +613,17 @@ export default function App() {
               <IconPlus size={18} />
             </ActionIcon>
           </Tooltip>
-          <Tooltip label={t('shell.terminal.toggle')}>
-            <ActionIcon
-              variant={terminalPanelOpen ? 'light' : 'subtle'}
-              aria-label={t('shell.terminal.toggle')}
-              onClick={() => setTerminalPanelOpen((v) => !v)}
-            >
-              <IconTerminal2 size={18} />
-            </ActionIcon>
-          </Tooltip>
+          {capabilities.localTerminal && (
+            <Tooltip label={t('shell.terminal.toggle')}>
+              <ActionIcon
+                variant={terminalPanelOpen ? 'light' : 'subtle'}
+                aria-label={t('shell.terminal.toggle')}
+                onClick={() => setTerminalPanelOpen((v) => !v)}
+              >
+                <IconTerminal2 size={18} />
+              </ActionIcon>
+            </Tooltip>
+          )}
           <Tooltip label={t('shell.tooltip.refresh')}>
             <ActionIcon
               variant="subtle"
@@ -634,7 +641,7 @@ export default function App() {
             </Menu.Target>
             <Menu.Dropdown>
               <Menu.Item leftSection={<IconFileSettings size={16} />} onClick={() => setConfigModalOpen(true)}>
-                {t('shell.menu.kubeconfigs')}
+                {capabilities.fileDialogs ? t('shell.menu.kubeconfigs') : t('shell.menu.kubeconfigsServer')}
               </Menu.Item>
               <Menu.Item
                 leftSection={<IconSettingsCog size={16} />}
@@ -723,7 +730,11 @@ export default function App() {
                 <br />
                 {t('shell.empty.noContextsHint')}
               </Text>
-              <Button onClick={addKubeConfig}>{t('shell.addKubeconfig')}</Button>
+              {capabilities.fileDialogs ? (
+                <Button onClick={addKubeConfig}>{t('shell.addKubeconfig')}</Button>
+              ) : (
+                <Text size="sm" c="dimmed">{t('shell.server.kubeconfigHint')}</Text>
+              )}
             </div>
           </Center>
         ) : connecting ? (
@@ -798,7 +809,7 @@ export default function App() {
           </Center>
         )}
         </Box>
-        <TerminalPanel opened={terminalPanelOpen} currentContext={currentContext} disabled={!!connectError || connecting} />
+        {capabilities.localTerminal && <TerminalPanel opened={terminalPanelOpen} currentContext={currentContext} disabled={!!connectError || connecting} />}
       </AppShell.Main>
 
       <YamlDrawer
@@ -817,7 +828,7 @@ export default function App() {
         opened={configModalOpen}
         onClose={() => setConfigModalOpen(false)}
         configs={configs}
-        onAdd={addKubeConfig}
+        onAdd={capabilities.fileDialogs ? addKubeConfig : undefined}
         onRemove={removeKubeConfig}
       />
 

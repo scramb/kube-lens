@@ -6,6 +6,7 @@ import '@mantine/core/styles.css';
 import '@mantine/notifications/styles.css';
 import './style.css';
 import './i18n';
+import './serverBridge';
 import App from './App';
 
 const theme = createTheme({

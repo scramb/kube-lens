@@ -13,8 +13,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-
-	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // ---------- Types exposed to the frontend ----------
@@ -161,7 +159,7 @@ func (a *App) pumpLogs(ctx context.Context, req *rest.Request, streamID string) 
 
 	stream, err := req.Stream(ctx)
 	if err != nil {
-		wailsruntime.EventsEmit(a.ctx, "logs:error:"+streamID, err.Error())
+		a.emit("logs:error:"+streamID, err.Error())
 		return
 	}
 	defer stream.Close()
@@ -179,7 +177,7 @@ func (a *App) pumpLogs(ctx context.Context, req *rest.Request, streamID string) 
 		}
 		out := make([]string, len(batch))
 		copy(out, batch)
-		wailsruntime.EventsEmit(a.ctx, "logs:data:"+streamID, out)
+		a.emit("logs:data:"+streamID, out)
 		batch = batch[:0]
 	}
 
@@ -200,7 +198,7 @@ func (a *App) pumpLogs(ctx context.Context, req *rest.Request, streamID string) 
 		select {
 		case <-ctx.Done():
 			flush()
-			wailsruntime.EventsEmit(a.ctx, "logs:end:"+streamID, "")
+			a.emit("logs:end:"+streamID, "")
 			return
 		case line := <-lines:
 			batch = append(batch, line)
@@ -215,7 +213,7 @@ func (a *App) pumpLogs(ctx context.Context, req *rest.Request, streamID string) 
 			if err != nil {
 				msg = err.Error()
 			}
-			wailsruntime.EventsEmit(a.ctx, "logs:end:"+streamID, msg)
+			a.emit("logs:end:"+streamID, msg)
 			return
 		}
 	}

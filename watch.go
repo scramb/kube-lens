@@ -10,8 +10,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/dynamic"
-
-	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // watchDebounceInterval bestimmt, wie oft höchstens ein "changed"-Event
@@ -121,7 +119,7 @@ func (a *App) watchLoop(ctx context.Context, watchID string, res dynamic.Namespa
 	pending := false
 
 	emit := func() {
-		wailsruntime.EventsEmit(a.ctx, "watch:changed:"+watchID)
+		a.emit("watch:changed:" + watchID)
 	}
 
 	// signal markiert eine Änderung und startet ggf. das Debounce-Fenster.
