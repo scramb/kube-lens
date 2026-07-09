@@ -101,9 +101,9 @@ func fluxRevision(obj map[string]any) string {
 	return ""
 }
 
-// FluxStatus lists every Flux resource type and counts ready / not-ready /
-// suspended instances across all namespaces.
-func (m *KubeManager) FluxProblemResources() ([]FluxProblemResource, error) {
+type fluxResourcePredicate func(obj map[string]any, readyStatus string, readyFound bool, suspended bool) bool
+
+func (m *KubeManager) collectFluxResources(predicate fluxResourcePredicate) ([]FluxProblemResource, error) {
 	_, dyn, _, err := m.clients()
 	if err != nil {
 		return nil, err
@@ -125,7 +125,7 @@ func (m *KubeManager) FluxProblemResources() ([]FluxProblemResource, error) {
 		for _, item := range list.Items {
 			status, reason, message, found := readyCondition(item.Object)
 			suspended := isSuspended(item.Object)
-			if suspended || (found && status == "True") {
+			if !predicate(item.Object, status, found, suspended) {
 				continue
 			}
 			if !found {
@@ -157,6 +157,28 @@ func (m *KubeManager) FluxProblemResources() ([]FluxProblemResource, error) {
 		return out[i].Name < out[j].Name
 	})
 	return out, nil
+}
+
+// FluxProblemResources returns Flux resources that are failed/not-ready. Suspended
+// resources with Ready!=True intentionally still appear here; Suspended itself is
+// shown separately and is not the reason a resource is considered a problem.
+func fluxProblemPredicate(_ map[string]any, status string, found bool, _ bool) bool {
+	return !(found && status == "True")
+}
+
+func fluxSuspendedPredicate(_ map[string]any, _ string, _ bool, suspended bool) bool {
+	return suspended
+}
+
+func (m *KubeManager) FluxProblemResources() ([]FluxProblemResource, error) {
+	return m.collectFluxResources(fluxProblemPredicate)
+}
+
+// FluxSuspendedResources returns Flux resources with spec.suspend=true. A resource
+// can be both suspended and not ready; in that case it intentionally appears here
+// and in the problems overview.
+func (m *KubeManager) FluxSuspendedResources() ([]FluxProblemResource, error) {
+	return m.collectFluxResources(fluxSuspendedPredicate)
 }
 
 func (m *KubeManager) FluxStatus() ([]FluxKindStatus, error) {

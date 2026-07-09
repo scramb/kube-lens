@@ -65,6 +65,37 @@ func TestIsReady(t *testing.T) {
 	}
 }
 
+func TestFluxResourcePredicates(t *testing.T) {
+	ready := fluxObj(false, []any{map[string]any{"type": "Ready", "status": "True"}}, nil)
+	if fluxProblemPredicate(ready, "True", true, false) {
+		t.Error("Ready=True should not be a problem")
+	}
+	if fluxSuspendedPredicate(ready, "True", true, false) {
+		t.Error("spec.suspend missing/false should not be suspended")
+	}
+
+	notReady := fluxObj(false, []any{map[string]any{"type": "Ready", "status": "False"}}, nil)
+	if !fluxProblemPredicate(notReady, "False", true, false) {
+		t.Error("Ready=False should be a problem")
+	}
+
+	suspendedReady := fluxObj(true, []any{map[string]any{"type": "Ready", "status": "True"}}, nil)
+	if fluxProblemPredicate(suspendedReady, "True", true, true) {
+		t.Error("Suspended Ready=True should not be a problem")
+	}
+	if !fluxSuspendedPredicate(suspendedReady, "True", true, true) {
+		t.Error("spec.suspend=true should be in suspended view")
+	}
+
+	suspendedNotReady := fluxObj(true, []any{map[string]any{"type": "Ready", "status": "False"}}, nil)
+	if !fluxProblemPredicate(suspendedNotReady, "False", true, true) {
+		t.Error("Suspended Ready=False should still be a problem")
+	}
+	if !fluxSuspendedPredicate(suspendedNotReady, "False", true, true) {
+		t.Error("Suspended Ready=False should also be in suspended view")
+	}
+}
+
 func TestFluxRevisionPriority(t *testing.T) {
 	obj := fluxObj(nil, nil, map[string]any{
 		"lastAppliedRevision":   "main@sha1:aaa",

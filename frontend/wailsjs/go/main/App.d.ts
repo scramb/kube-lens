@@ -26,6 +26,8 @@ export function FluxReconcileWithSource(arg1:string,arg2:string,arg3:string,arg4
 
 export function FluxStatus():Promise<Array<main.FluxKindStatus>>;
 
+export function FluxSuspendedResources():Promise<Array<main.FluxProblemResource>>;
+
 export function GetClusterOverviewMetrics(arg1:string):Promise<main.ClusterOverviewMetrics>;
 
 export function GetEventsFor(arg1:string,arg2:string,arg3:string):Promise<Array<main.EventInfo>>;

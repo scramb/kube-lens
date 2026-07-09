@@ -50,6 +50,10 @@ export function FluxStatus() {
   return window['go']['main']['App']['FluxStatus']();
 }
 
+export function FluxSuspendedResources() {
+  return window['go']['main']['App']['FluxSuspendedResources']();
+}
+
 export function GetClusterOverviewMetrics(arg1) {
   return window['go']['main']['App']['GetClusterOverviewMetrics'](arg1);
 }
