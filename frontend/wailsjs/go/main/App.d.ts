@@ -76,6 +76,8 @@ export function PatchResource(arg1:string,arg2:string,arg3:string,arg4:string,ar
 
 export function RemoveKubeConfig(arg1:string):Promise<void>;
 
+export function RolloutRestart(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string):Promise<void>;
+
 export function ResourceHasItems(arg1:string,arg2:string,arg3:string,arg4:string):Promise<boolean>;
 
 export function RevealPodEnvironmentSecret(arg1:string,arg2:string,arg3:string):Promise<string>;
@@ -87,6 +89,8 @@ export function SetHideEmptyCRDs(arg1:boolean):Promise<main.ResourceUISettings>;
 export function SetPrometheusSettings(arg1:string,arg2:main.PrometheusContextSettings):Promise<main.PrometheusContextSettings>;
 
 export function SetResourceFavorite(arg1:string,arg2:string,arg3:boolean):Promise<main.ResourceUISettings>;
+
+export function ScaleResource(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string,arg6:number):Promise<void>;
 
 export function SetSectionCollapsed(arg1:string,arg2:string,arg3:boolean):Promise<main.ResourceUISettings>;
 
